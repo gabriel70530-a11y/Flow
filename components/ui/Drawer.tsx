@@ -45,7 +45,7 @@ export function Drawer({ open, onClose, eyebrow, title, children }: DrawerProps)
         <div className="mb-6 flex items-start justify-between gap-3">
           <div>
             <span className="text-[13px] text-muted">{eyebrow}</span>
-            <h2 id={titleId} className="mt-1 text-xl">
+            <h2 id={titleId} className="mt-1 text-[20px]">
               {title}
             </h2>
           </div>

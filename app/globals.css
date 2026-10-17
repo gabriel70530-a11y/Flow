@@ -75,6 +75,10 @@
   --shadow-card: var(--card-shadow);
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-heading: var(--font-display), "Arial Black", system-ui, sans-serif;
+  /* O protótipo herda line-height 1.45 do body em todos os tamanhos pequenos. */
+  --text-xs--line-height: 1.45;
+  --text-sm--line-height: 1.45;
+  --text-base--line-height: 1.45;
   /* md: acima disso, barra lateral; abaixo, barras do celular. lg: grids em duas colunas. */
   --breakpoint-md: 761px;
   --breakpoint-lg: 1001px;

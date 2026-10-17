@@ -60,7 +60,7 @@ export function MateriasScreen() {
         const done = topics.filter((topic) => progressOf(progress, topic.id).status === "concluido").length;
         return (
           <Card key={area.id} flush>
-            <CardHeader flush title={area.name} className="mb-0 border-b border-line pb-3">
+            <CardHeader flush title={area.name} className="border-b border-line">
               <div className="flex items-center gap-3">
                 <span className="text-[13px] text-muted tabular-nums">
                   {done}/{topics.length}

@@ -9,7 +9,7 @@ interface ListRowProps {
 }
 
 export function ListRow({ title, subtitle, end, onClick, compact = false }: ListRowProps) {
-  const className = `flex w-full items-center gap-3 text-left ${compact ? "py-2.5" : "px-4 py-3 md:px-5"}`;
+  const className = `flex w-full items-center gap-3 border-t border-line text-left ${compact ? "py-2.5" : "px-4 py-3 md:px-5"}`;
   const content = (
     <>
       <div className="min-w-0 flex-1">
@@ -21,7 +21,7 @@ export function ListRow({ title, subtitle, end, onClick, compact = false }: List
   );
 
   return (
-    <li className="border-t border-line first:border-t-0">
+    <li className="first:*:border-t-0">
       {onClick ? (
         <button type="button" onClick={onClick} className={`${className} hover:bg-hover`}>
           {content}
