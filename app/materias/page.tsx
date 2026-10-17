@@ -1,5 +1,5 @@
-import { PageHeader } from "@/components/ui/PageHeader";
+import { MateriasScreen } from "@/components/materias/MateriasScreen";
 
 export default function MateriasPage() {
-  return <PageHeader title="Matérias" subtitle="Clique em um tópico para atualizar." />;
+  return <MateriasScreen />;
 }
