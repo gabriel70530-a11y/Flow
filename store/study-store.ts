@@ -460,7 +460,7 @@ export const useStudyStore = create<StudyStore>()(
 
         importBackup: (raw) => {
           const data = parseBackup(raw);
-          if (!data) return "Este arquivo não parece um backup do ENEM Flow.";
+          if (!data) return "Este arquivo não parece um backup do Flow.";
           set({ ...data, demo: false, timer: resetTimer(data.timer) });
           return null;
         },
