@@ -26,6 +26,7 @@ import {
   type TimerState,
 } from "@/lib/timer";
 import { createDemoData } from "./demo-data";
+import { STORAGE_KEY } from "./storage-key";
 
 export type Theme = "system" | "light" | "dark";
 
@@ -62,8 +63,6 @@ interface StudyActions {
 }
 
 export type StudyStore = StudyData & StudyActions;
-
-export const STORAGE_KEY = "enem-flow:v1";
 
 export function emptyData(): StudyData {
   return { version: 1, demo: false, progress: {}, sessions: [], goal: 25, theme: "system", timer: DEFAULT_TIMER };
