@@ -25,6 +25,7 @@ export interface StudyData {
   theme: Theme;
   sound: boolean;
   showStreak: boolean;
+  analyticsConsent: boolean;
   timer: TimerState;
 }
 
@@ -42,6 +43,7 @@ export function emptyData(): StudyData {
     theme: "system",
     sound: true,
     showStreak: true,
+    analyticsConsent: false,
     timer: DEFAULT_TIMER,
   };
 }

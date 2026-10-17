@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Saira } from "next/font/google";
-import { AppShell } from "@/components/shell/AppShell";
 import { LEGACY_STORAGE_KEY, STORAGE_KEY } from "@/store/storage-key";
 import "./globals.css";
 
@@ -29,9 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body>
-        <AppShell>{children}</AppShell>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

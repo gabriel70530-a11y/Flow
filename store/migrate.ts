@@ -51,6 +51,7 @@ function normalize(saved: Record<string, unknown>): StudyData {
     theme: saved.theme === "light" || saved.theme === "dark" ? saved.theme : "system",
     sound: saved.sound !== false,
     showStreak: saved.showStreak !== false,
+    analyticsConsent: saved.analyticsConsent === true,
     timer: { ...DEFAULT_TIMER, ...(isRecord(saved.timer) ? (saved.timer as Partial<TimerState>) : {}) },
   };
 }

@@ -50,6 +50,7 @@ import {
   validateTopic,
   type TopicInput,
 } from "@/lib/topics";
+import { track, type AnalyticsEvent } from "./analytics";
 import { loadData, parseBackup } from "./migrate";
 import { emptyData, type OnboardingState, type StudyData, type Theme } from "./state";
 import { CORRUPT_STORAGE_KEY, LEGACY_STORAGE_KEY, STORAGE_KEY } from "./storage-key";
@@ -77,6 +78,8 @@ interface StudyActions {
   setTheme: (theme: Theme) => void;
   setSound: (sound: boolean) => void;
   setShowStreak: (showStreak: boolean) => void;
+  setAnalyticsConsent: (consent: boolean) => void;
+  trackEvent: (event: AnalyticsEvent) => void;
 
   setTimerMode: (mode: TimerMode) => void;
   setTimerTopic: (topicId: string) => void;
@@ -197,6 +200,7 @@ function toStudyData(state: StudyData): StudyData {
     theme: state.theme,
     sound: state.sound,
     showStreak: state.showStreak,
+    analyticsConsent: state.analyticsConsent,
     timer: state.timer,
   };
 }
@@ -255,8 +259,10 @@ export const useStudyStore = create<StudyStore>()(
         toggleMastery: (topicId, level) =>
           updateProgress(topicId, (current) => ({ ...current, mastery: current.mastery === level ? 0 : level })),
 
-        completeReview: (topicId, feedback) =>
-          updateProgress(topicId, (current) => completeNextReview(current, today(), feedback)),
+        completeReview: (topicId, feedback) => {
+          get().trackEvent("revisao_concluida");
+          return updateProgress(topicId, (current) => completeNextReview(current, today(), feedback));
+        },
 
         setReviewFeedback: (topicId, stage, feedback) =>
           updateProgress(topicId, (current) => ({
@@ -277,6 +283,8 @@ export const useStudyStore = create<StudyStore>()(
         setTheme: (theme) => set({ theme }),
         setSound: (sound) => set({ sound }),
         setShowStreak: (showStreak) => set({ showStreak }),
+        setAnalyticsConsent: (analyticsConsent) => set({ analyticsConsent }),
+        trackEvent: (event) => track(event, get().analyticsConsent),
 
         setTimerMode: (mode) => updateIdleTimer({ mode }),
         setTimerTopic: (topicId) => {
@@ -320,6 +328,7 @@ export const useStudyStore = create<StudyStore>()(
           const state: SessionState = data.timer.mode === "pomodoro" ? "interrompida" : "concluida";
           const { session, changes } = recordSession(data, elapsed(data.timer, now), state, now);
           set({ ...changes, timer: resetTimer(data.timer) });
+          if (session) get().trackEvent("sessao_registrada");
           return session;
         },
 
@@ -337,6 +346,7 @@ export const useStudyStore = create<StudyStore>()(
           }
           const { session, changes } = recordSession(data, phaseSeconds(data.timer), "concluida", now);
           set({ ...changes, timer: nextPhase(data.timer) });
+          if (session) get().trackEvent("sessao_registrada");
           return { kind: "focus-done", session };
         },
 
@@ -355,16 +365,21 @@ export const useStudyStore = create<StudyStore>()(
           const error = get().savePlanner(settings);
           if (error) return error;
           set({ onboarding: { status: "concluido", planMode } });
+          get().trackEvent("onboarding_concluido");
           if (planMode === "sugerido") get().regeneratePlan();
           return null;
         },
 
-        skipOnboarding: () => set({ onboarding: { ...get().onboarding, status: "pulado" } }),
+        skipOnboarding: () => {
+          set({ onboarding: { ...get().onboarding, status: "pulado" } });
+          get().trackEvent("onboarding_pulado");
+        },
 
         regeneratePlan: () => {
           const { topics, progress, tasks, planner } = get();
           const result = generatePlan({ today: today(), topics, progress, tasks, settings: planner, newId: () => newId("task-") });
           set({ tasks: result.tasks });
+          get().trackEvent("plano_gerado");
           return result;
         },
 
@@ -426,7 +441,14 @@ export const useStudyStore = create<StudyStore>()(
           return null;
         },
 
-        resetData: () => set({ ...emptyData(), theme: get().theme, sound: get().sound, showStreak: get().showStreak }),
+        resetData: () =>
+          set({
+            ...emptyData(),
+            theme: get().theme,
+            sound: get().sound,
+            showStreak: get().showStreak,
+            analyticsConsent: get().analyticsConsent,
+          }),
       };
     },
     {

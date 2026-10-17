@@ -8,6 +8,7 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { Drawer } from "@/components/ui/Drawer";
 import { ListRow } from "@/components/ui/ListRow";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { ProBadge } from "@/components/ui/ProBadge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { showToast } from "@/components/ui/Toast";
 import { useStudyTopic } from "@/components/timer/use-study-topic";
@@ -23,6 +24,7 @@ import {
   type PlanLeftover,
   type PlanTask,
 } from "@/lib/planner";
+import { hasProAccess } from "@/lib/plan";
 import { findTopic } from "@/lib/topics";
 import { useHydrated, useStudyStore } from "@/store/study-store";
 import { PlannerSettingsForm } from "./planner-fields";
@@ -67,6 +69,7 @@ export function CronogramaScreen() {
   const missed = missedTasks(tasks, today);
   const postponed = tasks.filter((task) => task.status === "adiada");
   const hasPlan = tasks.some((task) => task.date !== null && task.date >= today);
+  const proAccess = hasProAccess();
   const weekCapacity = days.reduce((sum, date) => sum + availableMinutes(planner, date), 0);
 
   const apply = () => {
@@ -127,7 +130,7 @@ export function CronogramaScreen() {
       <PageHeader title="Cronograma" subtitle={SUBTITLE} />
 
       <div className="flex flex-wrap gap-2">
-        <Button variant="primary" onClick={requestPlan} disabled={weekCapacity === 0}>
+        <Button variant="primary" onClick={requestPlan} disabled={weekCapacity === 0 || !proAccess}>
           <RefreshCw size={16} aria-hidden />
           {hasPlan ? "Atualizar plano" : "Gerar plano"}
         </Button>
@@ -139,7 +142,19 @@ export function CronogramaScreen() {
           <SlidersHorizontal size={16} aria-hidden />
           Disponibilidade
         </Button>
+        <span className="self-center">
+          <ProBadge />
+        </span>
       </div>
+
+      {!proAccess && (
+        <p className="text-[13px] text-muted">
+          O plano sugerido faz parte do Pro. Você ainda pode adicionar e organizar tarefas à mão.{" "}
+          <Link href="/planos" className={linkStyles}>
+            Ver planos
+          </Link>
+        </p>
+      )}
 
       {weekCapacity === 0 && (
         <p className="text-[13px] text-muted">

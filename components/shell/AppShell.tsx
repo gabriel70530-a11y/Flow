@@ -36,6 +36,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [hydrated, progress, topics]);
 
   useEffect(() => {
+    if (hydrated) useStudyStore.getState().trackEvent("app_aberto");
+  }, [hydrated]);
+
+  useEffect(() => {
     if (!hydrated) return;
     if (theme === "system") document.documentElement.removeAttribute("data-theme");
     else document.documentElement.dataset.theme = theme;

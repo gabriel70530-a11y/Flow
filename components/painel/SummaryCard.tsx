@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { linkStyles } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { ProBadge } from "@/components/ui/ProBadge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { addDays } from "@/lib/dates";
 import {
@@ -48,7 +49,9 @@ export function SummaryCard({ today, monday }: { today: string; monday: string }
 
   return (
     <Card>
-      <CardHeader title="Resumo da semana" />
+      <CardHeader title="Resumo da semana">
+        <ProBadge />
+      </CardHeader>
       <div className="grid">
         <Row label="Planejado x realizado">
           {plannedMinutes > 0 ? (

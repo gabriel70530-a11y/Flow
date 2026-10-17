@@ -14,6 +14,7 @@ import { PlannerSettingsForm } from "@/components/cronograma/planner-fields";
 import { THEME_OPTIONS } from "@/components/shell/ThemeSelect";
 import { toDateKey } from "@/lib/dates";
 import { GOAL_LIMITS, GOAL_UNITS, type GoalType } from "@/lib/stats";
+import { analyticsUrl } from "@/store/analytics";
 import { useHydrated, useStudyStore, type Theme } from "@/store/study-store";
 
 const SUBTITLE = "Preferências, metas e os seus dados.";
@@ -52,9 +53,10 @@ function Settings() {
   const theme = useStudyStore((state) => state.theme);
   const sound = useStudyStore((state) => state.sound);
   const showStreak = useStudyStore((state) => state.showStreak);
+  const analyticsConsent = useStudyStore((state) => state.analyticsConsent);
   const goal = useStudyStore((state) => state.goal);
   const planner = useStudyStore((state) => state.planner);
-  const { setTheme, setSound, setShowStreak, setGoal, savePlanner, exportBackup, importBackup, resetData } =
+  const { setTheme, setSound, setShowStreak, setAnalyticsConsent, setGoal, savePlanner, exportBackup, importBackup, resetData } =
     useStudyStore.getState();
   const fileInput = useRef<HTMLInputElement>(null);
   const [pendingImport, setPendingImport] = useState<string | null>(null);
@@ -127,6 +129,17 @@ function Settings() {
               <Toggle pressed={showStreak} onChange={setShowStreak}>
                 Mostrar sequência de dias no painel
               </Toggle>
+              {analyticsUrl() && (
+                <>
+                  <Toggle pressed={analyticsConsent} onChange={setAnalyticsConsent}>
+                    Compartilhar dados de uso anônimos
+                  </Toggle>
+                  <p className="text-[13px] text-muted">
+                    Só eventos como &quot;sessão registrada&quot; e o dia, com um código aleatório deste navegador. Nada de nome,
+                    tópicos ou anotações. Ajuda a melhorar o app durante o teste.
+                  </p>
+                </>
+              )}
             </div>
           </Card>
 
