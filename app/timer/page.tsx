@@ -1,5 +1,5 @@
-import { PageHeader } from "@/components/ui/PageHeader";
+import { TimerScreen } from "@/components/timer/TimerScreen";
 
 export default function TimerPage() {
-  return <PageHeader title="Timer" subtitle="O tempo de foco entra sozinho no painel da semana." />;
+  return <TimerScreen />;
 }

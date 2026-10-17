@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_TIMER,
   clockText,
+  displaySeconds,
   elapsed,
   isIdle,
   isPhaseOver,
@@ -33,6 +34,23 @@ describe("elapsed", () => {
 
     const resumed = startTimer(paused, seconds(500));
     expect(elapsed(resumed, seconds(530))).toBe(90);
+  });
+});
+
+describe("displaySeconds", () => {
+  it("counts down the phase in pomodoro and up in stopwatch mode", () => {
+    const pomodoro = startTimer({ ...DEFAULT_TIMER, focus: 25 }, start);
+    expect(displaySeconds(pomodoro, seconds(0.4))).toBe(25 * 60);
+    expect(displaySeconds(pomodoro, seconds(61))).toBe(24 * 60 - 1);
+
+    const stopwatch = startTimer({ ...DEFAULT_TIMER, mode: "cronometro" }, start);
+    expect(displaySeconds(stopwatch, seconds(61.9))).toBe(61);
+  });
+
+  it("never goes past the phase when the clock reads before the start", () => {
+    const running = startTimer(DEFAULT_TIMER, start);
+    expect(elapsed(running, start - 500)).toBe(0);
+    expect(displaySeconds(running, start - 500)).toBe(25 * 60);
   });
 });
 

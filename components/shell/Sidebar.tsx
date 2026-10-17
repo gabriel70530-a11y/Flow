@@ -7,11 +7,12 @@ import { Wordmark } from "./Wordmark";
 interface SidebarProps {
   pathname: string;
   dueReviews: number;
+  timerText: string | null;
   theme: Theme;
   onThemeChange: (theme: Theme) => void;
 }
 
-export function Sidebar({ pathname, dueReviews, theme, onThemeChange }: SidebarProps) {
+export function Sidebar({ pathname, dueReviews, timerText, theme, onThemeChange }: SidebarProps) {
   return (
     <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col gap-1 border-r border-line bg-surface pt-[calc(20px+env(safe-area-inset-top,0px))] pr-3 pb-[calc(16px+env(safe-area-inset-bottom,0px))] pl-[max(12px,env(safe-area-inset-left,0px))] md:flex">
       <div className="self-start px-3 pt-1 pb-6">
@@ -27,6 +28,9 @@ export function Sidebar({ pathname, dueReviews, theme, onThemeChange }: SidebarP
           >
             <Icon size={22} strokeWidth={2} aria-hidden />
             {label}
+            {href === "/timer" && timerText && (
+              <span className="ml-auto text-[13px] font-normal text-muted tabular-nums">{timerText}</span>
+            )}
             {href === "/revisoes" && dueReviews > 0 && (
               <span className="ml-auto rounded-full bg-danger px-[7px] py-px text-xs font-semibold text-on-accent tabular-nums">
                 {dueReviews}

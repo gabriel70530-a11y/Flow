@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useMemo, type ReactNode } from "react";
 import { toDateKey } from "@/lib/dates";
 import { groupReviews, pendingReviews } from "@/lib/reviews";
+import { useTimerTicker } from "@/components/timer/use-timer-ticker";
 import { IconButton } from "@/components/ui/IconButton";
 import { Toast } from "@/components/ui/Toast";
 import { useHydrated, useStudyStore, type Theme } from "@/store/study-store";
@@ -21,6 +22,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const progress = useStudyStore((state) => state.progress);
   const demo = useStudyStore((state) => state.demo);
   const setTheme = useStudyStore((state) => state.setTheme);
+  const timerText = useTimerTicker(hydrated);
 
   // Até hidratar, o servidor e o primeiro render do cliente precisam mostrar a mesma coisa.
   const theme: Theme = hydrated ? storedTheme : "system";
@@ -43,7 +45,13 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <Sidebar pathname={pathname} dueReviews={dueReviews} theme={theme} onThemeChange={setTheme} />
+      <Sidebar
+        pathname={pathname}
+        dueReviews={dueReviews}
+        timerText={timerText}
+        theme={theme}
+        onThemeChange={setTheme}
+      />
 
       <header className="sticky top-[env(safe-area-inset-top,0px)] z-20 flex h-[52px] items-center justify-between border-b border-line bg-surface pr-[max(16px,env(safe-area-inset-right,0px))] pl-[max(16px,env(safe-area-inset-left,0px))] md:hidden">
         <Wordmark compact />
@@ -57,7 +65,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {children}
       </main>
 
-      <TabBar pathname={pathname} dueReviews={dueReviews} />
+      <TabBar pathname={pathname} dueReviews={dueReviews} timerText={timerText} />
       <Toast />
     </>
   );

@@ -24,7 +24,14 @@ export const DEFAULT_TIMER: TimerState = {
 
 // O tempo vem do relógio, não de ticks, para continuar certo com a aba em segundo plano ou após recarregar.
 export function elapsed(timer: TimerState, now: number): number {
-  return timer.banked + (timer.running ? (now - timer.startedAt) / 1000 : 0);
+  return timer.banked + (timer.running ? Math.max(0, now - timer.startedAt) / 1000 : 0);
+}
+
+// Pomodoro conta para baixo dentro da fase; cronômetro conta para cima.
+export function displaySeconds(timer: TimerState, now: number): number {
+  return timer.mode === "pomodoro"
+    ? Math.ceil(phaseSeconds(timer) - elapsed(timer, now))
+    : Math.floor(elapsed(timer, now));
 }
 
 export function phaseSeconds(timer: TimerState): number {
