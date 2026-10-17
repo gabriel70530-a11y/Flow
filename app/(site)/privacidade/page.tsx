@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/site/LegalPage";
 
-export const metadata: Metadata = { title: "Privacidade · ENEM Flow" };
+export const metadata: Metadata = { title: "Privacidade" };
 
 export default function PrivacidadePage() {
   return (
@@ -9,7 +9,7 @@ export default function PrivacidadePage() {
       <section>
         <h2>Onde ficam seus dados</h2>
         <p>
-          O ENEM Flow não tem conta nem servidor de dados. Tópicos, sessões, revisões, cronograma e preferências ficam salvos no
+          O Flow não tem conta nem servidor de dados. Tópicos, sessões, revisões, cronograma e preferências ficam salvos no
           armazenamento local do seu navegador, neste aparelho. Nós não recebemos esse conteúdo.
         </p>
       </section>
@@ -46,7 +46,7 @@ export default function PrivacidadePage() {
       <section>
         <h2>Seus direitos</h2>
         <p>
-          O ENEM Flow segue os princípios da LGPD: coletar o mínimo, com finalidade clara e controle seu. Como não guardamos seus
+          O Flow segue os princípios da LGPD: coletar o mínimo, com finalidade clara e controle seu. Como não guardamos seus
           dados de estudo, o acesso, a correção e a exclusão estão nas suas mãos, no próprio app.
         </p>
       </section>

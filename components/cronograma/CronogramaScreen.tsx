@@ -152,7 +152,7 @@ export function CronogramaScreen() {
         <Card>
           <CardHeader title="Monte sua semana em 2 minutos" />
           <p className="mb-4 text-sm text-muted">
-            Escolha seus dias de estudo e as áreas que pesam mais. O ENEM Flow organiza até 2 matérias por dia, sem limitar horas.
+            Escolha seus dias de estudo e as áreas que pesam mais. O Flow organiza até 2 matérias por dia, sem limitar horas.
             Você pode mudar tudo depois, ou montar sozinho.
           </p>
           <div className="flex flex-wrap gap-2">

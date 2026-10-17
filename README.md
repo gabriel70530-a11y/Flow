@@ -1,6 +1,6 @@
-# ENEM Flow
+# Flow
 
-Menos caos. Mais flow nos estudos. Organizador de estudos para o ENEM: matérias prontas e personalizáveis, semana organizada com até 2 matérias por dia (sem limite de horas), "Estudar hoje" no painel, timer Pomodoro ou cronômetro, revisões espaçadas (1, 7, 15 e 30 dias) e estatísticas a partir das sessões registradas.
+Sua preparação para o ENEM, no ritmo certo. Organizador de estudos: matérias prontas e personalizáveis, semana organizada com até 2 matérias por dia (sem limite de horas), "Estudar hoje" no painel, timer Pomodoro ou cronômetro, revisões espaçadas (1, 7, 15 e 30 dias) e estatísticas a partir das sessões registradas.
 
 Não é cursinho, não promete nota nem aprovação e não tem vínculo com o INEP ou o MEC.
 

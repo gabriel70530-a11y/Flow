@@ -1,16 +1,30 @@
-export function Wordmark({ compact = false }: { compact?: boolean }) {
+const SIZES = {
+  sm: "text-[24px]",
+  md: "text-[32px]",
+  lg: "text-[64px] md:text-[88px]",
+};
+
+interface WordmarkProps {
+  size?: keyof typeof SIZES;
+  tagline?: boolean;
+}
+
+// A marca é "FLOW", recriada em texto. O ENEM só aparece no slogan, como nome da prova.
+export function Wordmark({ size = "md", tagline = false }: WordmarkProps) {
   return (
     <div
       role="img"
-      aria-label="ENEM Flow"
-      className="inline-grid font-heading text-text italic leading-none font-stretch-125%"
+      aria-label={tagline ? "Flow. Sua preparação para o ENEM, no ritmo certo." : "Flow"}
+      className="inline-grid justify-items-center gap-[0.35em] font-heading text-text italic"
     >
-      <b className={`font-extrabold tracking-[-0.01em] ${compact ? "text-[22px]" : "text-[30px]"}`}>ENEM</b>
-      <span
-        className={`mt-[3px] mr-[-0.45em] justify-self-end font-light tracking-[0.45em] ${compact ? "text-[9px]" : "text-[12px]"}`}
-      >
-        FLOW
-      </span>
+      <span className={`${SIZES[size]} leading-none font-extrabold tracking-[0.02em] font-stretch-125%`}>FLOW</span>
+      {tagline && (
+        <span className="text-center text-[15px] leading-snug font-normal tracking-[0.08em] font-stretch-110% md:text-[18px]">
+          Sua preparação para o ENEM,
+          <br />
+          no ritmo certo.
+        </span>
+      )}
     </div>
   );
 }

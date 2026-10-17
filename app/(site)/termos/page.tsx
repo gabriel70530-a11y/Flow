@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/site/LegalPage";
 
-export const metadata: Metadata = { title: "Termos de uso · ENEM Flow" };
+export const metadata: Metadata = { title: "Termos de uso" };
 
 export default function TermosPage() {
   return (
     <LegalPage title="Termos de uso">
       <section>
-        <h2>O que é o ENEM Flow</h2>
+        <h2>O que é o Flow</h2>
         <p>
           Uma ferramenta para organizar estudos: matérias, cronograma, timer, revisões e acompanhamento. Não é cursinho, não
           oferece aulas e não é oficial: não tem vínculo com o INEP nem com o MEC.

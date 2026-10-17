@@ -177,7 +177,7 @@ function OnboardingSteps() {
               <Segmented options={planModeOptions} value={planMode} onChange={setPlanMode} />
               <p className="text-[13px] text-muted">
                 {planMode === "sugerido"
-                  ? "O ENEM Flow sugere tarefas que cabem no seu tempo. Você pode mover, dividir ou remover qualquer uma."
+                  ? "O Flow organiza até 2 matérias por dia nos seus dias de estudo. Você pode mover ou remover qualquer uma."
                   : "Você adiciona as tarefas no Cronograma quando quiser. Timer, revisões e painel funcionam do mesmo jeito."}
               </p>
             </div>

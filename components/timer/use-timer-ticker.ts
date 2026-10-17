@@ -28,7 +28,7 @@ export function useTimerTicker(hydrated: boolean): string | null {
   }, [hydrated, now, tick, sound]);
 
   useEffect(() => {
-    document.title = text && timer.running ? `${text} · ENEM Flow` : "ENEM Flow";
+    document.title = text && timer.running ? `${text} · Flow` : "Flow";
   }, [text, timer.running]);
 
   return text;

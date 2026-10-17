@@ -1,6 +1,6 @@
-# ENEM Flow
+# Flow
 
-Organizador de estudos para estudantes do ensino médio e candidatos ao ENEM: "Menos caos. Mais flow nos estudos." O objetivo é organizar as matérias da semana e do dia e ajudar a lembrar das revisões, sem deixar a rotina rígida e sem limitar a carga horária de ninguém. Não é cursinho, não promete aprovação ou nota e não tem vínculo com INEP/MEC.
+Organizador de estudos para estudantes do ensino médio e candidatos ao ENEM. A marca é **Flow**, com o slogan "Sua preparação para o ENEM, no ritmo certo." O nome ENEM nunca faz parte da marca: aparece só como o nome da prova (no slogan e em textos descritivos). O objetivo é organizar as matérias da semana e do dia e ajudar a lembrar das revisões, sem deixar a rotina rígida e sem limitar a carga horária de ninguém. Não é cursinho, não promete aprovação ou nota e não tem vínculo com INEP/MEC.
 
 O escopo do produto está em `prompt_mestre_enem_flow_claude_code.md` (fase 2). O protótipo em `docs/prototype.html` continua sendo a referência visual e dos fluxos que ele já cobre. Se o prompt mestre e o protótipo divergirem, vale o prompt mestre.
 
@@ -213,13 +213,14 @@ O tema tem três estados: Automático (segue o sistema e não define `data-theme
 - **Corpo:** pilha do sistema, 15px, line-height 1.45 (também nos tamanhos `text-xs`, `text-sm` e `text-base`).
 - **Títulos de página (h1):** Saira 700, 26px, `font-stretch: 112%`.
 - **Títulos de card (h2):** Saira 600, 17px, `font-stretch: 108%`.
+- **Títulos e metadados:** `"Página · Flow"`; a página inicial usa "Flow · Sua preparação para o ENEM, no ritmo certo."
 - **Números de destaque:** o total de horas usa Saira itálico 800, 48px, `font-stretch: 120%`. O relógio do timer usa Saira itálico 300, até 92px, `font-stretch: 120%`.
 - Todo número em coluna ou que muda (horas, relógio, datas) usa `tabular-nums`.
 - Itálico só no logo e nesses dois números.
 
 ### Logo (componente `Wordmark`)
 
-Recriado em texto, nunca como imagem: "ENEM" em Saira itálico 800, `font-stretch: 125%`, 30px (22px no celular); "FLOW" em Saira itálico 300, 12px (9px no celular), `letter-spacing: .45em`, alinhado à direita embaixo, com `margin-right: -.45em`. Cor `text`, `aria-label="ENEM Flow"`.
+Recriado em texto, nunca como imagem: "FLOW" em Saira itálico 800, `font-stretch: 125%`, em caixa alta. Tamanhos: 24px nas barras superiores, 32px na barra lateral e 64–88px em destaque. A versão com slogan põe "Sua preparação para o ENEM, / no ritmo certo." centralizado embaixo, em Saira itálico 400 com `letter-spacing: .08em`. Cor `text`, `aria-label="Flow"`. Nomes internos (chave `enem-flow:v2`, pacote) continuam como estão para não perder dados.
 
 ### Forma e espaçamento
 

@@ -80,7 +80,7 @@ function Settings() {
     setImportError(null);
     if (!file) return;
     if (file.size > 5_000_000) {
-      setImportError("Arquivo grande demais para um backup do ENEM Flow.");
+      setImportError("Arquivo grande demais para um backup do Flow.");
       return;
     }
     setPendingImport(await file.text());
@@ -241,7 +241,7 @@ function Settings() {
             <CardHeader title="Sobre" />
             <div className="grid gap-3 text-sm text-muted">
               <p>
-                O ENEM Flow ajuda a organizar estudos. Não é cursinho, não promete nota nem aprovação e não tem vínculo com o INEP
+                O Flow ajuda a organizar os estudos para o ENEM. Não é cursinho, não promete nota nem aprovação e não tem vínculo com o INEP
                 ou o MEC.
               </p>
               <div className="flex flex-wrap gap-x-4 gap-y-2">

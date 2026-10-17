@@ -1,8 +1,7 @@
 // Prévia estática do painel. Os dados são inventados e a legenda diz isso.
 const SAMPLE_TASKS = [
-  { title: "Probabilidade", detail: "Matemática · 50 min", done: true },
-  { title: "Revisão: Era Vargas", detail: "Ciências Humanas · 25 min", done: false },
-  { title: "Competência 3: argumentação", detail: "Redação · 50 min", done: false },
+  { title: "Probabilidade", detail: "Matemática · 1h10 estudados", done: true },
+  { title: "Revisão: Era Vargas", detail: "Ciências Humanas", done: false },
 ];
 
 const SAMPLE_BARS = [55, 80, 40, 90, 65, 30, 0];
@@ -14,10 +13,10 @@ export function AppPreview() {
       <div className="grid gap-4 rounded-xl bg-surface p-5 shadow-card" aria-hidden>
         <div className="flex items-center justify-between">
           <span className="font-heading text-[17px] font-semibold font-stretch-108%">Estudar hoje</span>
-          <span className="text-[13px] text-muted">1 de 3 tarefas</span>
+          <span className="text-[13px] text-muted">1 de 2 matérias dominadas</span>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-bar">
-          <div className="h-full w-1/3 rounded-full bg-accent" />
+          <div className="h-full w-1/2 rounded-full bg-accent" />
         </div>
         <ul className="grid">
           {SAMPLE_TASKS.map((task) => (
@@ -27,7 +26,7 @@ export function AppPreview() {
                 <span className="text-[13px] text-muted">{task.detail}</span>
               </span>
               <span className={`rounded-lg px-3 py-1.5 text-[13px] font-semibold ${task.done ? "text-success" : "bg-hover"}`}>
-                {task.done ? "Feita" : "Começar"}
+                {task.done ? "Dominada" : "Começar"}
               </span>
             </li>
           ))}

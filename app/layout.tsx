@@ -11,8 +11,8 @@ const saira = Saira({
 });
 
 export const metadata: Metadata = {
-  title: "ENEM Flow",
-  description: "Organizador pessoal de estudos para o ENEM.",
+  title: { default: "Flow · Sua preparação para o ENEM, no ritmo certo.", template: "%s · Flow" },
+  description: "Organize as matérias da semana e do dia e lembre das revisões. Sua preparação para o ENEM, no ritmo certo.",
 };
 
 export const viewport: Viewport = {

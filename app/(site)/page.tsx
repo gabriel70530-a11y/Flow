@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { buttonStyles } from "@/components/ui/Button";
 import { PlanCards } from "@/components/planos/PlanCards";
+import { Wordmark } from "@/components/shell/Wordmark";
 import { AppPreview } from "@/components/site/AppPreview";
 
 export const metadata: Metadata = {
-  title: "ENEM Flow · Menos caos. Mais flow nos estudos.",
+  title: { absolute: "Flow · Sua preparação para o ENEM, no ritmo certo." },
   description:
     "Organize as matérias do ENEM, descubra o que estudar hoje, use o timer e faça revisões espaçadas. Grátis, sem cadastro.",
 };
@@ -27,7 +28,7 @@ const STEPS = [
 
 const FAQ = [
   [
-    "O ENEM Flow garante aprovação?",
+    "O Flow garante aprovação?",
     "Não. Ele ajuda a organizar o estudo, mas nota e aprovação dependem de muitos fatores. Nenhuma ferramenta pode prometer isso.",
   ],
   ["É oficial do INEP ou do MEC?", "Não. É uma ferramenta independente, sem vínculo com o INEP ou o MEC."],
@@ -52,7 +53,7 @@ export default function LandingPage() {
     <div className="mx-auto grid max-w-5xl gap-20 px-4 py-12 md:px-8 md:py-16">
       <section className="grid items-center gap-10 md:grid-cols-[1.1fr_1fr]">
         <div className="grid gap-5">
-          <h1 className="text-[36px] leading-tight md:text-[44px]">Menos caos. Mais flow nos estudos.</h1>
+          <h1 className="text-[36px] leading-tight md:text-[44px]">Sua preparação para o ENEM, no ritmo certo.</h1>
           <p className="text-lg text-muted">
             Transforme sua meta de passar no ENEM em um plano de ação. Organize as matérias, descubra o que estudar hoje e
             acompanhe sua evolução, um dia de cada vez.
@@ -120,8 +121,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="grid justify-items-center gap-4 rounded-xl bg-surface px-5 py-10 text-center shadow-card">
-        <h2 className="text-[22px]">Comece pelo que importa hoje.</h2>
+      <section
+        className="grid justify-items-center gap-6 rounded-xl bg-surface px-5 py-14 text-center shadow-card"
+        aria-labelledby="comecar-titulo"
+      >
+        <Wordmark size="lg" tagline />
+        <h2 id="comecar-titulo" className="text-[22px]">
+          Comece pelo que importa hoje.
+        </h2>
         <p className="max-w-md text-muted">Leva 2 minutos para montar o plano. Ou abra o app e estude do seu jeito.</p>
         <Link href="/painel" className={buttonStyles("primary", "lg")}>
           Organizar meus estudos

@@ -66,7 +66,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       />
 
       <header className="sticky top-[env(safe-area-inset-top,0px)] z-20 flex h-[52px] items-center justify-between border-b border-line bg-surface pr-[max(16px,env(safe-area-inset-right,0px))] pl-[max(16px,env(safe-area-inset-left,0px))] md:hidden">
-        <Wordmark compact />
+        <Wordmark size="sm" />
         <div className="flex items-center gap-1">
           <Link
             href="/ajustes"
