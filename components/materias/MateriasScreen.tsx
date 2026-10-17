@@ -1,29 +1,62 @@
 "use client";
 
+import { Plus, Search, Settings2 } from "lucide-react";
 import { useCallback, useState } from "react";
+import { Button } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { Drawer } from "@/components/ui/Drawer";
 import { DueLabel } from "@/components/ui/DueLabel";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { inputStyles } from "@/components/ui/Field";
 import { ListRow } from "@/components/ui/ListRow";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Pill } from "@/components/ui/Pill";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { showToast } from "@/components/ui/Toast";
 import { toDateKey } from "@/lib/dates";
-import { nextReview, progressOf } from "@/lib/reviews";
+import { STATUS_LABELS, nextReview, progressOf, type TopicStatus } from "@/lib/reviews";
 import { AREAS, type AreaId } from "@/lib/syllabus";
-import { findTopic, visibleTopics } from "@/lib/topics";
+import {
+  EMPTY_FILTER,
+  PRIORITY_LABELS,
+  filterTopics,
+  findTopic,
+  sortTopics,
+  visibleTopics,
+  type Priority,
+  type TopicFilter,
+  type TopicSort,
+} from "@/lib/topics";
 import { useHydrated, useStudyStore } from "@/store/study-store";
+import { ManageTopicsDrawer } from "./ManageTopicsDrawer";
 import { TopicDrawer } from "./TopicDrawer";
+import { TopicForm } from "./TopicForm";
 
-const HINT = "Clique em um tópico para atualizar.";
+const HINT = "Toque em um tópico para atualizar, editar ou ocultar.";
+
+const SORT_LABELS: Record<TopicSort, string> = {
+  padrao: "Padrão",
+  nome: "Nome",
+  prioridade: "Prioridade",
+  status: "Status",
+  revisao: "Revisão",
+};
+
+const selectStyles = `${inputStyles} md:w-auto`;
 
 export function MateriasScreen() {
   const hydrated = useHydrated();
   const progress = useStudyStore((state) => state.progress);
   const allTopics = useStudyStore((state) => state.topics);
-  const [areaFilter, setAreaFilter] = useState<AreaId | "all">("all");
+  const addTopic = useStudyStore((state) => state.addTopic);
+  const [filter, setFilter] = useState<TopicFilter>(EMPTY_FILTER);
+  const [sort, setSort] = useState<TopicSort>("padrao");
   const [openTopicId, setOpenTopicId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [managing, setManaging] = useState(false);
   const closeDrawer = useCallback(() => setOpenTopicId(null), []);
+  const updateFilter = (changes: Partial<TopicFilter>) => setFilter({ ...filter, ...changes });
 
   if (!hydrated) {
     return (
@@ -36,30 +69,130 @@ export function MateriasScreen() {
   }
 
   const today = toDateKey(new Date());
-  const topics = visibleTopics(allTopics);
-  const concluded = topics.filter((topic) => progressOf(progress, topic.id).status === "concluido").length;
-  const filters = [{ id: "all" as const, name: "Todas" }, ...AREAS];
+  const visible = visibleTopics(allTopics);
+  const hiddenCount = allTopics.length - visible.length;
+  const concluded = visible.filter((topic) => progressOf(progress, topic.id).status === "concluido").length;
+  const matches = sortTopics(filterTopics(allTopics, progress, filter), progress, sort);
+  const filtering = JSON.stringify(filter) !== JSON.stringify(EMPTY_FILTER);
+  const areaFilters = [{ id: "todas" as const, name: "Todas" }, ...AREAS];
 
   return (
     <div className="grid gap-5">
-      <PageHeader title="Matérias" subtitle={`${concluded} de ${topics.length} tópicos concluídos. ${HINT}`} />
+      <PageHeader
+        title="Matérias"
+        subtitle={`${concluded} de ${visible.length} tópicos concluídos${hiddenCount ? ` · ${hiddenCount} ${hiddenCount === 1 ? "oculto" : "ocultos"}` : ""}. ${HINT}`}
+      />
+
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="relative min-w-[200px] flex-1">
+          <span className="sr-only">Buscar tópico</span>
+          <Search size={16} aria-hidden className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted" />
+          <input
+            type="search"
+            value={filter.query}
+            onChange={(event) => updateFilter({ query: event.target.value })}
+            placeholder="Buscar tópico"
+            className={`${inputStyles} pl-8`}
+          />
+        </label>
+        <Button variant="primary" onClick={() => setCreating(true)}>
+          <Plus size={16} aria-hidden />
+          Novo tópico
+        </Button>
+        <Button onClick={() => setManaging(true)}>
+          <Settings2 size={16} aria-hidden />
+          Gerenciar tópicos
+        </Button>
+      </div>
 
       <div className="flex max-w-full gap-1.5 overflow-x-auto">
-        {filters.map((filter) => (
+        {areaFilters.map((area) => (
           <button
-            key={filter.id}
+            key={area.id}
             type="button"
-            aria-pressed={areaFilter === filter.id}
-            onClick={() => setAreaFilter(filter.id)}
+            aria-pressed={filter.areaId === area.id}
+            onClick={() => updateFilter({ areaId: area.id as AreaId | "todas" })}
             className="h-[34px] rounded-full bg-surface px-3.5 text-sm font-semibold whitespace-nowrap text-muted shadow-card aria-pressed:bg-accent-soft aria-pressed:text-accent aria-pressed:shadow-none"
           >
-            {filter.name}
+            {area.name}
           </button>
         ))}
       </div>
 
-      {AREAS.filter((area) => areaFilter === "all" || area.id === areaFilter).map((area) => {
-        const areaTopics = topics.filter((topic) => topic.areaId === area.id);
+      <div className="grid grid-cols-3 items-end gap-2 text-[13px] text-muted md:flex md:flex-wrap">
+        <label className="grid gap-1">
+          Status
+          <select
+            value={filter.status}
+            onChange={(event) => updateFilter({ status: event.target.value as TopicStatus | "todos" })}
+            className={selectStyles}
+          >
+            <option value="todos">Todos</option>
+            {(Object.keys(STATUS_LABELS) as TopicStatus[]).map((status) => (
+              <option key={status} value={status}>
+                {STATUS_LABELS[status]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="grid gap-1">
+          Prioridade
+          <select
+            value={filter.priority}
+            onChange={(event) => updateFilter({ priority: event.target.value as Priority | "todas" })}
+            className={selectStyles}
+          >
+            <option value="todas">Todas</option>
+            {(Object.keys(PRIORITY_LABELS) as Priority[]).map((priority) => (
+              <option key={priority} value={priority}>
+                {PRIORITY_LABELS[priority]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="grid gap-1">
+          Ordenar por
+          <select value={sort} onChange={(event) => setSort(event.target.value as TopicSort)} className={selectStyles}>
+            {(Object.keys(SORT_LABELS) as TopicSort[]).map((key) => (
+              <option key={key} value={key}>
+                {SORT_LABELS[key]}
+              </option>
+            ))}
+          </select>
+        </label>
+        {filtering && (
+          <button
+            type="button"
+            onClick={() => setFilter(EMPTY_FILTER)}
+            className="col-span-3 h-9 justify-self-start underline underline-offset-3"
+          >
+            Limpar filtros
+          </button>
+        )}
+      </div>
+
+      {matches.length === 0 && (
+        <Card flush>
+          <EmptyState title={visible.length ? "Nenhum tópico encontrado" : "Nenhum tópico na lista"}>
+            {visible.length ? (
+              <>
+                Tente outro termo ou{" "}
+                <button type="button" onClick={() => setFilter(EMPTY_FILTER)} className="underline underline-offset-3">
+                  limpe os filtros
+                </button>
+                .
+              </>
+            ) : (
+              "Todos os tópicos estão ocultos. Reexiba alguns em Gerenciar tópicos ou crie um novo."
+            )}
+          </EmptyState>
+        </Card>
+      )}
+
+      {AREAS.map((area) => {
+        const areaTopics = visible.filter((topic) => topic.areaId === area.id);
+        const shown = matches.filter((topic) => topic.areaId === area.id);
+        if (shown.length === 0) return null;
         const done = areaTopics.filter((topic) => progressOf(progress, topic.id).status === "concluido").length;
         return (
           <Card key={area.id} flush>
@@ -67,23 +200,38 @@ export function MateriasScreen() {
               <div className="flex items-center gap-3">
                 <span className="text-[13px] text-muted tabular-nums">
                   {done}/{areaTopics.length}
+                  <span className="sr-only"> concluídos</span>
                 </span>
-                <ProgressBar thin value={areaTopics.length ? done / areaTopics.length : 0} className="hidden w-[120px] md:block" />
+                <ProgressBar
+                  thin
+                  value={areaTopics.length ? done / areaTopics.length : 0}
+                  className="hidden w-[120px] md:block"
+                />
               </div>
             </CardHeader>
             <ul>
-              {areaTopics.map((topic) => {
+              {shown.map((topic) => {
                 const topicProgress = progressOf(progress, topic.id);
                 const review = nextReview(topicProgress);
+                const details = [
+                  topic.priority !== "media" && `Prioridade ${PRIORITY_LABELS[topic.priority].toLowerCase()}`,
+                  topic.origin === "personalizado" && "Personalizado",
+                ].filter(Boolean);
                 return (
                   <ListRow
                     key={topic.id}
                     onClick={() => setOpenTopicId(topic.id)}
                     title={topic.name}
                     subtitle={
-                      review && (
+                      (review || details.length > 0) && (
                         <>
-                          Revisão {review.stage}: <DueLabel due={review.due} today={today} />
+                          {details.join(" · ")}
+                          {review && details.length > 0 && " · "}
+                          {review && (
+                            <>
+                              Revisão {review.stage}: <DueLabel due={review.due} today={today} />
+                            </>
+                          )}
                         </>
                       )
                     }
@@ -104,6 +252,26 @@ export function MateriasScreen() {
       })}
 
       <TopicDrawer topic={findTopic(allTopics, openTopicId)} today={today} onClose={closeDrawer} />
+      <ManageTopicsDrawer open={managing} onClose={() => setManaging(false)} />
+      <Drawer open={creating} onClose={() => setCreating(false)} eyebrow="Matérias" title="Novo tópico">
+        <TopicForm
+          initial={{
+            name: "",
+            areaId: filter.areaId === "todas" ? "mat" : filter.areaId,
+            description: "",
+            priority: "media",
+          }}
+          submitLabel="Criar tópico"
+          onCancel={() => setCreating(false)}
+          onSubmit={(input) => {
+            const result = addTopic(input);
+            if ("error" in result) return result.error;
+            setCreating(false);
+            showToast("Tópico criado.");
+            return null;
+          }}
+        />
+      </Drawer>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { nextReview, progressOf, type ProgressMap, type TopicStatus } from "./reviews";
 import { AREAS, type AreaId } from "./syllabus";
 
 export type Priority = "alta" | "media" | "baixa";
@@ -118,4 +119,50 @@ export function restoreDefaults(topics: readonly TopicRecord[]): TopicRecord[] {
   });
   const missing = [...originals.values()].filter((original) => !findTopic(topics, original.id));
   return [...restored, ...missing];
+}
+
+export type TopicSort = "padrao" | "nome" | "prioridade" | "status" | "revisao";
+
+export interface TopicFilter {
+  query: string;
+  areaId: AreaId | "todas";
+  status: TopicStatus | "todos";
+  priority: Priority | "todas";
+}
+
+export const EMPTY_FILTER: TopicFilter = { query: "", areaId: "todas", status: "todos", priority: "todas" };
+
+const STATUS_ORDER: Record<TopicStatus, number> = { revisar: 0, and: 1, nao: 2, concluido: 3 };
+
+function normalizeText(text: string): string {
+  return text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLocaleLowerCase("pt-BR").trim();
+}
+
+// A busca ignora acentos e maiúsculas e também olha a descrição.
+export function filterTopics(topics: readonly TopicRecord[], progress: ProgressMap, filter: TopicFilter): TopicRecord[] {
+  const query = normalizeText(filter.query);
+  return topics.filter(
+    (topic) =>
+      !topic.hidden &&
+      (filter.areaId === "todas" || topic.areaId === filter.areaId) &&
+      (filter.status === "todos" || progressOf(progress, topic.id).status === filter.status) &&
+      (filter.priority === "todas" || topic.priority === filter.priority) &&
+      (!query || normalizeText(`${topic.name} ${topic.description}`).includes(query)),
+  );
+}
+
+export function sortTopics(topics: readonly TopicRecord[], progress: ProgressMap, sort: TopicSort): TopicRecord[] {
+  const byName = (first: TopicRecord, second: TopicRecord) => first.name.localeCompare(second.name, "pt-BR");
+  const dueOf = (topic: TopicRecord) => nextReview(progressOf(progress, topic.id))?.due ?? "9999-12-31";
+  const compare: Record<TopicSort, ((first: TopicRecord, second: TopicRecord) => number) | null> = {
+    padrao: null,
+    nome: byName,
+    prioridade: (first, second) => PRIORITY_WEIGHT[second.priority] - PRIORITY_WEIGHT[first.priority] || byName(first, second),
+    status: (first, second) =>
+      STATUS_ORDER[progressOf(progress, first.id).status] - STATUS_ORDER[progressOf(progress, second.id).status] ||
+      byName(first, second),
+    revisao: (first, second) => dueOf(first).localeCompare(dueOf(second)) || byName(first, second),
+  };
+  const comparator = compare[sort];
+  return comparator ? [...topics].sort(comparator) : [...topics];
 }

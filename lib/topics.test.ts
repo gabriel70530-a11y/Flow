@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  EMPTY_FILTER,
   createTopic,
   defaultTopics,
   deleteTopic,
+  filterTopics,
   findTopic,
   restoreDefaults,
   restoreDefaultsChanges,
   setTopicHidden,
+  sortTopics,
   updateTopic,
   validateTopic,
   visibleTopics,
@@ -99,5 +102,38 @@ describe("restoreDefaults", () => {
     const missing = defaultTopics().filter((topic) => topic.id !== "red-6");
     expect(restoreDefaultsChanges(missing)).toEqual([{ topic: expect.objectContaining({ id: "red-6" }), changes: ["adicionar"] }]);
     expect(restoreDefaults(missing)).toHaveLength(44);
+  });
+});
+
+describe("filterTopics and sortTopics", () => {
+  const topics = setTopicHidden(createTopic(defaultTopics(), input, "custom-1"), "mat-1", true);
+  const progress = {
+    "mat-0": { status: "concluido" as const, mastery: 4 as const, reviews: [{ stage: 1 as const, due: "2026-10-20" }] },
+    "mat-2": { status: "revisar" as const, mastery: 2 as const, reviews: [] },
+    "mat-3": { status: "and" as const, mastery: 2 as const, reviews: [{ stage: 2 as const, due: "2026-10-18" }] },
+  };
+
+  it("searches ignoring accents and case, including the description", () => {
+    const ids = (query: string) => filterTopics(topics, progress, { ...EMPTY_FILTER, query }).map((topic) => topic.id);
+    expect(ids("estatistica")).toEqual(["mat-2"]);
+    expect(ids("DETERMINANTES")).toEqual(["custom-1"]);
+  });
+
+  it("filters by area, status and priority and skips hidden topics", () => {
+    const math = filterTopics(topics, progress, { ...EMPTY_FILTER, areaId: "mat" });
+    expect(math.map((topic) => topic.id)).not.toContain("mat-1");
+    expect(math).toHaveLength(10);
+    expect(filterTopics(topics, progress, { ...EMPTY_FILTER, status: "revisar" }).map((topic) => topic.id)).toEqual(["mat-2"]);
+    expect(filterTopics(topics, progress, { ...EMPTY_FILTER, priority: "alta" }).map((topic) => topic.id)).toEqual(["custom-1"]);
+  });
+
+  it("sorts by status, priority, name and next review", () => {
+    const math = filterTopics(topics, progress, { ...EMPTY_FILTER, areaId: "mat" });
+    expect(sortTopics(math, progress, "status").slice(0, 2).map((topic) => topic.id)).toEqual(["mat-2", "mat-3"]);
+    expect(sortTopics(math, progress, "status").at(-1)?.id).toBe("mat-0");
+    expect(sortTopics(math, progress, "prioridade")[0].id).toBe("custom-1");
+    expect(sortTopics(math, progress, "nome")[0].name).toBe("Análise combinatória");
+    expect(sortTopics(math, progress, "revisao").slice(0, 2).map((topic) => topic.id)).toEqual(["mat-3", "mat-0"]);
+    expect(sortTopics(math, progress, "padrao")).toEqual(math);
   });
 });
