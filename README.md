@@ -1,6 +1,6 @@
 # ENEM Flow
 
-Menos caos. Mais flow nos estudos. Organizador de estudos para o ENEM: matérias prontas e personalizáveis, cronograma que cabe na rotina, "Estudar hoje" no painel, timer Pomodoro ou cronômetro, revisões espaçadas (1, 7, 15 e 30 dias) e estatísticas a partir das sessões registradas.
+Menos caos. Mais flow nos estudos. Organizador de estudos para o ENEM: matérias prontas e personalizáveis, semana organizada com até 2 matérias por dia (sem limite de horas), "Estudar hoje" no painel, timer Pomodoro ou cronômetro, revisões espaçadas (1, 7, 15 e 30 dias) e estatísticas a partir das sessões registradas.
 
 Não é cursinho, não promete nota nem aprovação e não tem vínculo com o INEP ou o MEC.
 
@@ -26,7 +26,7 @@ Abra http://localhost:3000. A página inicial é o site; o app começa em `/pain
 
 - `/` landing, `/privacidade`, `/termos`: site público.
 - `/painel`: "Estudar hoje", semana com meta (horas, sessões ou tópicos), resumo, por área e próximas revisões.
-- `/cronograma`: plano dos próximos 7 dias dentro da disponibilidade, tarefas que ficaram para depois, adiadas.
+- `/cronograma`: matérias dos próximos 7 dias, até 2 por dia de estudo. O que não foi estudado passa sozinho para o próximo dia; o que não foi dominado se repete no dia seguinte.
 - `/materias`: busca, filtros, ordenação, criar, editar, ocultar, restaurar lista padrão.
 - `/timer`: Pomodoro e cronômetro, estudo geral, reflexão pós-sessão, sessões de hoje.
 - `/revisoes`: atrasadas, hoje, próximos 7 dias e futuras; concluir com feedback, adiar e reagendar.

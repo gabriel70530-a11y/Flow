@@ -5,9 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Field, inputStyles } from "@/components/ui/Field";
 import { Segmented } from "@/components/ui/Segmented";
 import type { PlanStrategy, PlannerSettings } from "@/lib/planner";
-import { formatDuration } from "@/lib/stats";
 import { AREAS, type AreaId } from "@/lib/syllabus";
-import { MINUTE_OPTIONS, SESSION_OPTIONS, minutesLabel } from "./task-format";
 
 const WEEKDAYS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
@@ -16,32 +14,27 @@ export const strategyOptions: { value: PlanStrategy; label: string }[] = [
   { value: "prioridades", label: "Foco nas prioridades" },
 ];
 
-export function AvailabilityFields({ value, onChange }: { value: number[]; onChange: (value: number[]) => void }) {
-  const total = value.reduce((sum, minutes) => sum + minutes, 0);
+export function StudyDaysFields({ value, onChange }: { value: boolean[]; onChange: (value: boolean[]) => void }) {
+  const count = value.filter(Boolean).length;
   return (
     <div className="grid gap-2">
-      <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
-        {WEEKDAYS.map((weekday, index) => {
-          const options = MINUTE_OPTIONS.includes(value[index]) ? MINUTE_OPTIONS : [...MINUTE_OPTIONS, value[index]].sort((a, b) => a - b);
-          return (
-            <Field key={weekday} label={weekday}>
-              <select
-                value={value[index]}
-                onChange={(event) => onChange(value.map((minutes, day) => (day === index ? Number(event.target.value) : minutes)))}
-                className={`${inputStyles} px-1.5`}
-              >
-                {options.map((minutes) => (
-                  <option key={minutes} value={minutes}>
-                    {minutesLabel(minutes)}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          );
-        })}
+      <div className="grid grid-cols-7 gap-1.5">
+        {WEEKDAYS.map((weekday, index) => (
+          <button
+            key={weekday}
+            type="button"
+            aria-pressed={value[index]}
+            onClick={() => onChange(value.map((studies, day) => (day === index ? !studies : studies)))}
+            className="min-h-11 rounded-lg bg-hover text-sm font-semibold text-muted aria-pressed:bg-accent aria-pressed:text-on-accent"
+          >
+            {weekday}
+          </button>
+        ))}
       </div>
-      <p className="text-[13px] text-muted tabular-nums">
-        {total ? `${formatDuration(total * 60)} por semana. Dias livres não recebem tarefas.` : "Escolha pelo menos um dia com tempo."}
+      <p className="text-[13px] text-muted">
+        {count
+          ? `${count} ${count === 1 ? "dia" : "dias"} de estudo, com até 2 matérias por dia. Estude quanto tempo quiser.`
+          : "Escolha pelo menos um dia para estudar."}
       </p>
     </div>
   );
@@ -78,21 +71,6 @@ export function AreaChips({ label, hint, value, onChange }: AreaChipsProps) {
   );
 }
 
-export function SessionLengthField({ value, onChange }: { value: number; onChange: (value: number) => void }) {
-  const options = SESSION_OPTIONS.includes(value) ? SESSION_OPTIONS : [...SESSION_OPTIONS, value].sort((a, b) => a - b);
-  return (
-    <Field label="Duração de cada sessão" hint="O cronograma não encolhe sessões para caber no dia.">
-      <select value={value} onChange={(event) => onChange(Number(event.target.value))} className={inputStyles}>
-        {options.map((minutes) => (
-          <option key={minutes} value={minutes}>
-            {minutes} min
-          </option>
-        ))}
-      </select>
-    </Field>
-  );
-}
-
 interface PlannerSettingsFormProps {
   initial: PlannerSettings;
   today: string;
@@ -115,10 +93,9 @@ export function PlannerSettingsForm({ initial, today, submitLabel, onSubmit }: P
   return (
     <form onSubmit={submit} className="grid gap-5">
       <div className="grid gap-1.5">
-        <span className="text-[13px] font-semibold text-muted">Tempo disponível por dia</span>
-        <AvailabilityFields value={settings.availability} onChange={(availability) => update({ availability })} />
+        <span className="text-[13px] font-semibold text-muted">Em quais dias você quer estudar?</span>
+        <StudyDaysFields value={settings.studyDays} onChange={(studyDays) => update({ studyDays })} />
       </div>
-      <SessionLengthField value={settings.sessionMinutes} onChange={(sessionMinutes) => update({ sessionMinutes })} />
       <div className="grid gap-1.5">
         <span className="text-[13px] font-semibold text-muted">Como distribuir</span>
         <Segmented options={strategyOptions} value={settings.strategy} onChange={(strategy) => update({ strategy })} />

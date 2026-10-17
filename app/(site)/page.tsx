@@ -11,17 +11,17 @@ export const metadata: Metadata = {
 };
 
 const BENEFITS = [
-  ["Cronograma que cabe na rotina", "Você diz quanto tempo tem em cada dia. O plano nunca passa disso nem espreme sessões."],
-  ["Saber o que estudar hoje", "O painel abre com as tarefas do dia e um botão para começar."],
+  ["Semana organizada, sem rigidez", "Até 2 matérias por dia nos dias que você escolher. Sem limite de horas e sem obrigação de fazer tudo."],
+  ["Saber o que estudar hoje", "O painel abre com as matérias do dia e um botão para começar."],
   ["Timer Pomodoro e cronômetro", "O tempo de foco entra sozinho no painel. Pausas não contam como estudo."],
   ["Revisões espaçadas", "Ao concluir um tópico, as revisões de 1, 7, 15 e 30 dias são agendadas."],
   ["Evolução com dados reais", "Horas por dia e por área, planejado x realizado, tudo a partir das suas sessões."],
-  ["Rotina flexível", "Perdeu um dia? Reagende, divida ou deixe para outra semana, sem culpa."],
+  ["Estude até dominar", "Ainda não dominou? A matéria volta no dia seguinte. Não deu tempo? Ela passa para o próximo dia, sem culpa."],
 ];
 
 const STEPS = [
-  ["Informe sua rotina", "Tempo disponível em cada dia, áreas mais difíceis e, se souber, a data da prova."],
-  ["Organize a semana", "Receba um cronograma sugerido ou monte o seu. Ajuste quando a vida mudar."],
+  ["Conte sua rotina", "Em quais dias você quer estudar, as áreas mais difíceis e, se souber, a data da prova."],
+  ["Organize a semana", "Receba as matérias de cada dia ou monte você mesmo. Ajuste quando a vida mudar."],
   ["Acompanhe o progresso", "Estude pelo timer, marque revisões e veja a semana tomar forma."],
 ];
 
@@ -40,7 +40,7 @@ const FAQ = [
     "Quanto custa?",
     "O plano gratuito é gratuito de verdade. O Flow Pro tem preço experimental de R$ 19,90/mês, mas ainda não é vendido: durante o teste, os recursos Pro estão liberados.",
   ],
-  ["E se eu não conseguir seguir o plano?", "Normal. Tarefas que ficaram para trás podem ser reagendadas, divididas ou adiadas, quando você quiser."],
+  ["E se eu não conseguir seguir o plano?", "Normal. O que não deu para estudar passa sozinho para o próximo dia, e você pode mover qualquer matéria quando quiser."],
   [
     "As matérias são o conteúdo oficial do ENEM?",
     "Não. A lista inicial é uma estrutura de organização por área. Você pode editar, ocultar e criar tópicos.",

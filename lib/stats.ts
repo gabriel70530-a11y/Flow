@@ -99,14 +99,12 @@ export function goalProgress(
   return { done: secondsBetween(sessions, from, to) / 3600, target: goal.value };
 }
 
-// O realizado do plano é o foco registrado nas próprias tarefas, separado do total estudado na semana.
-// Tarefas adiadas não contam como planejadas.
+// Matérias organizadas para a semana x matérias que a pessoa disse ter dominado. Adiadas não contam.
 export function plannedVersusDone(tasks: PlanTask[], sessions: StudySession[], from: string, to: string) {
   const planned = tasks.filter((task) => task.status !== "adiada" && inRange(task.date, from, to));
   return {
-    plannedMinutes: planned.reduce((total, task) => total + task.minutes, 0),
     taskCount: planned.length,
-    tasksDone: planned.filter((task) => task.status === "concluida").length,
+    tasksDone: planned.filter((task) => task.status === "concluida" && task.outcome !== "repetir").length,
     taskFocusSeconds: planned.reduce((total, task) => total + task.focusSec, 0),
     doneSeconds: secondsBetween(sessions, from, to),
   };

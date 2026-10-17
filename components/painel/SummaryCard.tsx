@@ -37,7 +37,7 @@ export function SummaryCard({ today, monday }: { today: string; monday: string }
   const topics = useStudyStore((state) => state.topics);
 
   const sunday = addDays(monday, 6);
-  const { plannedMinutes, taskCount, tasksDone, taskFocusSeconds, doneSeconds } = plannedVersusDone(tasks, sessions, monday, sunday);
+  const { taskCount, tasksDone, taskFocusSeconds, doneSeconds } = plannedVersusDone(tasks, sessions, monday, sunday);
   const weekSessions = sessions.filter((session) => session.date >= monday && session.date <= sunday);
   const interrupted = weekSessions.filter((session) => session.state === "interrompida").length;
   const previousSeconds = secondsBetween(sessions, addDays(monday, -7), addDays(monday, -1));
@@ -53,17 +53,17 @@ export function SummaryCard({ today, monday }: { today: string; monday: string }
         <ProBadge />
       </CardHeader>
       <div className="grid">
-        <Row label="Planejado x realizado">
-          {plannedMinutes > 0 ? (
+        <Row label="Matérias da semana">
+          {taskCount > 0 ? (
             <>
-              {tasksDone} de {taskCount} {taskCount === 1 ? "tarefa concluída" : "tarefas concluídas"} ·{" "}
-              {formatDuration(taskFocusSeconds)} de foco nas tarefas, de {formatDuration(plannedMinutes * 60)} planejados.
-              <ProgressBar thin value={taskFocusSeconds / (plannedMinutes * 60)} className="mt-2" />
+              {tasksDone} de {taskCount} {taskCount === 1 ? "matéria dominada" : "matérias dominadas"} ·{" "}
+              {formatDuration(taskFocusSeconds)} estudados nelas.
+              <ProgressBar thin value={tasksDone / taskCount} className="mt-2" />
               <span className="mt-1 block text-[13px] text-muted">No total, {formatDuration(doneSeconds)} estudados na semana.</span>
             </>
           ) : (
             <>
-              {formatDuration(doneSeconds)} estudados. Sem tarefas planejadas nesta semana.{" "}
+              {formatDuration(doneSeconds)} estudados. Nenhuma matéria organizada nesta semana.{" "}
               <Link href="/cronograma" className={linkStyles}>
                 Abrir cronograma
               </Link>

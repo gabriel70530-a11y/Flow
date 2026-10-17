@@ -7,10 +7,14 @@ import {
   generatePlan,
   lowerPriority,
   rescheduleTask,
-  splitTask,
-  validateAvailability,
+  topicsOn,
+  MAX_TOPICS_PER_DAY,
+  carryOverMissed,
+  repeatNextDay,
+  validateStudyDays,
   validateTask,
   type PlanResult,
+  type RepeatResult,
   type PlanTask,
   type PlannerSettings,
   type TaskInput,
@@ -85,7 +89,7 @@ interface StudyActions {
   setTimerTopic: (topicId: string) => void;
   setFocusMinutes: (minutes: number) => void;
   setBreakMinutes: (minutes: number) => void;
-  studyTopic: (topicId: string, task?: { id: string; minutes: number }) => boolean;
+  studyTopic: (topicId: string, taskId?: string) => boolean;
   startTimer: () => boolean;
   pauseTimer: () => void;
   finishTimer: () => StudySession | null;
@@ -104,7 +108,8 @@ interface StudyActions {
   addTask: (input: TaskInput) => string | null;
   moveTask: (taskId: string, date: string | null) => boolean;
   setTaskDone: (taskId: string, done: boolean) => void;
-  splitPlanTask: (taskId: string) => void;
+  answerMastery: (taskId: string, mastered: boolean) => RepeatResult | null;
+  carryOver: () => PlanTask[];
   lowerTaskPriority: (taskId: string) => void;
   removeTask: (taskId: string) => void;
 
@@ -293,15 +298,11 @@ export const useStudyStore = create<StudyStore>()(
         setFocusMinutes: (minutes) => updateIdleTimer({ focus: clamp(minutes, 1, 120, 25) }),
         setBreakMinutes: (minutes) => updateIdleTimer({ brk: clamp(minutes, 1, 60, 5) }),
 
-        // Abrir o timer a partir de uma tarefa usa a duração dela como bloco de foco do Pomodoro.
-        studyTopic: (topicId, task) => {
+        // Tarefa do cronograma abre no cronômetro: o tempo não tem limite, o estudante para quando sentir que dominou.
+        studyTopic: (topicId, taskId) => {
           const { timer } = get();
           if (timer.running || !isIdle(timer)) return false;
-          updateTimer({
-            topicId,
-            taskId: task?.id ?? "",
-            ...(task ? { mode: "pomodoro" as const, focus: clamp(task.minutes, 1, 120, timer.focus) } : {}),
-          });
+          updateTimer({ topicId, taskId: taskId ?? "", ...(taskId ? { mode: "cronometro" as const } : {}) });
           return true;
         },
 
@@ -355,9 +356,9 @@ export const useStudyStore = create<StudyStore>()(
         setSessionNote: (sessionId, note) => updateSession(sessionId, { note: note.trim().slice(0, NOTE_MAX) || undefined }),
 
         savePlanner: (settings) => {
-          const error = validateAvailability(settings.availability);
+          const error = validateStudyDays(settings.studyDays);
           if (error) return error;
-          set({ planner: { ...settings, sessionMinutes: clamp(settings.sessionMinutes, 15, 120, 50) } });
+          set({ planner: settings });
           return null;
         },
 
@@ -386,6 +387,7 @@ export const useStudyStore = create<StudyStore>()(
         addTask: (input) => {
           const error = validateTask(input, today());
           if (error) return error;
+          if (topicsOn(get().tasks, input.date) >= MAX_TOPICS_PER_DAY) return "Esse dia já tem 2 matérias. Escolha outro dia.";
           const topic = findTopic(get().topics, input.topicId);
           const task: PlanTask = {
             id: newId("task-"),
@@ -393,7 +395,6 @@ export const useStudyStore = create<StudyStore>()(
             areaId: topic?.areaId ?? null,
             kind: "estudo",
             date: input.date,
-            minutes: input.minutes,
             priority: input.priority,
             status: "planejada",
             origin: "manual",
@@ -404,7 +405,8 @@ export const useStudyStore = create<StudyStore>()(
         },
 
         moveTask: (taskId, date) => {
-          if (date !== null && (!isDateKey(date) || date < today())) return false;
+          const others = get().tasks.filter((task) => task.id !== taskId);
+          if (date !== null && (!isDateKey(date) || date < today() || topicsOn(others, date) >= MAX_TOPICS_PER_DAY)) return false;
           set({ tasks: rescheduleTask(get().tasks, taskId, date) });
           return true;
         },
@@ -412,12 +414,34 @@ export const useStudyStore = create<StudyStore>()(
         setTaskDone: (taskId, done) =>
           set({
             tasks: get().tasks.map((task) =>
-              task.id === taskId ? { ...task, status: done ? "concluida" : task.focusSec > 0 ? "iniciada" : "planejada" } : task,
+              task.id === taskId
+                ? { ...task, status: done ? "concluida" : task.focusSec > 0 ? "iniciada" : "planejada", outcome: undefined }
+                : task,
             ),
           }),
 
-        splitPlanTask: (taskId) =>
-          set({ tasks: splitTask(get().tasks, taskId, get().planner, today(), () => newId("task-")) }),
+        // "Dominei" fecha a tarefa e conclui o tópico (ou a revisão). "Ainda não" fecha o dia e repete a matéria no dia seguinte.
+        answerMastery: (taskId, mastered) => {
+          const task = get().tasks.find((item) => item.id === taskId);
+          if (!task || task.status === "concluida") return null;
+          const outcome = mastered ? ("dominada" as const) : ("repetir" as const);
+          const tasks = get().tasks.map((item) => (item.id === taskId ? { ...item, status: "concluida" as const, outcome } : item));
+          if (mastered) {
+            set({ tasks });
+            if (task.topicId && task.kind === "revisao") get().completeReview(task.topicId, "bem");
+            else if (task.topicId) get().setStatus(task.topicId, "concluido");
+            return null;
+          }
+          const result = repeatNextDay(tasks, task, get().planner, today(), () => newId("task-"));
+          set({ tasks: result.tasks });
+          return result;
+        },
+
+        carryOver: () => {
+          const result = carryOverMissed(get().tasks, get().planner, today());
+          if (result.moved.length) set({ tasks: result.tasks });
+          return result.moved;
+        },
 
         lowerTaskPriority: (taskId) =>
           set({

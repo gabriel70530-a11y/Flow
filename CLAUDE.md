@@ -1,6 +1,6 @@
 # ENEM Flow
 
-Organizador de estudos para estudantes do ensino médio e candidatos ao ENEM: "Menos caos. Mais flow nos estudos." Ajuda a saber o que estudar hoje, organizar matérias, seguir um cronograma realista, registrar sessões e fazer revisões. Não é cursinho, não promete aprovação ou nota e não tem vínculo com INEP/MEC.
+Organizador de estudos para estudantes do ensino médio e candidatos ao ENEM: "Menos caos. Mais flow nos estudos." O objetivo é organizar as matérias da semana e do dia e ajudar a lembrar das revisões, sem deixar a rotina rígida e sem limitar a carga horária de ninguém. Não é cursinho, não promete aprovação ou nota e não tem vínculo com INEP/MEC.
 
 O escopo do produto está em `prompt_mestre_enem_flow_claude_code.md` (fase 2). O protótipo em `docs/prototype.html` continua sendo a referência visual e dos fluxos que ele já cobre. Se o prompt mestre e o protótipo divergirem, vale o prompt mestre.
 
@@ -100,15 +100,17 @@ interface StudySession {
   mode: 'pomodoro' | 'cronometro'; state: 'concluida' | 'interrompida';
   reflection?: 'bem' | 'parcial' | 'revisar' | 'dificuldade'; note?: string; taskId?: string;
 }
-interface PlanTask {
+interface PlanTask {                         // uma matéria do dia, sem duração
   id: string; topicId: string | null; areaId: AreaId | null; kind: 'estudo' | 'revisao';
-  date: string | null; minutes: number; priority: Priority;    // date null = adiada sem data
-  status: 'planejada' | 'iniciada' | 'concluida' | 'adiada'; origin: 'gerada' | 'manual';
-  focusSec: number;
+  date: string | null; priority: Priority;                       // date null = adiada sem data
+  status: 'planejada' | 'iniciada' | 'concluida' | 'adiada';
+  origin: 'gerada' | 'manual' | 'repeticao' | 'transferida';
+  focusSec: number;                                              // tempo estudado nela, sem limite
+  outcome?: 'dominada' | 'repetir';                            // resposta ao fechar a tarefa
 }
 ```
 
-O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `sessions`, `tasks`, `timer`, a meta (`goal: { type: 'horas' | 'sessoes' | 'topicos'; value }`), as preferências de cronograma (disponibilidade em minutos de segunda a domingo, duração da sessão, áreas prioritárias e difíceis, data-alvo, estratégia), o onboarding e as preferências de interface (tema, som, sequência visível).
+O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `sessions`, `tasks`, `timer`, a meta (`goal: { type: 'horas' | 'sessoes' | 'topicos'; value }`), as preferências de cronograma (dias de estudo de segunda a domingo, áreas prioritárias e difíceis, data-alvo, estratégia), o onboarding e as preferências de interface (tema, som, sequência visível).
 
 - IDs estáveis. Tópicos padrão mantêm `${areaId}-${índice}` (`mat-3`); personalizados usam `custom-…`. Nunca use o nome como chave.
 - Chave do `localStorage`: `enem-flow:v2`. Se ela não existir, migre de `enem-flow:v1` (formato do protótipo) e deixe a v1 intacta como cópia de segurança.
@@ -146,16 +148,19 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 - O `AudioContext` só pode ser criado no clique de Iniciar (regra dos navegadores).
 
 **Cronograma**
-- Disponibilidade por dia da semana (0 = descanso), duração preferida da sessão, áreas prioritárias e difíceis, data-alvo opcional e estratégia (equilibrada ou foco nas prioridades).
-- O gerador nunca põe num dia mais minutos do que a disponibilidade e não encolhe sessões para caber. O que não couber aparece como pendente, com sugestão de redistribuição.
-- Ordem de escolha: revisões vencidas ou do dia, tópicos "Precisa revisar", "Em andamento" e "Não iniciado", pesando prioridade do tópico, áreas prioritárias e áreas pouco contempladas na semana. Tópicos ocultos e concluídos ficam de fora.
-- Regenerar mantém tarefas concluídas, iniciadas e manuais; substitui só as geradas e ainda planejadas a partir de hoje. Antes, mostra quantas serão trocadas.
-- Começar uma tarefa abre o Timer com o tópico e a duração da tarefa como foco. O foco registrado com a tarefa ativa soma em `focusSec`; a tarefa fica "iniciada" ao começar e "concluída" quando `focusSec` alcança a duração ou quando o estudante conclui manualmente.
-- Tarefas de dias passados não concluídas aparecem como "não feitas" com opções: reagendar para um dia com espaço livre, dividir em duas sessões menores, baixar a prioridade ou deixar para outra semana. Nada é movido sem o estudante aceitar. Sem linguagem de culpa.
+- O cronograma organiza, não limita: não existe duração por matéria nem limite de horas. A pessoa escolhe só em quais dias estuda (dias de estudo), as áreas prioritárias e difíceis, a data-alvo opcional e a estratégia (equilibrada ou foco nas prioridades).
+- Cada dia de estudo recebe **no máximo 2 matérias** (revisões contam como matéria). Estudar as duas não é obrigatório.
+- Ordem de escolha: revisões vencidas ou do dia, tópicos "Precisa revisar", "Em andamento" e "Não iniciado", pesando prioridade do tópico, áreas prioritárias e áreas pouco contempladas na semana. Tópicos ocultos e concluídos ficam de fora. O que não couber na semana aparece como pendente.
+- Regenerar mantém tarefas concluídas, iniciadas, manuais, repetições e transferidas; substitui só as geradas e ainda planejadas a partir de hoje. Antes, mostra quantas serão trocadas.
+- Começar uma matéria abre o Timer no cronômetro, sem limite de tempo. O foco registrado com a tarefa ativa soma em `focusSec` e a tarefa fica "iniciada". O tempo nunca conclui a tarefa.
+- Ao terminar, o app pergunta "Você sente que dominou?". **Dominei**: a tarefa conclui e o tópico vira Concluído (agendando as revisões) ou, se era revisão, a revisão é concluída. **Ainda não dominei**: a tarefa do dia fecha e a matéria é repetida no próximo dia de estudo (de preferência amanhã).
+- O que ficou sem estudar em dias anteriores passa **sozinho** para o próximo dia de estudo, ao abrir o app, com um aviso. Sem linguagem de culpa.
+- Repetições e transferências respeitam o limite de 2 por dia: se o dia já está cheio, uma tarefa gerada e ainda não começada sai para dar lugar; tarefas manuais, iniciadas ou concluídas nunca saem. Sem dia livre em duas semanas, a tarefa fica adiada.
+- A pessoa ainda pode mover uma matéria para outro dia (com menos de 2), baixar a prioridade ou deixar para outra semana.
 - Quem não quiser cronograma usa o app manualmente.
 
 **Painel**
-- "Estudar hoje" fica no topo: tarefas do dia, progresso do dia (foco registrado hoje x minutos planejados), botão para começar, próxima revisão. Sem plano, oferece criar um ou estudar sem plano.
+- "Estudar hoje" fica no topo: as matérias do dia, quantas foram dominadas, o tempo estudado hoje (sem meta), botão para começar, "Dominei?" e a próxima revisão. Sem plano, oferece organizar a semana ou estudar sem plano.
 - A semana vai de segunda a domingo, no fuso local. Setas para semanas anteriores; não há navegação para semanas futuras.
 - Meta semanal em horas (padrão 25 h), sessões ou tópicos concluídos, editável sem reescrever histórico. Em horas, a meta diária é `meta / 7` e os dias que a atingem ficam com a barra na cor de destaque.
 - Números vêm só de sessões registradas. Sem denominador válido, não mostre porcentagem. Estado vazio explica como começar.
@@ -250,5 +255,5 @@ Recriado em texto, nunca como imagem: "ENEM" em Saira itálico 800, `font-stretc
 
 - Todas as telas funcionam nos dois temas, em 400px e em 1440px, sem rolagem horizontal.
 - `npm run build`, `npm run lint` e `npm test` passam.
-- Testes cobrem: revisões (agendar, reagendar, adiar, feedback), tópicos (criar, editar, ocultar, restaurar sem duplicar), sessões (sem duplicar, sem pausa), cronograma (respeita disponibilidade, regenera sem perder concluídas, atraso não sobrecarrega o dia seguinte), estatísticas e migração v1 → v2.
+- Testes cobrem: revisões (agendar, reagendar, adiar, feedback), tópicos (criar, editar, ocultar, restaurar sem duplicar), sessões (sem duplicar, sem pausa), cronograma (no máximo 2 matérias por dia, só em dias de estudo, regenera sem perder concluídas, repete o que não foi dominado, transfere o que não foi estudado sem passar de 2 por dia), estatísticas e migração v1 → v2.
 - O `README.md` explica como rodar, onde os dados ficam e o que depende de configuração externa.

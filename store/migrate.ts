@@ -1,4 +1,4 @@
-import { DEFAULT_PLANNER } from "@/lib/planner";
+import { DEFAULT_PLANNER, type PlanTask, type PlannerSettings } from "@/lib/planner";
 import type { StudySession } from "@/lib/sessions";
 import type { GoalType } from "@/lib/stats";
 import { DEFAULT_TIMER, type TimerState } from "@/lib/timer";
@@ -30,6 +30,33 @@ function parseJson(raw: string): unknown {
   }
 }
 
+function without(record: Record<string, unknown>, keys: string[]): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(record).filter(([key]) => !keys.includes(key)));
+}
+
+// Versões anteriores guardavam minutos por dia; hoje só importa em quais dias a pessoa estuda.
+function normalizePlanner(saved: unknown): PlannerSettings {
+  if (!isRecord(saved)) return DEFAULT_PLANNER;
+  const { availability, studyDays } = saved;
+  const days =
+    Array.isArray(studyDays) && studyDays.length === 7
+      ? studyDays.map(Boolean)
+      : Array.isArray(availability) && availability.length === 7
+        ? availability.map((minutes) => Number(minutes) > 0)
+        : DEFAULT_PLANNER.studyDays;
+  return {
+    ...DEFAULT_PLANNER,
+    ...(without(saved, ["availability", "sessionMinutes", "studyDays"]) as Partial<PlannerSettings>),
+    studyDays: days.some(Boolean) ? days : DEFAULT_PLANNER.studyDays,
+  };
+}
+
+// Tarefas antigas tinham duração em minutos; o campo saiu porque o tempo de estudo não é limitado.
+function normalizeTasks(saved: unknown): PlanTask[] {
+  if (!Array.isArray(saved)) return [];
+  return saved.filter(isRecord).map((task) => without(task, ["minutes"]) as unknown as PlanTask);
+}
+
 // Completa campos ausentes com os padrões, para dados salvos por versões anteriores da v2 continuarem abrindo.
 function normalize(saved: Record<string, unknown>): StudyData {
   const base = emptyData();
@@ -41,12 +68,12 @@ function normalize(saved: Record<string, unknown>): StudyData {
     topics: Array.isArray(saved.topics) ? (saved.topics as StudyData["topics"]) : base.topics,
     progress: isRecord(saved.progress) ? (saved.progress as StudyData["progress"]) : {},
     sessions: Array.isArray(saved.sessions) ? (saved.sessions as StudySession[]) : [],
-    tasks: Array.isArray(saved.tasks) ? (saved.tasks as StudyData["tasks"]) : [],
+    tasks: normalizeTasks(saved.tasks),
     goal: {
       type: GOAL_TYPES.includes(goal.type as GoalType) ? (goal.type as GoalType) : base.goal.type,
       value: Number.isFinite(goalValue) && goalValue > 0 ? goalValue : base.goal.value,
     },
-    planner: { ...DEFAULT_PLANNER, ...(isRecord(saved.planner) ? saved.planner : {}) },
+    planner: normalizePlanner(saved.planner),
     onboarding: { ...base.onboarding, ...(isRecord(saved.onboarding) ? saved.onboarding : {}) },
     theme: saved.theme === "light" || saved.theme === "dark" ? saved.theme : "system",
     sound: saved.sound !== false,

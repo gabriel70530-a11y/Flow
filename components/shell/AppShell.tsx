@@ -8,7 +8,7 @@ import { toDateKey } from "@/lib/dates";
 import { groupReviews, pendingReviews } from "@/lib/reviews";
 import { useTimerTicker } from "@/components/timer/use-timer-ticker";
 import { IconButton } from "@/components/ui/IconButton";
-import { Toast } from "@/components/ui/Toast";
+import { Toast, showToast } from "@/components/ui/Toast";
 import { useHydrated, useStudyStore, type Theme } from "@/store/study-store";
 import { DemoNotice } from "./DemoNotice";
 import { SaveFailureNotice } from "./SaveFailureNotice";
@@ -36,7 +36,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [hydrated, progress, topics]);
 
   useEffect(() => {
-    if (hydrated) useStudyStore.getState().trackEvent("app_aberto");
+    if (!hydrated) return;
+    const { trackEvent, carryOver } = useStudyStore.getState();
+    trackEvent("app_aberto");
+    const moved = carryOver();
+    if (moved.length === 1) showToast("Uma matéria que ficou sem estudo passou para o próximo dia.");
+    else if (moved.length > 1) showToast(`${moved.length} matérias que ficaram sem estudo passaram para os próximos dias.`);
   }, [hydrated]);
 
   useEffect(() => {

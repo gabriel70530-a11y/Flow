@@ -14,13 +14,11 @@ import { showToast } from "@/components/ui/Toast";
 import { useStudyTopic } from "@/components/timer/use-study-topic";
 import { dayLabel, toDateKey } from "@/lib/dates";
 import {
-  TASK_STATUS_LABELS,
-  availableMinutes,
+  MAX_TOPICS_PER_DAY,
   generatePlan,
-  missedTasks,
   planDays,
-  plannedMinutes,
-  suggestDay,
+  isStudyDay,
+  topicsOn,
   type PlanLeftover,
   type PlanTask,
 } from "@/lib/planner";
@@ -30,9 +28,10 @@ import { useHydrated, useStudyStore } from "@/store/study-store";
 import { PlannerSettingsForm } from "./planner-fields";
 import { TaskDrawer } from "./TaskDrawer";
 import { TaskForm } from "./TaskForm";
-import { taskDetails, taskTitle } from "./task-format";
+import { isMastered, taskDetails, taskStatusLabel, taskTitle } from "./task-format";
 
-const SUBTITLE = "Seus próximos 7 dias, dentro do tempo que você tem.";
+const SUBTITLE =
+  "Até 2 matérias por dia, sem obrigação de fazer as duas: o que não der passa para o próximo dia. Estude o tempo que quiser.";
 
 function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
@@ -45,7 +44,7 @@ export function CronogramaScreen() {
   const progress = useStudyStore((state) => state.progress);
   const planner = useStudyStore((state) => state.planner);
   const onboarding = useStudyStore((state) => state.onboarding);
-  const { regeneratePlan, savePlanner, moveTask } = useStudyStore.getState();
+  const { regeneratePlan, savePlanner } = useStudyStore.getState();
   const studyTopic = useStudyTopic();
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
   const [addingOn, setAddingOn] = useState<string | null>(null);
@@ -66,11 +65,10 @@ export function CronogramaScreen() {
 
   const today = toDateKey(new Date());
   const days = planDays(today);
-  const missed = missedTasks(tasks, today);
   const postponed = tasks.filter((task) => task.status === "adiada");
   const hasPlan = tasks.some((task) => task.date !== null && task.date >= today);
   const proAccess = hasProAccess();
-  const weekCapacity = days.reduce((sum, date) => sum + availableMinutes(planner, date), 0);
+  const hasStudyDays = planner.studyDays.some(Boolean);
 
   const apply = () => {
     const result = regeneratePlan();
@@ -85,33 +83,21 @@ export function CronogramaScreen() {
     else setPreview({ added: result.added.length, removed: result.removed.length });
   };
 
-  const renderTask = (task: PlanTask, missedRow = false) => {
+  const renderTask = (task: PlanTask) => {
     const done = task.status === "concluida";
-    const suggestion = missedRow ? suggestDay(tasks, planner, today, task.minutes, task.id) : null;
     return (
       <ListRow
         key={task.id}
-        title={<span className={done ? "text-muted line-through" : ""}>{taskTitle(task, topics)}</span>}
+        title={<span className={isMastered(task) ? "text-muted line-through" : done ? "text-muted" : ""}>{taskTitle(task, topics)}</span>}
         subtitle={
           <span className="tabular-nums">
             {taskDetails(task)}
-            {task.status !== "planejada" && ` · ${TASK_STATUS_LABELS[task.status]}`}
-            {missedRow && task.date && ` · era ${dayLabel(task.date, today).toLowerCase()}`}
+            {task.status !== "planejada" && ` · ${taskStatusLabel(task)}`}
           </span>
         }
         end={
           <>
-            {suggestion && (
-              <Button
-                onClick={() => {
-                  moveTask(task.id, suggestion);
-                  showToast(`Tarefa movida para ${dayLabel(suggestion, today).toLowerCase()}.`);
-                }}
-              >
-                Mover p/ {dayLabel(suggestion, today).toLowerCase()}
-              </Button>
-            )}
-            {!done && !missedRow && task.date === today && (
+            {!done && task.date === today && (
               <Button variant="primary" onClick={() => studyTopic(task.topicId, task)}>
                 Começar
               </Button>
@@ -130,7 +116,7 @@ export function CronogramaScreen() {
       <PageHeader title="Cronograma" subtitle={SUBTITLE} />
 
       <div className="flex flex-wrap gap-2">
-        <Button variant="primary" onClick={requestPlan} disabled={weekCapacity === 0 || !proAccess}>
+        <Button variant="primary" onClick={requestPlan} disabled={!hasStudyDays || !proAccess}>
           <RefreshCw size={16} aria-hidden />
           {hasPlan ? "Atualizar plano" : "Gerar plano"}
         </Button>
@@ -140,7 +126,7 @@ export function CronogramaScreen() {
         </Button>
         <Button onClick={() => setEditingSettings(true)}>
           <SlidersHorizontal size={16} aria-hidden />
-          Disponibilidade
+          Dias de estudo
         </Button>
         <span className="self-center">
           <ProBadge />
@@ -156,9 +142,9 @@ export function CronogramaScreen() {
         </p>
       )}
 
-      {weekCapacity === 0 && (
+      {!hasStudyDays && (
         <p className="text-[13px] text-muted">
-          Sua disponibilidade está zerada. Ajuste em Disponibilidade para gerar um plano.
+          Nenhum dia de estudo escolhido. Ajuste em Dias de estudo para organizar a semana.
         </p>
       )}
 
@@ -166,7 +152,7 @@ export function CronogramaScreen() {
         <Card>
           <CardHeader title="Monte sua semana em 2 minutos" />
           <p className="mb-4 text-sm text-muted">
-            Conte quanto tempo você tem em cada dia e quais áreas pesam mais. O ENEM Flow sugere um plano que cabe na sua rotina.
+            Escolha seus dias de estudo e as áreas que pesam mais. O ENEM Flow organiza até 2 matérias por dia, sem limitar horas.
             Você pode mudar tudo depois, ou montar sozinho.
           </p>
           <div className="flex flex-wrap gap-2">
@@ -203,8 +189,8 @@ export function CronogramaScreen() {
             </button>
           </CardHeader>
           <p className="mb-2 text-sm text-muted">
-            Para incluir estes, aumente o tempo de algum dia ou use sessões mais curtas em Disponibilidade. Nada foi espremido para
-            caber.
+            Cada dia recebe no máximo 2 matérias. Estes entram nos próximos dias, conforme as matérias atuais forem dominadas,
+            ou você pode incluir mais dias de estudo.
           </p>
           <ul className="grid gap-1 text-sm">
             {leftovers.slice(0, 6).map((leftover) => (
@@ -218,39 +204,24 @@ export function CronogramaScreen() {
         </Card>
       )}
 
-      {missed.length > 0 && (
-        <Card flush>
-          <CardHeader flush title="Ficou para depois">
-            <span className="text-[13px] text-muted tabular-nums">{missed.length}</span>
-          </CardHeader>
-          <p className="px-4 pb-2 text-[13px] text-muted md:px-5">
-            Acontece. Escolha um dia com espaço, divida em sessões menores ou deixe para outra semana.
-          </p>
-          <ul>{missed.map((task) => renderTask(task, true))}</ul>
-        </Card>
-      )}
-
       {days.map((date) => {
         const dayTasks = tasks.filter((task) => task.date === date && task.status !== "adiada");
-        const available = availableMinutes(planner, date);
-        const planned = plannedMinutes(tasks, date);
+        const studyDay = isStudyDay(planner, date);
         return (
           <Card key={date} flush>
             <CardHeader flush title={capitalize(dayLabel(date, today))}>
-              <span className={`text-[13px] tabular-nums ${planned > available ? "text-danger" : "text-muted"}`}>
-                {available === 0 && planned === 0 ? "Dia livre" : `${planned} de ${available} min`}
+              <span className="text-[13px] text-muted tabular-nums">
+                {!studyDay && dayTasks.length === 0 ? "Dia livre" : `${topicsOn(tasks, date)} de ${MAX_TOPICS_PER_DAY} matérias`}
               </span>
             </CardHeader>
             {dayTasks.length > 0 ? (
               <ul>{dayTasks.map((task) => renderTask(task))}</ul>
             ) : (
               <p className="px-4 pb-4 text-[13px] text-muted md:px-5">
-                {available === 0 ? "Descanso também faz parte." : "Nada planejado. "}
-                {available > 0 && (
-                  <button type="button" onClick={() => setAddingOn(date)} className={linkStyles}>
-                    Adicionar tarefa
-                  </button>
-                )}
+                {studyDay ? "Nada planejado. " : "Descanso também faz parte. "}
+                <button type="button" onClick={() => setAddingOn(date)} className={linkStyles}>
+                  Adicionar matéria
+                </button>
               </p>
             )}
           </Card>
@@ -279,7 +250,7 @@ export function CronogramaScreen() {
           />
         )}
       </Drawer>
-      <Drawer open={editingSettings} onClose={() => setEditingSettings(false)} eyebrow="Cronograma" title="Disponibilidade e preferências">
+      <Drawer open={editingSettings} onClose={() => setEditingSettings(false)} eyebrow="Cronograma" title="Dias de estudo e preferências">
         <PlannerSettingsForm
           initial={planner}
           today={today}

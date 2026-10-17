@@ -123,7 +123,8 @@ export function TimerCard() {
         </select>
         {task && (
           <span className="font-normal">
-            Tarefa do cronograma: {task.minutes} min planejados, {formatDuration(task.focusSec)} feitos.
+            Matéria do dia{task.focusSec > 0 && ` · ${formatDuration(task.focusSec)} já estudados`}. Sem limite de tempo:
+            estude o quanto quiser, até sentir que dominou o conteúdo.
           </span>
         )}
       </label>

@@ -95,25 +95,41 @@ describe("timer and sessions", () => {
     expect(state().timer).toMatchObject({ mode: "pomodoro", focus: 25, topicId: "mat-2" });
   });
 
-  it("adds focus to the plan task and concludes it when the planned time is reached", () => {
+  it("opens a plan task in the stopwatch with no time limit and only closes it by mastery", () => {
     const task: PlanTask = {
-      id: "t1", topicId: "nat-1", areaId: "nat", kind: "estudo", date: today, minutes: 30,
+      id: "t1", topicId: "nat-1", areaId: "nat", kind: "estudo", date: today,
       priority: "media", status: "planejada", origin: "gerada", focusSec: 0,
     };
     useStudyStore.setState({ tasks: [task] });
-    expect(state().studyTopic("nat-1", { id: "t1", minutes: 30 })).toBe(true);
-    expect(state().timer).toMatchObject({ topicId: "nat-1", taskId: "t1", focus: 30, mode: "pomodoro" });
+    expect(state().studyTopic("nat-1", "t1")).toBe(true);
+    expect(state().timer).toMatchObject({ topicId: "nat-1", taskId: "t1", mode: "cronometro" });
 
     state().startTimer();
     expect(state().tasks[0].status).toBe("iniciada");
-    advance(20 * 60);
+    advance(2 * 60 * 60);
     state().finishTimer();
-    expect(state().tasks[0]).toMatchObject({ status: "iniciada", focusSec: 1200 });
+    expect(state().tasks[0]).toMatchObject({ status: "iniciada", focusSec: 7200 });
 
-    state().startTimer();
-    advance(20 * 60 + 600);
-    state().finishTimer();
-    expect(state().tasks[0]).toMatchObject({ status: "concluida", focusSec: 1800 });
+    const result = state().answerMastery("t1", false);
+    expect(state().tasks[0].status).toBe("concluida");
+    expect(result?.repeat).toMatchObject({ topicId: "nat-1", date: "2026-10-17", origin: "repeticao", status: "planejada" });
+    expect(state().progress["nat-1"].status).toBe("and");
+
+    expect(state().answerMastery(result!.repeat.id, true)).toBeNull();
+    expect(state().progress["nat-1"].status).toBe("concluido");
+    expect(state().progress["nat-1"].reviews).toHaveLength(4);
+    expect(state().answerMastery("t1", true)).toBeNull();
+  });
+
+  it("completes the review when a review task is mastered", () => {
+    state().setStatus("lin-0", "concluido");
+    const task: PlanTask = {
+      id: "r1", topicId: "lin-0", areaId: "lin", kind: "revisao", date: today,
+      priority: "media", status: "planejada", origin: "gerada", focusSec: 0,
+    };
+    useStudyStore.setState({ tasks: [task] });
+    state().answerMastery("r1", true);
+    expect(state().progress["lin-0"].reviews[0]).toMatchObject({ done: today, feedback: "bem" });
   });
 
   it("stores reflection and a trimmed note on the session", () => {
@@ -196,17 +212,19 @@ describe("reviews and settings", () => {
 });
 
 describe("plan", () => {
-  it("finishes onboarding with a suggested plan inside the availability", () => {
-    const settings = { ...state().planner, availability: [60, 60, 60, 60, 60, 0, 0], sessionMinutes: 30 };
+  it("finishes onboarding with at most two topics on each chosen day", () => {
+    const settings = { ...state().planner, studyDays: [true, true, true, true, true, false, false] };
     expect(state().finishOnboarding(settings, "sugerido")).toBeNull();
     expect(state().onboarding.status).toBe("concluido");
-    expect(state().tasks.length).toBeGreaterThan(0);
-    expect(state().tasks.filter((task) => task.date === today).reduce((sum, task) => sum + task.minutes, 0)).toBeLessThanOrEqual(60);
+    expect(state().tasks.filter((task) => task.date === today)).toHaveLength(2);
+    expect(state().tasks.filter((task) => task.date === "2026-10-17")).toHaveLength(0);
   });
 
-  it("saves preferences without a plan in manual mode and rejects invalid availability", () => {
-    expect(state().finishOnboarding({ ...state().planner, availability: [60, -5, 0, 0, 0, 0, 0] }, "manual")).toMatch(/16 horas/);
-    expect(state().finishOnboarding({ ...state().planner, availability: [60, 60, 0, 0, 0, 0, 0] }, "manual")).toBeNull();
+  it("saves preferences without a plan in manual mode and needs at least one study day", () => {
+    const none = { ...state().planner, studyDays: Array(7).fill(false) };
+    const monday = { ...state().planner, studyDays: [true, false, false, false, false, false, false] };
+    expect(state().finishOnboarding(none, "manual")).toMatch(/pelo menos um dia/);
+    expect(state().finishOnboarding(monday, "manual")).toBeNull();
     expect(state().tasks).toEqual([]);
   });
 
@@ -219,21 +237,37 @@ describe("plan", () => {
     expect(new Set(state().tasks.map((task) => `${task.kind}:${task.topicId}`)).size).toBe(state().tasks.length);
   });
 
-  it("validates manual tasks and unlinks the timer when a task is removed", () => {
-    expect(state().addTask({ topicId: "mat-0", date: "2026-10-01", minutes: 30, priority: "media" })).toMatch(/data/);
-    expect(state().addTask({ topicId: "mat-0", date: today, minutes: 30, priority: "media" })).toBeNull();
+  it("carries topics that were not studied to the next study day", () => {
+    const missed: PlanTask = {
+      id: "m1", topicId: "mat-3", areaId: "mat", kind: "estudo", date: "2026-10-15",
+      priority: "media", status: "planejada", origin: "gerada", focusSec: 0,
+    };
+    useStudyStore.setState({ tasks: [missed] });
+    expect(state().carryOver().map((task) => task.date)).toEqual([today]);
+    expect(state().tasks[0]).toMatchObject({ date: today, origin: "transferida" });
+    expect(state().carryOver()).toEqual([]);
+  });
+
+  it("validates manual tasks, keeps two per day and unlinks the timer when a task is removed", () => {
+    expect(state().addTask({ topicId: "mat-0", date: "2026-10-01", priority: "media" })).toMatch(/data/);
+    expect(state().addTask({ topicId: "mat-0", date: today, priority: "media" })).toBeNull();
+    expect(state().addTask({ topicId: "mat-1", date: today, priority: "media" })).toBeNull();
+    expect(state().addTask({ topicId: "mat-2", date: today, priority: "media" })).toMatch(/2 matérias/);
     const task = state().tasks[0];
     expect(task).toMatchObject({ origin: "manual", areaId: "mat", status: "planejada" });
-    state().studyTopic("mat-0", { id: task.id, minutes: task.minutes });
+    state().studyTopic("mat-0", task.id);
     state().removeTask(task.id);
-    expect(state().tasks).toEqual([]);
+    expect(state().tasks).toHaveLength(1);
     expect(state().timer.taskId).toBe("");
   });
 
-  it("moves tasks only to today or later and to another week", () => {
-    state().addTask({ topicId: "mat-0", date: today, minutes: 30, priority: "alta" });
+  it("moves tasks only to today or later, never to a full day, and to another week", () => {
+    state().addTask({ topicId: "mat-0", date: today, priority: "alta" });
+    state().addTask({ topicId: "mat-1", date: "2026-10-17", priority: "media" });
+    state().addTask({ topicId: "mat-2", date: "2026-10-17", priority: "media" });
     const { id } = state().tasks[0];
     expect(state().moveTask(id, "2026-10-01")).toBe(false);
+    expect(state().moveTask(id, "2026-10-17")).toBe(false);
     expect(state().moveTask(id, null)).toBe(true);
     expect(state().tasks[0]).toMatchObject({ date: null, status: "adiada" });
     state().lowerTaskPriority(id);
@@ -257,5 +291,22 @@ describe("backup", () => {
     expect(state().sessions).toHaveLength(1);
     expect(state().timer.running).toBe(false);
     expect(state().demo).toBe(false);
+  });
+});
+
+describe("mastery outcome", () => {
+  it("records whether the topic was mastered or will be repeated", () => {
+    const base: PlanTask = {
+      id: "a", topicId: "mat-3", areaId: "mat", kind: "estudo", date: today,
+      priority: "media", status: "planejada", origin: "gerada", focusSec: 0,
+    };
+    useStudyStore.setState({ tasks: [base, { ...base, id: "b", topicId: "lin-3" }] });
+    const repeat = state().answerMastery("a", false)?.repeat;
+    state().answerMastery("b", true);
+    expect(state().tasks.find((task) => task.id === "a")).toMatchObject({ status: "concluida", outcome: "repetir" });
+    expect(state().tasks.find((task) => task.id === "b")).toMatchObject({ status: "concluida", outcome: "dominada" });
+    expect(repeat).not.toHaveProperty("outcome");
+    state().setTaskDone("a", false);
+    expect(state().tasks.find((task) => task.id === "a")?.outcome).toBeUndefined();
   });
 });

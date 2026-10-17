@@ -10,15 +10,15 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Segmented } from "@/components/ui/Segmented";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { showToast } from "@/components/ui/Toast";
-import { AreaChips, AvailabilityFields, SessionLengthField, strategyOptions } from "@/components/cronograma/planner-fields";
+import { AreaChips, StudyDaysFields, strategyOptions } from "@/components/cronograma/planner-fields";
 import { shortDate, toDateKey } from "@/lib/dates";
 import type { PlannerSettings } from "@/lib/planner";
-import { formatDuration } from "@/lib/stats";
 import { findArea, type AreaId } from "@/lib/syllabus";
 import type { OnboardingState } from "@/store/state";
 import { useHydrated, useStudyStore } from "@/store/study-store";
 
-const STEPS = ["Objetivo", "Tempo", "Áreas", "Prova", "Organização", "Resumo"];
+const STEPS = ["Objetivo", "Dias", "Áreas", "Prova", "Organização", "Resumo"];
+const WEEKDAY_NAMES = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"];
 const COURSE_MAX = 80;
 
 const planModeOptions: { value: OnboardingState["planMode"]; label: string }[] = [
@@ -53,7 +53,7 @@ function OnboardingSteps() {
   const [planMode, setPlanMode] = useState(storedMode);
   const [error, setError] = useState<string | null>(null);
   const today = toDateKey(new Date());
-  const weekMinutes = settings.availability.reduce((sum, minutes) => sum + minutes, 0);
+  const studyDayNames = WEEKDAY_NAMES.filter((_, index) => settings.studyDays[index]);
 
   const update = (changes: Partial<PlannerSettings>) => {
     setSettings((current) => ({ ...current, ...changes }));
@@ -61,8 +61,8 @@ function OnboardingSteps() {
   };
 
   const goTo = (target: number) => {
-    if (step === 1 && target > 1 && weekMinutes === 0) {
-      setError("Escolha pelo menos um dia com tempo para estudar.");
+    if (step === 1 && target > 1 && studyDayNames.length === 0) {
+      setError("Escolha pelo menos um dia para estudar.");
       return;
     }
     setError(null);
@@ -87,7 +87,7 @@ function OnboardingSteps() {
 
   const summary: [string, string, number][] = [
     ["Objetivo", settings.course || "Não informado", 0],
-    ["Tempo por semana", `${formatDuration(weekMinutes * 60)} em sessões de ${settings.sessionMinutes} min`, 1],
+    ["Dias de estudo", `${studyDayNames.join(", ")}, com até 2 matérias por dia`, 1],
     ["Áreas prioritárias ou difíceis", areaNames(settings.difficultAreas), 2],
     ["Áreas em que vai bem", areaNames(settings.strongAreas), 2],
     ["Data da prova", settings.targetDate ? shortDate(settings.targetDate) + "/" + settings.targetDate.slice(0, 4) : "Não informada", 3],
@@ -132,10 +132,13 @@ function OnboardingSteps() {
         {step === 1 && (
           <div className="grid gap-5">
             <div className="grid gap-1.5">
-              <span className="text-[13px] font-semibold text-muted">Quanto tempo você tem para estudar em cada dia?</span>
-              <AvailabilityFields value={settings.availability} onChange={(availability) => update({ availability })} />
+              <span className="text-[13px] font-semibold text-muted">Em quais dias você quer estudar?</span>
+              <StudyDaysFields value={settings.studyDays} onChange={(studyDays) => update({ studyDays })} />
             </div>
-            <SessionLengthField value={settings.sessionMinutes} onChange={(sessionMinutes) => update({ sessionMinutes })} />
+            <p className="text-[13px] text-muted">
+              Cada dia de estudo recebe até 2 matérias. Não precisa fazer as duas: o que não der passa para o dia seguinte. Não há
+              limite de tempo: estude cada matéria até sentir que dominou.
+            </p>
           </div>
         )}
 

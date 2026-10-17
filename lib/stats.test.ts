@@ -133,16 +133,15 @@ describe("goals and summaries", () => {
     expect(goalProgress({ type: "topicos", value: 3 }, sessions, progress, ...week)).toEqual({ done: 1, target: 3 });
   });
 
-  it("compares planned minutes with recorded study and ignores postponed tasks", () => {
+  it("counts mastered topics of the week apart from total study and ignores postponed tasks", () => {
     const base = { topicId: "mat-0", areaId: "mat" as const, kind: "estudo" as const, priority: "media" as const, origin: "gerada" as const, focusSec: 0 };
     const tasks = [
-      { ...base, id: "a", date: "2026-10-12", minutes: 60, status: "concluida" as const, focusSec: 3000 },
-      { ...base, id: "b", date: "2026-10-14", minutes: 50, status: "planejada" as const },
-      { ...base, id: "c", date: null, minutes: 50, status: "adiada" as const },
-      { ...base, id: "d", date: "2026-10-20", minutes: 50, status: "planejada" as const },
+      { ...base, id: "a", date: "2026-10-12", status: "concluida" as const, focusSec: 3000 },
+      { ...base, id: "b", date: "2026-10-14", status: "planejada" as const },
+      { ...base, id: "c", date: null, status: "adiada" as const },
+      { ...base, id: "d", date: "2026-10-20", status: "planejada" as const },
     ];
     expect(plannedVersusDone(tasks, sessions, ...week)).toEqual({
-      plannedMinutes: 110,
       taskCount: 2,
       tasksDone: 1,
       taskFocusSeconds: 3000,

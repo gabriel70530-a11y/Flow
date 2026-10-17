@@ -17,8 +17,8 @@ export const FREE_FEATURES = [
 ];
 
 export const PRO_FEATURES = [
-  "Cronograma personalizado pela sua disponibilidade",
-  "Reorganização sugerida de tarefas que ficaram para depois",
+  "Semana organizada automaticamente, com até 2 matérias por dia",
+  "Matérias não estudadas e não dominadas voltam sozinhas no dia seguinte",
   "Resumo detalhado: planejado x realizado, constância e comparação semanal",
 ];
 

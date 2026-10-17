@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Field, inputStyles } from "@/components/ui/Field";
 import { Segmented } from "@/components/ui/Segmented";
 import { priorityOptions } from "@/components/materias/TopicForm";
-import { MAX_TASK_MINUTES, MIN_TASK_MINUTES, type TaskInput } from "@/lib/planner";
+import type { TaskInput } from "@/lib/planner";
 import { AREAS } from "@/lib/syllabus";
 import { visibleTopics } from "@/lib/topics";
 import { useStudyStore } from "@/store/study-store";
@@ -18,9 +18,8 @@ interface TaskFormProps {
 
 export function TaskForm({ today, initialDate, onDone }: TaskFormProps) {
   const topics = useStudyStore((state) => state.topics);
-  const sessionMinutes = useStudyStore((state) => state.planner.sessionMinutes);
   const addTask = useStudyStore((state) => state.addTask);
-  const [input, setInput] = useState<TaskInput>({ topicId: null, date: initialDate, minutes: sessionMinutes, priority: "media" });
+  const [input, setInput] = useState<TaskInput>({ topicId: null, date: initialDate, priority: "media" });
   const [error, setError] = useState<string | null>(null);
   const update = (changes: Partial<TaskInput>) => {
     setInput((current) => ({ ...current, ...changes }));
@@ -56,30 +55,16 @@ export function TaskForm({ today, initialDate, onDone }: TaskFormProps) {
           ))}
         </select>
       </Field>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Dia">
-          <input
-            type="date"
-            min={today}
-            value={input.date}
-            onChange={(event) => update({ date: event.target.value })}
-            required
-            className={inputStyles}
-          />
-        </Field>
-        <Field label="Duração (min)">
-          <input
-            type="number"
-            inputMode="numeric"
-            min={MIN_TASK_MINUTES}
-            max={MAX_TASK_MINUTES}
-            value={input.minutes}
-            onChange={(event) => update({ minutes: event.target.valueAsNumber })}
-            required
-            className={`${inputStyles} tabular-nums`}
-          />
-        </Field>
-      </div>
+      <Field label="Dia" hint="Cada dia tem no máximo 2 matérias.">
+        <input
+          type="date"
+          min={today}
+          value={input.date}
+          onChange={(event) => update({ date: event.target.value })}
+          required
+          className={inputStyles}
+        />
+      </Field>
       <div className="grid gap-1.5">
         <span className="text-[13px] font-semibold text-muted">Prioridade</span>
         <Segmented options={priorityOptions} value={input.priority} onChange={(priority) => update({ priority })} />

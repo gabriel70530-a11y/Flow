@@ -7,10 +7,15 @@ import { Field, inputStyles } from "@/components/ui/Field";
 import { showToast } from "@/components/ui/Toast";
 import { useStudyTopic } from "@/components/timer/use-study-topic";
 import { dayLabel, isDateKey } from "@/lib/dates";
-import { TASK_STATUS_LABELS, canSplit, freeMinutes, suggestDay, type PlanTask } from "@/lib/planner";
-import { formatDuration } from "@/lib/stats";
+import {
+  MAX_TOPICS_PER_DAY,
+  suggestDay,
+  topicsOn,
+  type PlanTask,
+} from "@/lib/planner";
 import { useStudyStore } from "@/store/study-store";
-import { taskDetails, taskTitle } from "./task-format";
+import { taskDetails, taskStatusLabel, taskTitle } from "./task-format";
+import { useAnswerMastery } from "./use-answer-mastery";
 
 interface TaskDrawerProps {
   task: PlanTask | undefined;
@@ -22,7 +27,8 @@ export function TaskDrawer({ task, today, onClose }: TaskDrawerProps) {
   const topics = useStudyStore((state) => state.topics);
   const tasks = useStudyStore((state) => state.tasks);
   const planner = useStudyStore((state) => state.planner);
-  const { moveTask, setTaskDone, splitPlanTask, lowerTaskPriority, removeTask } = useStudyStore.getState();
+  const { moveTask, setTaskDone, lowerTaskPriority, removeTask } = useStudyStore.getState();
+  const answerMastery = useAnswerMastery();
   const studyTopic = useStudyTopic();
   const [confirmingRemove, setConfirmingRemove] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +41,7 @@ export function TaskDrawer({ task, today, onClose }: TaskDrawerProps) {
     onClose();
   };
   const done = task.status === "concluida";
-  const suggestion = done ? null : suggestDay(tasks, planner, today, task.minutes, task.id);
+  const suggestion = done ? null : suggestDay(tasks, planner, today, task.id);
   const act = (message: string, action: () => void) => {
     action();
     showToast(message);
@@ -49,14 +55,11 @@ export function TaskDrawer({ task, today, onClose }: TaskDrawerProps) {
       setError("Escolha hoje ou uma data futura.");
       return;
     }
-    // Mover à mão é escolha do estudante: avisa se passar da disponibilidade, mas não impede.
-    const over = task.minutes - freeMinutes(tasks.filter((other) => other.id !== task.id), planner, date);
-    act(
-      over > 0
-        ? `Tarefa movida. Esse dia passa ${formatDuration(over * 60)} da sua disponibilidade.`
-        : `Tarefa movida para ${dayLabel(date, today).toLowerCase()}.`,
-      () => moveTask(task.id, date),
-    );
+    if (topicsOn(tasks.filter((other) => other.id !== task.id), date) >= MAX_TOPICS_PER_DAY) {
+      setError("Esse dia já tem 2 matérias. Escolha outro dia.");
+      return;
+    }
+    act(`Tarefa movida para ${dayLabel(date, today).toLowerCase()}.`, () => moveTask(task.id, date));
   };
 
   const remove = () => {
@@ -71,7 +74,7 @@ export function TaskDrawer({ task, today, onClose }: TaskDrawerProps) {
     <Drawer
       open
       onClose={close}
-      eyebrow={`${task.date ? dayLabel(task.date, today) : "Sem data"} · ${TASK_STATUS_LABELS[task.status]}`}
+      eyebrow={`${task.date ? dayLabel(task.date, today) : "Sem data"} · ${taskStatusLabel(task)}`}
       title={taskTitle(task, topics)}
     >
       <p className="-mt-3 mb-4 text-sm text-muted tabular-nums">{taskDetails(task)}</p>
@@ -88,7 +91,7 @@ export function TaskDrawer({ task, today, onClose }: TaskDrawerProps) {
           )}
           {!suggestion && (
             <p className="text-[13px] text-muted">
-              Não há espaço livre nas próximas duas semanas com a sua disponibilidade atual. Escolha uma data ou deixe para
+              Os próximos dias de estudo já têm 2 matérias. Escolha uma data ou deixe para
               depois.
             </p>
           )}
@@ -107,11 +110,6 @@ export function TaskDrawer({ task, today, onClose }: TaskDrawerProps) {
             <Button type="submit">Mover</Button>
           </form>
           <div className="flex flex-wrap gap-2">
-            {canSplit(task) && (
-              <Button onClick={() => act("Tarefa dividida em duas sessões menores.", () => splitPlanTask(task.id))}>
-                Dividir em duas
-              </Button>
-            )}
             {task.priority !== "baixa" && (
               <Button onClick={() => act("Prioridade reduzida.", () => lowerTaskPriority(task.id))}>Baixar prioridade</Button>
             )}
@@ -124,16 +122,38 @@ export function TaskDrawer({ task, today, onClose }: TaskDrawerProps) {
         </DrawerSection>
       )}
 
+      {!done && (
+        <DrawerSection title="Você sente que dominou este conteúdo?">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="primary"
+              onClick={() => {
+                answerMastery(task, true);
+                close();
+              }}
+            >
+              Dominei
+            </Button>
+            <Button
+              onClick={() => {
+                answerMastery(task, false);
+                close();
+              }}
+            >
+              Ainda não dominei
+            </Button>
+          </div>
+          <p className="text-[13px] text-muted">
+            O tempo é só uma sugestão: estude o quanto conseguir. Se ainda não dominou, a matéria volta no dia seguinte.
+          </p>
+        </DrawerSection>
+      )}
+
       <DrawerSection title="Tarefa">
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => act(done ? "Tarefa reaberta." : "Tarefa concluída.", () => setTaskDone(task.id, !done))}>
-            {done ? "Reabrir" : "Marcar como concluída"}
-          </Button>
+          {done && <Button onClick={() => act("Tarefa reaberta.", () => setTaskDone(task.id, false))}>Reabrir</Button>}
           <Button onClick={remove}>{confirmingRemove ? "Clique de novo para remover" : "Remover"}</Button>
         </div>
-        <p className="text-[13px] text-muted">
-          Concluir a tarefa não marca o tópico como concluído. Isso você decide em Matérias.
-        </p>
       </DrawerSection>
 
       {!done && (

@@ -54,11 +54,28 @@ describe("loadData", () => {
 
   it("fills fields missing from older v2 data", () => {
     const { topics, ...partial } = emptyData();
-    const current = JSON.stringify({ ...partial, planner: { sessionMinutes: 30 } });
+    const current = JSON.stringify({ ...partial, planner: { strategy: "prioridades" } });
     const { data } = loadData({ current, legacy: null }, today);
     expect(data.topics).toEqual(topics);
-    expect(data.planner.sessionMinutes).toBe(30);
-    expect(data.planner.availability).toHaveLength(7);
+    expect(data.planner.strategy).toBe("prioridades");
+    expect(data.planner.studyDays).toHaveLength(7);
+  });
+
+  it("turns old minutes per day into study days and drops task durations", () => {
+    const oldTask = {
+      id: "t", topicId: "mat-0", areaId: "mat", kind: "estudo", date: today, minutes: 50,
+      priority: "media", status: "planejada", origin: "gerada", focusSec: 0,
+    };
+    const current = JSON.stringify({
+      ...emptyData(),
+      planner: { availability: [60, 0, 90, 0, 0, 30, 0], sessionMinutes: 50, strategy: "equilibrada" },
+      tasks: [oldTask],
+    });
+    const { data } = loadData({ current, legacy: null }, today);
+    expect(data.planner.studyDays).toEqual([true, false, true, false, false, true, false]);
+    expect(data.planner).not.toHaveProperty("availability");
+    expect(data.planner).not.toHaveProperty("sessionMinutes");
+    expect(data.tasks[0]).not.toHaveProperty("minutes");
   });
 
   it("starts from scratch and flags corrupted v2 data", () => {
