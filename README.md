@@ -1,6 +1,8 @@
 # ENEM Flow
 
-Organizador pessoal de estudos para o ENEM: matérias e tópicos, timer Pomodoro ou cronômetro, revisões espaçadas (1, 7, 15 e 30 dias) e um painel com as horas da semana.
+Menos caos. Mais flow nos estudos. Organizador de estudos para o ENEM: matérias prontas e personalizáveis, cronograma que cabe na rotina, "Estudar hoje" no painel, timer Pomodoro ou cronômetro, revisões espaçadas (1, 7, 15 e 30 dias) e estatísticas a partir das sessões registradas.
+
+Não é cursinho, não promete nota nem aprovação e não tem vínculo com o INEP ou o MEC.
 
 ## Como rodar
 
@@ -11,16 +13,48 @@ npm install
 npm run dev
 ```
 
-Abra http://localhost:3000.
+Abra http://localhost:3000. A página inicial é o site; o app começa em `/painel`.
 
-Outros comandos:
+| Comando | O que faz |
+|---|---|
+| `npm run dev` | servidor local |
+| `npm run build` e `npm start` | build de produção e servidor |
+| `npm run lint` | ESLint |
+| `npm test` | Vitest: datas, tópicos, revisões, sessões, cronograma, estatísticas, planos, migração e store |
 
-- `npm run build`: build de produção (`npm start` para servir depois)
-- `npm run lint`: ESLint
-- `npm test`: testes do Vitest (regras de datas, revisões, estatísticas, timer e store)
+## Telas
+
+- `/` landing, `/privacidade`, `/termos`: site público.
+- `/painel`: "Estudar hoje", semana com meta (horas, sessões ou tópicos), resumo, por área e próximas revisões.
+- `/cronograma`: plano dos próximos 7 dias dentro da disponibilidade, tarefas que ficaram para depois, adiadas.
+- `/materias`: busca, filtros, ordenação, criar, editar, ocultar, restaurar lista padrão.
+- `/timer`: Pomodoro e cronômetro, estudo geral, reflexão pós-sessão, sessões de hoje.
+- `/revisoes`: atrasadas, hoje, próximos 7 dias e futuras; concluir com feedback, adiar e reagendar.
+- `/comecar`: configuração inicial opcional. `/ajustes`: preferências, meta, cronograma, backup. `/planos`.
 
 ## Onde ficam os dados
 
-Não há servidor nem conta. Tudo fica no `localStorage` do navegador, na chave `enem-flow:v1`, no mesmo formato do protótipo em `docs/prototype.html`.
+Não há servidor nem conta. Tudo fica no `localStorage` do navegador, na chave `enem-flow:v2`.
 
-Na primeira visita a app carrega dados de exemplo; o aviso no topo apaga tudo e começa do zero. Os dados valem só para aquele navegador: limpar os dados do site ou trocar de navegador começa do zero.
+- Na primeira abertura, se existir a chave `enem-flow:v1` (formato do protótipo), os dados são migrados para a v2 e a v1 fica intacta como cópia de segurança.
+- Sem nada salvo, o app carrega dados de exemplo, identificados por um aviso com "Apagar e começar do zero".
+- Se o JSON salvo estiver corrompido, o texto bruto vai para `enem-flow:v2:corrompido` e o app começa do zero.
+- Se o navegador recusar a gravação, um aviso aparece com "Tentar de novo".
+- Não há sincronização entre aparelhos. Em Ajustes dá para baixar um backup (JSON) e importar em outro navegador.
+
+## Configuração opcional
+
+Copie `.env.example` para `.env.local` e preencha o que quiser. Sem as variáveis, o app funciona e só esconde o que depende delas.
+
+| Variável | Efeito |
+|---|---|
+| `NEXT_PUBLIC_PRO_INTEREST_URL` | link https para a lista de interesse do Pro (ex.: formulário). Sem ela, a tela diz que a lista ainda não está aberta. |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | e-mail de contato no rodapé do site. |
+| `NEXT_PUBLIC_ANALYTICS_URL` | endpoint https que recebe eventos anônimos. Só envia se o estudante ativar em Ajustes. |
+
+## O que ainda depende de decisão ou serviço externo
+
+- **Cobrança do Flow Pro (R$ 19,90/mês, preço experimental).** Não há provedor de pagamento nem backend. Os recursos Pro (cronograma sugerido, reorganização, resumo detalhado) estão liberados para todos durante o teste e a interface diz isso; nada é vendido nem simulado. Para cobrar, é preciso um backend que valide a assinatura com o provedor e devolva o acesso a `currentEntitlement()` em `lib/plan.ts`, além de textos de cobrança, cancelamento e reembolso.
+- **Coleta de métricas para a validação com 20 a 30 estudantes.** O app emite `app_aberto`, `onboarding_concluido`, `onboarding_pulado`, `plano_gerado`, `sessao_registrada`, `revisao_concluida` e `pro_interesse`, com o dia e um código aleatório do navegador. Falta um endpoint que receba esses eventos (ver `NEXT_PUBLIC_ANALYTICS_URL`) e uma forma de coletar motivos de abandono (entrevista ou formulário). Intenção declarada na lista de interesse não é compra.
+- **Política de privacidade e termos.** As páginas descrevem o funcionamento real do app, mas são uma versão preliminar: revisar com orientação jurídica antes de abrir ao público, inclusive pelos cuidados com menores de idade (LGPD).
+- **Contato.** Definir um e-mail de suporte e configurar `NEXT_PUBLIC_CONTACT_EMAIL`.

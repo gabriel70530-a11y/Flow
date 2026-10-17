@@ -67,12 +67,13 @@ lib/
   planner.ts            geração e reorganização do cronograma
   stats.ts              horas por dia, por área, metas, sequência, planejado x realizado
   timer.ts              elapsed, phaseSeconds, isIdle
-  plan.ts               gratuito x Pro (acesso liberado durante o teste)
-  analytics.ts          eventos de validação (no-op sem endpoint configurado)
+  plan.ts               gratuito x Pro (acesso liberado durante o teste), lista de interesse, contato
   *.test.ts
 store/
-  study-store.ts        estado, ações e persist
-  migrate.ts            leitura do localStorage e migração v1 → v2
+  study-store.ts        ações, persist e aviso de falha ao salvar
+  state.ts              tipo StudyData e estado vazio
+  migrate.ts            leitura do localStorage, migração v1 → v2 e backup
+  analytics.ts          eventos de uso: só com endpoint configurado e consentimento
   demo-data.ts
 ```
 
@@ -165,7 +166,11 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 
 **Gratuito e Pro**
 - Gratuito: tópicos, personalização, status, timer, sessões, revisões, progresso, meta semanal e Painel. Nunca bloqueie isso.
-- Pro experimental, R$ 19,90/mês: cronograma avançado, reorganização sugerida, estatísticas detalhadas. Sem provedor de pagamento e sem backend, tudo fica liberado durante o teste e a tela de planos diz isso com transparência. O acesso Pro nunca é decidido só pelo frontend em produção.
+- Pro experimental, R$ 19,90/mês: cronograma avançado, reorganização sugerida, estatísticas detalhadas. Sem provedor de pagamento e sem backend, tudo fica liberado durante o teste e a tela de planos diz isso com transparência. O acesso Pro nunca é decidido só pelo frontend em produção (`lib/plan.ts`).
+
+**Métricas de validação**
+- Eventos sem dado pessoal (`app_aberto`, `onboarding_concluido`, `onboarding_pulado`, `plano_gerado`, `sessao_registrada`, `revisao_concluida`, `pro_interesse`) com o dia e um código aleatório do navegador.
+- Só saem com `NEXT_PUBLIC_ANALYTICS_URL` configurada **e** consentimento ativado em Ajustes (desligado por padrão).
 
 ## Hidratação
 
