@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}</style>
+<title>ENEM Flow</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira:ital,wdth,wght@0,100..125,300..800;1,100..125,300..800&display=swap">
+<style>
+:root {
+  --bg: #f4f3ee; --surface: #ffffff; --hover: #efeee8; --line: #e3e2db;
+  --text: #0f1b2d; --text-2: #5b6475; --accent: #14213d; --accent-soft: #e4e8f0; --on-accent: #ffffff;
+  --success: #2e7d4f; --success-soft: #e3f1e8; --danger: #c42b3f; --bar: #dcdfe6;
+  --shadow: 0 1px 2px rgba(15, 27, 45, .06), 0 1px 3px rgba(15, 27, 45, .04);
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --display: "Saira", "Arial Black", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b111c; --surface: #131b2a; --hover: #1c2638; --line: #253047;
+    --text: #e8ebf1; --text-2: #9aa5b8; --accent: #dfe6f3; --accent-soft: #1f2b42; --on-accent: #0f1b2d;
+    --success: #6fcf97; --success-soft: #17301f; --danger: #ff7a8a; --bar: #253047;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b111c; --surface: #131b2a; --hover: #1c2638; --line: #253047;
+  --text: #e8ebf1; --text-2: #9aa5b8; --accent: #dfe6f3; --accent-soft: #1f2b42; --on-accent: #0f1b2d;
+  --success: #6fcf97; --success-soft: #17301f; --danger: #ff7a8a; --bar: #253047;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4); color-scheme: dark;
+}
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--text); font: 15px/1.45 var(--font); -webkit-font-smoothing: antialiased }
+h1, h2, h3, p { margin: 0 }
+h1 { font: 700 26px/1.2 var(--display); font-stretch: 112%; letter-spacing: -.01em }
+h2 { font: 600 17px/1.3 var(--display); font-stretch: 108% }
+button, input, select { font: inherit; color: inherit }
+button { cursor: pointer; background: none; border: 0; padding: 0 }
+button:disabled { opacity: .45; cursor: not-allowed }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+svg { flex: none }
+.num { font-variant-numeric: tabular-nums }
+.sub { color: var(--text-2); font-size: 13px }
+.late { color: var(--danger) }
+
+.sidebar { position: fixed; inset: 0 auto 0 0; width: 240px; display: flex; flex-direction: column; gap: 4px; padding: calc(20px + env(safe-area-inset-top, 0px)) 12px calc(16px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); background: var(--surface); border-right: 1px solid var(--line) }
+.brand { display: inline-grid; align-self: flex-start; padding: 4px 12px 24px; font-family: var(--display); font-style: italic; font-stretch: 125%; color: var(--text); line-height: 1 }
+.brand b { font-size: 30px; font-weight: 800; letter-spacing: -.01em }
+.brand span { justify-self: end; margin-top: 3px; margin-right: -.45em; font-size: 12px; font-weight: 300; letter-spacing: .45em }
+.nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; font-weight: 500; color: var(--text) }
+.nav-item:hover { background: var(--hover) }
+.nav-item[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 600 }
+.nav-item .count { margin-left: auto; font-size: 12px; font-weight: 600; background: var(--danger); color: #fff; border-radius: 999px; padding: 1px 7px }
+.nav-item .count:empty { display: none }
+.sidebar .theme { margin-top: auto; padding: 0 12px; display: grid; gap: 6px }
+
+.topbar, .tabbar { display: none }
+
+main {
+  margin-left: 240px; max-width: 1180px;
+  padding-left: max(32px, env(safe-area-inset-left, 0px)); padding-right: max(32px, env(safe-area-inset-right, 0px));
+  padding-block: calc(28px + env(safe-area-inset-top, 0px)) 48px;
+}
+.page { display: grid; gap: 20px }
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap }
+.page-head p { margin-top: 2px }
+
+.card { background: var(--surface); border-radius: 12px; box-shadow: var(--shadow); padding: 20px }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px }
+.card.flush { padding: 0; overflow: hidden }
+.card.flush .card-head { padding: 16px 20px 0; margin-bottom: 8px }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; padding: 0 16px; border-radius: 8px; font-weight: 600; font-size: 14px; background: var(--hover); color: var(--text) }
+.btn:hover:not(:disabled) { filter: brightness(.96) }
+.btn.primary { background: var(--accent); color: var(--on-accent) }
+.btn.lg { height: 44px; padding: 0 24px; font-size: 15px }
+.icon-btn { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: var(--text-2) }
+.icon-btn:hover:not(:disabled) { background: var(--hover) }
+.link { color: var(--accent); font-weight: 600; font-size: 14px; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px }
+.link:hover { text-decoration: underline }
+select, input[type="number"] { height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface) }
+
+.tabs { display: flex; gap: 6px; overflow-x: auto; max-width: 100% }
+.tabs button { height: 34px; padding: 0 14px; border-radius: 999px; font-size: 14px; font-weight: 600; white-space: nowrap; background: var(--surface); color: var(--text-2); box-shadow: var(--shadow) }
+.tabs button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); box-shadow: none }
+.segmented { display: flex; background: var(--hover); border-radius: 10px; padding: 3px }
+.segmented button { flex: 1; height: 32px; padding: 0 12px; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--text-2); white-space: nowrap }
+.segmented button[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow) }
+
+.progress { height: 8px; background: var(--bar); border-radius: 999px; overflow: hidden }
+.progress i { display: block; height: 100%; background: var(--accent); border-radius: 999px; transition: width .3s }
+.progress.thin { height: 4px }
+
+.pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; white-space: nowrap; background: var(--hover); color: var(--text-2) }
+.pill.and { background: var(--accent-soft); color: var(--accent) }
+.pill.concluido { background: var(--success-soft); color: var(--success) }
+
+.dash { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 20px; align-items: start }
+.side { display: grid; gap: 20px }
+.week-total { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap }
+.week-total strong { font: italic 800 48px/1 var(--display); font-stretch: 120%; letter-spacing: -.01em }
+.goal-edit { display: inline-flex; align-items: center; gap: 6px; color: var(--text-2) }
+.goal-edit input { width: 64px; height: 30px }
+.week-meta { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; flex-wrap: wrap }
+.chart { position: relative; display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; height: 210px; align-items: end; margin-top: 28px }
+.day { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 8px; height: 100% }
+.day .val { font-size: 12px; color: var(--text-2); height: 16px; line-height: 16px }
+.day .col { width: 100%; max-width: 44px; background: var(--bar); border-radius: 6px 6px 2px 2px; transition: height .3s }
+.day.hit .col { background: var(--accent) }
+.day .lbl { font-size: 13px; color: var(--text-2); height: 18px; line-height: 18px }
+.day.today .lbl { color: var(--text); font-weight: 700 }
+.goal-line { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--text-2); opacity: .7; pointer-events: none }
+.goal-line span { position: absolute; right: 0; bottom: 4px; font-size: 12px; color: var(--text-2); background: var(--surface); padding-left: 6px }
+.area-list { display: grid; gap: 14px }
+.area-list .row-top { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 6px }
+
+.list { list-style: none; margin: 0; padding: 0 }
+.item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 20px; text-align: left; border-top: 1px solid var(--line) }
+.list > li:first-child .item, .list > .item:first-child { border-top: 0 }
+button.item:hover { background: var(--hover) }
+.item .main { flex: 1; min-width: 0 }
+.item .title { font-weight: 500; overflow-wrap: anywhere }
+.item .end { display: flex; align-items: center; gap: 12px; flex: none }
+.compact .item { padding: 10px 0 }
+
+.matrix { display: grid; gap: 20px }
+.area-card .card-head { padding-bottom: 12px; margin: 0; border-bottom: 1px solid var(--line) }
+.area-card .card-head .progress { width: 120px }
+.area-head-right { display: flex; align-items: center; gap: 12px }
+.level { font-size: 13px; color: var(--text-2); width: 64px; text-align: right }
+
+.timer-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start }
+.timer-card { display: grid; gap: 24px; padding: 28px }
+.clock-wrap { text-align: center; display: grid; gap: 6px }
+.clock { font: italic 300 clamp(60px, 14vw, 92px)/1.05 var(--display); font-stretch: 120% }
+.field { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text-2) }
+.field select { width: 100%; height: 42px; color: var(--text); font-weight: 400; font-size: 15px }
+.settings { display: flex; gap: 12px; border: 0; margin: 0; padding: 0 }
+.settings label { flex: 1 }
+.settings input { width: 100% }
+.timer-actions { display: flex; gap: 8px }
+.timer-actions .btn { flex: 1 }
+.empty { padding: 32px 20px; text-align: center; color: var(--text-2) }
+.empty strong { display: block; color: var(--text); font-size: 16px; margin-bottom: 4px }
+
+.notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; background: var(--accent-soft); border-radius: 12px; padding: 12px 16px; font-size: 14px }
+
+.scrim { position: fixed; inset: 0; background: rgba(0, 0, 0, .35); z-index: 30 }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 100%); z-index: 31; background: var(--surface); box-shadow: -8px 0 24px rgba(0, 0, 0, .12); display: flex; flex-direction: column; padding: calc(16px + env(safe-area-inset-top, 0px)) max(24px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) 24px; overflow-y: auto }
+.drawer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 24px }
+.drawer-head h2 { font-size: 20px; margin-top: 4px }
+.drawer section { display: grid; gap: 10px; padding-block: 16px; border-top: 1px solid var(--line) }
+.drawer h3 { font-size: 13px; font-weight: 600; color: var(--text-2); margin: 0 }
+.drawer .btn.lg { margin-top: auto; width: 100% }
+.schedule { display: grid; gap: 8px; font-size: 14px }
+.schedule div { display: flex; justify-content: space-between; gap: 12px }
+
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 12px); max-width: calc(100% - 32px); background: #1c1e21; color: #fff; padding: 12px 18px; border-radius: 10px; font-size: 14px; font-weight: 500; box-shadow: 0 8px 24px rgba(0, 0, 0, .2); opacity: 0; transition: .2s; pointer-events: none; z-index: 40 }
+.toast.on { opacity: 1; transform: translate(-50%, 0) }
+
+@media (max-width: 1000px) {
+  .dash, .timer-layout { grid-template-columns: 1fr }
+}
+@media (max-width: 760px) {
+  .sidebar { display: none }
+  .topbar { display: flex; align-items: center; justify-content: space-between; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--surface); border-bottom: 1px solid var(--line); height: 52px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+  .topbar .brand { padding: 0 }
+  .topbar .brand b { font-size: 22px }
+  .topbar .brand span { font-size: 9px }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 25; background: var(--surface) }
+  .tabbar { display: grid; grid-template-columns: repeat(4, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)) }
+  .tabbar button { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; font-weight: 600; color: var(--text-2); padding: 4px 0; position: relative }
+  .tabbar button[aria-current="page"] { color: var(--accent) }
+  .tabbar .count { position: absolute; top: 0; left: calc(50% + 6px); font-size: 10px; background: var(--danger); color: #fff; border-radius: 999px; padding: 0 5px }
+  .tabbar .count:empty { display: none }
+  main { margin-left: 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px calc(84px + env(safe-area-inset-bottom, 0px)) }
+  .card { padding: 16px }
+  .card.flush .card-head { padding: 14px 16px 0 }
+  .item { padding: 12px 16px }
+  .area-card .card-head .progress { display: none }
+  .level { display: none }
+  .chart { gap: 6px }
+  .drawer { top: auto; max-height: 88%; width: 100%; border-radius: 16px 16px 0 0; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)) }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important } }
+</style>
+
+<aside class="sidebar">
+  <div class="brand" aria-label="ENEM Flow"><b>ENEM</b><span>FLOW</span></div>
+  <button class="nav-item" data-action="tab" data-tab="painel">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+    Painel
+  </button>
+  <button class="nav-item" data-action="tab" data-tab="matriz">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/></svg>
+    Matérias
+  </button>
+  <button class="nav-item" data-action="tab" data-tab="timer">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
+    Timer<span class="sub num timer-badge" style="margin-left:auto"></span>
+  </button>
+  <button class="nav-item" data-action="tab" data-tab="revisoes">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M9 15.5l2 2 4-4"/></svg>
+    Revisões<span class="count num review-count"></span>
+  </button>
+  <label class="theme sub" for="theme">Aparência
+    <select id="theme">
+      <option value="system">Automática</option>
+      <option value="light">Clara</option>
+      <option value="dark">Escura</option>
+    </select>
+  </label>
+</aside>
+
+<header class="topbar">
+  <div class="brand" aria-label="ENEM Flow"><b>ENEM</b><span>FLOW</span></div>
+  <button class="icon-btn" data-action="cycle-theme" aria-label="Alternar aparência">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg>
+  </button>
+</header>
+
+<main>
+  <div class="notice" id="demo" hidden>
+    <span>Você está vendo dados de exemplo.</span>
+    <button class="link" id="reset" data-action="reset">Apagar e começar do zero</button>
+  </div>
+
+  <div class="page" id="painel">
+    <div class="page-head">
+      <div><h1>Painel</h1><p class="sub" id="today"></p></div>
+    </div>
+    <div class="dash">
+      <div class="card">
+        <div class="card-head">
+          <h2 id="week-label">Esta semana</h2>
+          <div style="display:flex;align-items:center;gap:4px">
+            <span class="sub num" id="week-range"></span>
+            <button class="icon-btn" data-action="week" data-step="-1" aria-label="Semana anterior"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <button class="icon-btn" id="next-week" data-action="week" data-step="1" aria-label="Próxima semana"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
+          </div>
+        </div>
+        <div class="week-total">
+          <strong class="num" id="total">0</strong>
+          <span class="goal-edit">horas de <input id="goal" type="number" min="1" max="100" class="num" aria-label="Meta semanal em horas"> h</span>
+        </div>
+        <div class="progress" style="margin-top:14px"><i id="goal-meter"></i></div>
+        <div class="week-meta sub num"><span id="goal-pct"></span><span id="week-notes"></span></div>
+        <div class="chart" id="chart"></div>
+      </div>
+      <div class="side">
+        <div class="card">
+          <div class="card-head"><h2>Por área</h2></div>
+          <div class="area-list" id="by-area"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Próximas revisões</h2><button class="link" data-action="tab" data-tab="revisoes">Ver todas</button></div>
+          <ul class="list compact" id="upcoming"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="matriz" hidden>
+    <div class="page-head">
+      <div><h1>Matérias</h1><p class="sub" id="matrix-summary"></p></div>
+    </div>
+    <div class="tabs" id="area-filter"></div>
+    <div class="matrix" id="areas"></div>
+  </div>
+
+  <div class="page" id="timer" hidden>
+    <div class="page-head"><div><h1>Timer</h1><p class="sub">O tempo de foco entra sozinho no painel da semana.</p></div></div>
+    <div class="timer-layout">
+      <div class="card timer-card">
+        <div class="segmented">
+          <button data-action="mode" data-mode="pomodoro">Pomodoro</button>
+          <button data-action="mode" data-mode="cronometro">Cronômetro</button>
+        </div>
+        <div class="clock-wrap">
+          <span class="sub" id="phase">Foco</span>
+          <div class="clock num" id="clock">25:00</div>
+          <div class="progress thin" id="phase-meter"><i></i></div>
+        </div>
+        <label class="field" for="topic">O que você vai estudar<select id="topic"></select></label>
+        <fieldset class="settings" id="durations">
+          <label class="field">Foco (min)<input id="focus-min" type="number" min="1" max="120" class="num"></label>
+          <label class="field">Pausa (min)<input id="break-min" type="number" min="1" max="60" class="num"></label>
+        </fieldset>
+        <div class="timer-actions">
+          <button class="btn lg primary" id="toggle" data-action="toggle">Iniciar</button>
+          <button class="btn lg" id="finish" data-action="finish">Finalizar</button>
+          <button class="btn lg" id="skip" data-action="skip" hidden>Pular pausa</button>
+        </div>
+      </div>
+      <div class="card flush">
+        <div class="card-head"><h2>Hoje</h2><span class="sub num" id="today-total"></span></div>
+        <ul class="list" id="sessions"></ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="revisoes" hidden>
+    <div class="page-head"><div><h1>Revisões</h1><p class="sub">Agendadas para 1, 7, 15 e 30 dias depois de concluir um tópico.</p></div></div>
+    <div class="matrix" id="review-groups"></div>
+  </div>
+</main>
+
+<nav class="tabbar">
+  <button data-action="tab" data-tab="painel"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Painel</button>
+  <button data-action="tab" data-tab="matriz"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/></svg>Matérias</button>
+  <button data-action="tab" data-tab="timer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg><span class="timer-badge num">Timer</span></button>
+  <button data-action="tab" data-tab="revisoes"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M9 15.5l2 2 4-4"/></svg>Revisões<span class="count num review-count"></span></button>
+</nav>
+
+<div class="scrim" id="scrim" data-action="close" hidden></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden></aside>
+<div class="toast" id="toast" role="status"></div>
+
+<script type="module">
+const AREAS = [
+  { id: 'mat', name: 'Matemática', topics: ['Razão e proporção', 'Porcentagem e juros', 'Estatística: média, moda e mediana', 'Probabilidade', 'Geometria plana', 'Geometria espacial', 'Funções de 1º e 2º grau', 'Análise combinatória', 'Leitura de gráficos e tabelas', 'Escalas e unidades'] },
+  { id: 'lin', name: 'Linguagens', topics: ['Interpretação de texto', 'Gêneros textuais', 'Funções da linguagem', 'Figuras de linguagem', 'Variação linguística', 'Escolas literárias', 'Artes e vanguardas', 'Inglês ou espanhol'] },
+  { id: 'nat', name: 'Ciências da Natureza', topics: ['Ecologia', 'Genética', 'Citologia', 'Estequiometria', 'Química orgânica', 'Eletroquímica', 'Cinemática', 'Eletricidade', 'Ondulatória', 'Energia e trabalho'] },
+  { id: 'hum', name: 'Ciências Humanas', topics: ['Brasil Colônia', 'Era Vargas', 'Ditadura militar', 'Revolução Industrial', 'Filosofia antiga', 'Sociologia clássica', 'Geopolítica', 'Cartografia', 'Questões ambientais'] },
+  { id: 'red', name: 'Redação', topics: ['Estrutura dissertativo-argumentativa', 'Competência 1: norma culta', 'Competência 2: tema e repertório', 'Competência 3: argumentação', 'Competência 4: coesão', 'Competência 5: proposta de intervenção', 'Repertório sociocultural'] },
+];
+const TOPICS = new Map(AREAS.flatMap(area => area.topics.map((name, i) => [`${area.id}-${i}`, { name, area }])));
+const REVIEW_DAYS = [1, 7, 15, 30];
+const STATUSES = { nao: 'Não iniciado', and: 'Em andamento', concluido: 'Concluído' };
+const MASTERY = ['Sem avaliação', 'Muito fraco', 'Fraco', 'Razoável', 'Bom', 'Domina'];
+const WEEKDAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+const THEMES = ['system', 'light', 'dark'];
+const STORAGE_KEY = 'enem-flow:v1';
+
+const $ = sel => document.querySelector(sel);
+const $$ = sel => document.querySelectorAll(sel);
+const pad = n => String(n).padStart(2, '0');
+const toKey = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const fromKey = key => { const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (key, n) => { const d = fromKey(key); d.setDate(d.getDate() + n); return toKey(d); };
+const today = () => toKey(new Date());
+const mondayOf = key => addDays(key, -((fromKey(key).getDay() + 6) % 7));
+const shortDate = key => `${key.slice(8)}/${key.slice(5, 7)}`;
+const hours = sec => (sec / 3600).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+const duration = sec => {
+  const m = Math.round(sec / 60);
+  return m < 60 ? `${m} min` : `${Math.floor(m / 60)}h${m % 60 ? pad(m % 60) : ''}`;
+};
+const clockText = sec => {
+  const s = Math.max(0, sec), h = Math.floor(s / 3600), mm = pad(Math.floor(s % 3600 / 60)), ss = pad(s % 60);
+  return h ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+};
+const escapeHtml = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+const defaultTimer = () => ({ mode: 'pomodoro', focus: 25, brk: 5, phase: 'focus', running: false, startedAt: 0, banked: 0, topicId: '' });
+const emptyState = () => ({ version: 1, demo: false, progress: {}, sessions: [], goal: 25, theme: 'system', tab: 'painel', timer: defaultTimer() });
+
+function scheduleReviews(from, firstStage) {
+  return REVIEW_DAYS.slice(firstStage - 1).map((days, i) => ({ stage: firstStage + i, due: addDays(from, days) }));
+}
+
+function demoState() {
+  const state = { ...emptyState(), demo: true };
+  const now = today();
+  const conclude = (id, daysAgo, mastery, reviewsDone) => {
+    const completedAt = addDays(now, -daysAgo);
+    const reviews = scheduleReviews(completedAt, 1).map(r =>
+      (reviewsDone ?? Infinity) >= r.stage && r.due < now ? { ...r, done: r.due } : r);
+    state.progress[id] = { status: 'concluido', mastery, completedAt, reviews };
+  };
+  const studying = (id, mastery) => { state.progress[id] = { status: 'and', mastery, reviews: [] }; };
+
+  conclude('mat-0', 15, 5); conclude('mat-1', 7, 4); conclude('mat-8', 1, 3);
+  conclude('lin-0', 30, 4); conclude('lin-2', 1, 3); conclude('nat-0', 7, 3);
+  conclude('red-0', 7, 4); conclude('hum-1', 10, 4, 1);
+  studying('mat-3', 2); studying('mat-4', 2); studying('lin-3', 3); studying('nat-1', 2);
+  studying('nat-3', 1); studying('hum-2', 3); studying('red-5', 2);
+
+  const addSession = (topicId, date, min, hour) =>
+    state.sessions.push({ id: newId(), topicId, date, sec: min * 60, mode: 'pomodoro', ts: fromKey(date).getTime() + hour * 3600e3 });
+  const monday = mondayOf(now);
+  const week = [
+    [['mat-3', 95], ['lin-3', 50]],
+    [['nat-1', 80], ['red-5', 45], ['mat-4', 60]],
+    [['hum-2', 110], ['mat-3', 50]],
+    [['nat-3', 75], ['lin-3', 40]],
+    [['mat-4', 120], ['red-0', 50]],
+    [['hum-2', 90]],
+    [['nat-1', 60]],
+  ];
+  week.forEach((sessions, i) => {
+    const date = addDays(monday, i);
+    if (date < now) sessions.forEach(([id, min], j) => addSession(id, date, min, 9 + 3 * j));
+  });
+  [200, 150, 180, 90, 240, 60].forEach((min, i) => addSession(`mat-${i}`, addDays(monday, i - 7), min, 10));
+  addSession('mat-3', now, 50, 8);
+  return state;
+}
+
+function loadState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (saved?.version === 1) {
+      // A primeira versão do protótipo salvava o timer em outro formato.
+      const timer = 'banked' in (saved.timer ?? {}) ? saved.timer : { ...defaultTimer(), topicId: saved.timer?.topicId ?? '' };
+      return { ...emptyState(), ...saved, timer };
+    }
+  } catch {}
+  return demoState();
+}
+
+let state = loadState();
+let weekOffset = 0;
+let areaFilter = 'all';
+let openTopic = null;
+let confirmingReset = false;
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
+}
+
+function commit() {
+  save();
+  render();
+}
+
+function toast(message) {
+  const el = $('#toast');
+  el.textContent = message;
+  el.classList.add('on');
+  clearTimeout(toast.timeout);
+  toast.timeout = setTimeout(() => el.classList.remove('on'), 2600);
+}
+
+const progressOf = id => state.progress[id] ?? { status: 'nao', mastery: 0, reviews: [] };
+const nextReview = id => progressOf(id).reviews.find(r => !r.done);
+const sumSeconds = filter => state.sessions.filter(filter).reduce((total, s) => total + s.sec, 0);
+
+function pendingReviews() {
+  return [...TOPICS.keys()]
+    .map(id => ({ id, review: nextReview(id) }))
+    .filter(x => x.review)
+    .sort((a, b) => a.review.due.localeCompare(b.review.due));
+}
+
+function dueLabel(due) {
+  const now = today();
+  if (due < now) return `<span class="late">Atrasada desde ${shortDate(due)}</span>`;
+  if (due === now) return 'Hoje';
+  if (due === addDays(now, 1)) return 'Amanhã';
+  return shortDate(due);
+}
+
+function setStatus(id, status) {
+  const current = progressOf(id);
+  if (current.status === status) return;
+  const done = current.reviews.filter(r => r.done);
+  const concluded = status === 'concluido';
+  // Ao reconcluir um tópico, as revisões já feitas ficam e só as restantes são reagendadas a partir de hoje.
+  const reviews = concluded ? [...done, ...scheduleReviews(today(), done.length + 1)] : done;
+  state.progress[id] = { ...current, status, reviews, completedAt: concluded ? today() : undefined };
+  commit();
+  if (concluded && reviews.some(r => !r.done)) toast('Revisões agendadas para 1, 7, 15 e 30 dias.');
+}
+
+let audio;
+function unlockAudio() {
+  // Navegadores só liberam som depois de um clique, então o contexto nasce no botão Iniciar.
+  try { audio ??= new AudioContext(); audio.resume(); } catch {}
+}
+
+function chime() {
+  if (!audio) return;
+  [0, 0.25, 0.5].forEach(offset => {
+    const osc = audio.createOscillator(), gain = audio.createGain(), at = audio.currentTime + offset;
+    osc.frequency.value = 880;
+    osc.connect(gain).connect(audio.destination);
+    gain.gain.setValueAtTime(0.0001, at);
+    gain.gain.exponentialRampToValueAtTime(0.2, at + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.2);
+    osc.start(at);
+    osc.stop(at + 0.22);
+  });
+}
+
+const phaseSeconds = () => (state.timer.phase === 'focus' ? state.timer.focus : state.timer.brk) * 60;
+const elapsed = () => state.timer.banked + (state.timer.running ? (Date.now() - state.timer.startedAt) / 1000 : 0);
+const timerIdle = () => !state.timer.running && state.timer.banked === 0 && state.timer.phase === 'focus';
+
+function resetTimer() {
+  Object.assign(state.timer, { phase: 'focus', running: false, startedAt: 0, banked: 0 });
+}
+
+function recordSession(sec) {
+  const { topicId, mode } = state.timer;
+  if (sec < 60 || !topicId) return false;
+  state.sessions.push({ id: newId(), topicId, date: today(), sec: Math.round(sec), mode, ts: Date.now() });
+  if (progressOf(topicId).status === 'nao') state.progress[topicId] = { ...progressOf(topicId), status: 'and' };
+  return true;
+}
+
+function tick() {
+  const t = state.timer;
+  if (t.running && t.mode === 'pomodoro' && elapsed() >= phaseSeconds()) {
+    if (t.phase === 'focus') {
+      recordSession(phaseSeconds());
+      Object.assign(t, { phase: 'break', banked: 0, startedAt: Date.now() });
+      toast('Bloco de foco registrado. Pausa iniciada.');
+    } else {
+      resetTimer();
+      toast('Pausa encerrada.');
+    }
+    chime();
+    commit();
+  }
+  paintClock();
+}
+
+function paintClock() {
+  const t = state.timer;
+  const pomodoro = t.mode === 'pomodoro';
+  const text = clockText(pomodoro ? Math.ceil(phaseSeconds() - elapsed()) : Math.floor(elapsed()));
+  $('#clock').textContent = text;
+  $('#phase-meter i').style.width = pomodoro ? `${Math.min(100, elapsed() / phaseSeconds() * 100)}%` : '0';
+  $$('.timer-badge').forEach(el => { el.textContent = timerIdle() ? (el.closest('.tabbar') ? 'Timer' : '') : text; });
+  document.title = t.running ? `${text} · ENEM Flow` : 'ENEM Flow';
+}
+
+function renderPainel() {
+  const monday = addDays(mondayOf(today()), weekOffset * 7);
+  const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+  const perDay = days.map(date => sumSeconds(s => s.date === date));
+  const total = perDay.reduce((a, b) => a + b, 0);
+  const dailyGoal = state.goal * 3600 / 7;
+  const scale = Math.max(dailyGoal * 1.25, ...perDay);
+  const percent = Math.round(total / 3600 / state.goal * 100);
+
+  $('#today').textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  $('#week-label').textContent = weekOffset === 0 ? 'Esta semana' : 'Semana';
+  $('#week-range').textContent = `${shortDate(monday)} – ${shortDate(days[6])}`;
+  $('#next-week').disabled = weekOffset === 0;
+  $('#total').textContent = hours(total);
+  if (document.activeElement !== $('#goal')) $('#goal').value = state.goal;
+  $('#goal-meter').style.width = `${Math.min(100, percent)}%`;
+  $('#goal-pct').textContent = `${percent}% da meta`;
+
+  const studied = new Set(state.sessions.map(s => s.date));
+  let day = studied.has(today()) ? today() : addDays(today(), -1), streak = 0;
+  while (studied.has(day)) { streak++; day = addDays(day, -1); }
+  $('#week-notes').textContent = streak ? `${streak} ${streak === 1 ? 'dia seguido' : 'dias seguidos'} estudando` : '';
+
+  $('#chart').innerHTML = days.map((date, i) => `
+    <div class="day${perDay[i] >= dailyGoal ? ' hit' : ''}${date === today() ? ' today' : ''}">
+      <span class="val num">${perDay[i] ? hours(perDay[i]) + 'h' : ''}</span>
+      <div class="col" style="height:${perDay[i] / scale * 140}px"></div>
+      <span class="lbl">${WEEKDAYS[i]}</span>
+    </div>`).join('') +
+    `<div class="goal-line" style="bottom:${26 + dailyGoal / scale * 140}px"><span class="num">Meta diária ${hours(dailyGoal)}h</span></div>`;
+
+  const byArea = AREAS.map(area => ({
+    area,
+    sec: sumSeconds(s => s.date >= monday && s.date <= days[6] && TOPICS.get(s.topicId)?.area === area),
+  }));
+  const max = Math.max(1, ...byArea.map(x => x.sec));
+  $('#by-area').innerHTML = byArea.map(({ area, sec }) => `
+    <div>
+      <div class="row-top"><span>${area.name}</span><span class="sub num">${hours(sec)} h</span></div>
+      <div class="progress thin"><i style="width:${sec / max * 100}%"></i></div>
+    </div>`).join('');
+
+  const upcoming = pendingReviews().slice(0, 4);
+  $('#upcoming').innerHTML = upcoming.length ? upcoming.map(({ id, review }) => `
+    <li class="item">
+      <div class="main"><div class="title">${escapeHtml(TOPICS.get(id).name)}</div><div class="sub">${TOPICS.get(id).area.name}</div></div>
+      <span class="sub num">${dueLabel(review.due)}</span>
+    </li>`).join('') : '<li class="sub">Nenhuma revisão agendada.</li>';
+}
+
+function renderMatriz() {
+  const concluded = [...TOPICS.keys()].filter(id => progressOf(id).status === 'concluido').length;
+  $('#matrix-summary').textContent = `${concluded} de ${TOPICS.size} tópicos concluídos. Clique em um tópico para atualizar.`;
+  $('#area-filter').innerHTML = [{ id: 'all', name: 'Todas' }, ...AREAS].map(area =>
+    `<button data-action="filter" data-area="${area.id}" aria-pressed="${areaFilter === area.id}">${area.name}</button>`).join('');
+
+  $('#areas').innerHTML = AREAS.filter(area => areaFilter === 'all' || area.id === areaFilter).map(area => {
+    const ids = area.topics.map((_, i) => `${area.id}-${i}`);
+    const done = ids.filter(id => progressOf(id).status === 'concluido').length;
+    return `
+      <div class="card flush area-card">
+        <div class="card-head">
+          <h2>${area.name}</h2>
+          <div class="area-head-right">
+            <span class="sub num">${done}/${ids.length}</span>
+            <div class="progress thin"><i style="width:${done / ids.length * 100}%"></i></div>
+          </div>
+        </div>
+        <div class="list">${ids.map(id => {
+          const p = progressOf(id), review = nextReview(id);
+          return `
+          <button class="item" data-action="open" data-id="${id}">
+            <div class="main">
+              <div class="title">${escapeHtml(TOPICS.get(id).name)}</div>
+              ${review ? `<div class="sub">Revisão ${review.stage}: ${dueLabel(review.due)}</div>` : ''}
+            </div>
+            <div class="end">
+              <span class="level num">${p.mastery ? `Nível ${p.mastery}` : ''}</span>
+              <span class="pill ${p.status}">${STATUSES[p.status]}</span>
+            </div>
+          </button>`;
+        }).join('')}</div>
+      </div>`;
+  }).join('');
+}
+
+function renderDrawer() {
+  const open = openTopic !== null;
+  $('#drawer').hidden = $('#scrim').hidden = !open;
+  if (!open) return;
+  const { name, area } = TOPICS.get(openTopic);
+  const p = progressOf(openTopic), now = today();
+  const schedule = p.reviews.length ? `
+    <section>
+      <h3>Revisões</h3>
+      <div class="schedule num">${p.reviews.map(r => `
+        <div><span>Revisão ${r.stage} · ${REVIEW_DAYS[r.stage - 1]} ${r.stage === 1 ? 'dia' : 'dias'}</span>
+        <span class="sub">${r.done ? `Feita em ${shortDate(r.done)}` : r.due < now ? `<span class="late">Atrasada · ${shortDate(r.due)}</span>` : shortDate(r.due)}</span></div>`).join('')}
+      </div>
+    </section>` : '';
+
+  $('#drawer').innerHTML = `
+    <div class="drawer-head">
+      <div><span class="sub">${area.name}</span><h2 id="drawer-title">${escapeHtml(name)}</h2></div>
+      <button class="icon-btn" data-action="close" aria-label="Fechar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <section>
+      <h3>Status</h3>
+      <div class="segmented">${Object.entries(STATUSES).map(([status, label]) =>
+        `<button data-action="status" data-id="${openTopic}" data-status="${status}" aria-pressed="${p.status === status}">${label}</button>`).join('')}</div>
+      ${p.status === 'concluido' ? '' : '<p class="sub">Ao concluir, as revisões de 1, 7, 15 e 30 dias são agendadas automaticamente.</p>'}
+    </section>
+    <section>
+      <h3>Nível de domínio · ${MASTERY[p.mastery]}</h3>
+      <div class="segmented">${[1, 2, 3, 4, 5].map(level =>
+        `<button class="num" data-action="mastery" data-id="${openTopic}" data-level="${level}" aria-pressed="${p.mastery === level}" aria-label="${MASTERY[level]}">${level}</button>`).join('')}</div>
+    </section>
+    ${schedule}
+    <button class="btn lg primary" data-action="study" data-id="${openTopic}">Estudar no timer</button>`;
+}
+
+function renderTimer() {
+  const t = state.timer, idle = timerIdle();
+  $$('[data-action="mode"]').forEach(b => {
+    b.setAttribute('aria-pressed', b.dataset.mode === t.mode);
+    b.disabled = !idle;
+  });
+  $('#topic').value = t.topicId;
+  $('#topic').disabled = t.running;
+  $('#focus-min').value = t.focus;
+  $('#break-min').value = t.brk;
+  $('#durations').hidden = t.mode !== 'pomodoro';
+  $('#durations').disabled = !idle;
+  $('#phase-meter').style.visibility = t.mode === 'pomodoro' ? 'visible' : 'hidden';
+  $('#phase').textContent = t.mode === 'cronometro' ? 'Cronômetro' : t.phase === 'focus' ? 'Foco' : 'Pausa';
+  $('#toggle').textContent = t.running ? 'Pausar' : idle ? 'Iniciar' : 'Continuar';
+  $('#finish').hidden = t.phase === 'break';
+  $('#finish').disabled = idle;
+  $('#skip').hidden = t.phase !== 'break';
+
+  const sessions = state.sessions.filter(s => s.date === today()).sort((a, b) => b.ts - a.ts);
+  $('#today-total').textContent = sessions.length ? `${hours(sumSeconds(s => s.date === today()))} h no total` : '';
+  $('#sessions').innerHTML = sessions.length ? sessions.map(s => {
+    const { name, area } = TOPICS.get(s.topicId);
+    const at = new Date(s.ts);
+    return `
+      <li class="item">
+        <div class="main"><div class="title">${escapeHtml(name)}</div><div class="sub num">${area.name} · ${pad(at.getHours())}:${pad(at.getMinutes())}</div></div>
+        <div class="end">
+          <span class="num">${duration(s.sec)}</span>
+          <button class="icon-btn" data-action="delete-session" data-id="${s.id}" aria-label="Excluir sessão de ${escapeHtml(name)}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
+        </div>
+      </li>`;
+  }).join('') : '<li class="empty"><strong>Nenhuma sessão hoje</strong>Escolha um tópico e inicie o timer.</li>';
+  paintClock();
+}
+
+function renderRevisoes() {
+  const now = today(), all = pendingReviews();
+  const groups = [
+    ['Atrasadas', all.filter(x => x.review.due < now)],
+    ['Hoje', all.filter(x => x.review.due === now)],
+    ['Próximos 7 dias', all.filter(x => x.review.due > now && x.review.due <= addDays(now, 7))],
+  ];
+  const dueCount = groups[0][1].length + groups[1][1].length;
+  $$('.review-count').forEach(el => { el.textContent = dueCount || ''; });
+
+  const empty = dueCount ? '' : `
+    <div class="card empty"><strong>Tudo em dia</strong>Nenhuma revisão para hoje.</div>`;
+  $('#review-groups').innerHTML = empty + groups.filter(([, list]) => list.length).map(([title, list]) => `
+    <div class="card flush">
+      <div class="card-head"><h2>${title}</h2><span class="sub num">${list.length}</span></div>
+      <ul class="list">${list.map(({ id, review }) => {
+        const { name, area } = TOPICS.get(id);
+        return `
+        <li class="item">
+          <div class="main">
+            <div class="title">${escapeHtml(name)}</div>
+            <div class="sub num">${area.name} · Revisão ${review.stage} de 4 · ${dueLabel(review.due)}</div>
+          </div>
+          ${review.due <= now ? `
+          <div class="end">
+            <button class="btn" data-action="study" data-id="${id}">Estudar</button>
+            <button class="btn primary" data-action="review-done" data-id="${id}">Concluir</button>
+          </div>` : ''}
+        </li>`;
+      }).join('')}</ul>
+    </div>`).join('');
+}
+
+function render() {
+  if (state.theme === 'system') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.dataset.theme = state.theme;
+  $('#theme').value = state.theme;
+  $('#demo').hidden = !state.demo;
+  $$('[data-action="tab"]').forEach(b => {
+    if (b.closest('.sidebar, .tabbar')) b.setAttribute('aria-current', b.dataset.tab === state.tab ? 'page' : 'false');
+  });
+  ['painel', 'matriz', 'timer', 'revisoes'].forEach(id => { $(`#${id}`).hidden = id !== state.tab; });
+  renderPainel();
+  renderMatriz();
+  renderTimer();
+  renderRevisoes();
+  renderDrawer();
+}
+
+const actions = {
+  tab: ({ tab }) => { state.tab = tab; commit(); window.scrollTo(0, 0); },
+  week: ({ step }) => { weekOffset = Math.min(0, weekOffset + Number(step)); renderPainel(); },
+  filter: ({ area }) => { areaFilter = area; renderMatriz(); },
+  open: ({ id }) => { openTopic = id; renderDrawer(); $('#drawer .icon-btn').focus(); },
+  close: () => { openTopic = null; renderDrawer(); },
+  status: ({ id, status }) => setStatus(id, status),
+  mastery: ({ id, level }) => {
+    const p = progressOf(id);
+    state.progress[id] = { ...p, mastery: p.mastery === Number(level) ? 0 : Number(level) };
+    commit();
+  },
+  'cycle-theme': () => { state.theme = THEMES[(THEMES.indexOf(state.theme) + 1) % THEMES.length]; commit(); },
+  mode: ({ mode }) => { state.timer.mode = mode; resetTimer(); commit(); },
+  toggle: () => {
+    const t = state.timer;
+    if (t.running) {
+      Object.assign(t, { banked: elapsed(), running: false });
+    } else if (!t.topicId) {
+      toast('Escolha o que você vai estudar.');
+      $('#topic').focus();
+      return;
+    } else {
+      unlockAudio();
+      Object.assign(t, { running: true, startedAt: Date.now() });
+    }
+    commit();
+  },
+  finish: () => {
+    const sec = elapsed();
+    const recorded = recordSession(sec);
+    resetTimer();
+    commit();
+    toast(recorded ? `Sessão de ${duration(sec)} registrada.` : 'Sessões com menos de 1 minuto não são registradas.');
+  },
+  skip: () => { resetTimer(); commit(); },
+  'delete-session': ({ id }) => {
+    state.sessions = state.sessions.filter(s => s.id !== id);
+    commit();
+    toast('Sessão excluída.');
+  },
+  'review-done': ({ id }) => {
+    nextReview(id).done = today();
+    commit();
+    toast(nextReview(id) ? 'Revisão concluída.' : 'Ciclo de revisões completo.');
+  },
+  study: ({ id }) => {
+    if (state.timer.running) return toast('Finalize a sessão em andamento primeiro.');
+    openTopic = null;
+    state.timer.topicId = id;
+    state.tab = 'timer';
+    commit();
+  },
+  reset: () => {
+    if (!confirmingReset) {
+      confirmingReset = true;
+      $('#reset').textContent = 'Clique de novo para confirmar';
+      setTimeout(() => { confirmingReset = false; $('#reset').textContent = 'Apagar e começar do zero'; }, 4000);
+      return;
+    }
+    confirmingReset = false;
+    state = { ...emptyState(), theme: state.theme, tab: 'matriz' };
+    commit();
+    toast('Dados apagados.');
+  },
+};
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-action]');
+  if (el && !el.disabled) actions[el.dataset.action](el.dataset);
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && openTopic) actions.close();
+});
+
+document.addEventListener('change', ({ target }) => {
+  const clamp = (min, max, fallback) => Math.min(max, Math.max(min, Number(target.value) || fallback));
+  switch (target.id) {
+    case 'theme': state.theme = target.value; break;
+    case 'goal': state.goal = clamp(1, 100, state.goal); break;
+    case 'topic': state.timer.topicId = target.value; break;
+    case 'focus-min': state.timer.focus = clamp(1, 120, 25); break;
+    case 'break-min': state.timer.brk = clamp(1, 60, 5); break;
+    default: return;
+  }
+  commit();
+});
+
+$('#topic').innerHTML = '<option value="">Escolha um tópico</option>' + AREAS.map(area =>
+  `<optgroup label="${area.name}">${area.topics.map((name, i) => `<option value="${area.id}-${i}">${escapeHtml(name)}</option>`).join('')}</optgroup>`).join('');
+
+render();
+setInterval(tick, 250);
+</script>
