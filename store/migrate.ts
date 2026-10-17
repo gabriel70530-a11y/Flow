@@ -110,3 +110,12 @@ export function loadData({ current, legacy }: StoredRaw, today: string): LoadRes
   }
   return { data: { ...emptyData(), demo: true, ...createDemoData(today) }, corrupt: false };
 }
+
+// Lê um backup exportado pelo app (v2) ou os dados do protótipo (v1). Devolve null se o arquivo não servir.
+export function parseBackup(raw: string): StudyData | null {
+  const saved = parseJson(raw);
+  if (!isRecord(saved)) return null;
+  if (saved.version === 2) return normalize(saved);
+  if (saved.version === 1) return migrateV1(saved);
+  return null;
+}

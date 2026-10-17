@@ -1,6 +1,7 @@
 "use client";
 
-import { Contrast } from "lucide-react";
+import { Contrast, Settings } from "lucide-react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, type ReactNode } from "react";
 import { toDateKey } from "@/lib/dates";
@@ -57,9 +58,19 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <header className="sticky top-[env(safe-area-inset-top,0px)] z-20 flex h-[52px] items-center justify-between border-b border-line bg-surface pr-[max(16px,env(safe-area-inset-right,0px))] pl-[max(16px,env(safe-area-inset-left,0px))] md:hidden">
         <Wordmark compact />
-        <IconButton onClick={cycleTheme} aria-label="Alternar aparência">
-          <Contrast size={20} aria-hidden />
-        </IconButton>
+        <div className="flex items-center gap-1">
+          <Link
+            href="/ajustes"
+            aria-label="Ajustes"
+            aria-current={pathname.startsWith("/ajustes") ? "page" : undefined}
+            className="grid size-9 place-items-center rounded-full text-muted hover:bg-hover aria-[current=page]:text-accent"
+          >
+            <Settings size={20} aria-hidden />
+          </Link>
+          <IconButton onClick={cycleTheme} aria-label="Alternar aparência" className="size-9">
+            <Contrast size={20} aria-hidden />
+          </IconButton>
+        </div>
       </header>
 
       <main className="max-w-[1180px] pt-5 pr-[max(16px,env(safe-area-inset-right,0px))] pb-[calc(84px+env(safe-area-inset-bottom,0px))] pl-[max(16px,env(safe-area-inset-left,0px))] md:ml-60 md:pt-[calc(28px+env(safe-area-inset-top,0px))] md:pr-[max(32px,env(safe-area-inset-right,0px))] md:pb-12 md:pl-[max(32px,env(safe-area-inset-left,0px))]">

@@ -27,7 +27,7 @@ import {
   type TopicStatus,
 } from "@/lib/reviews";
 import { NOTE_MAX, createSession, type Reflection, type SessionState, type StudySession } from "@/lib/sessions";
-import type { GoalType, WeeklyGoal } from "@/lib/stats";
+import { GOAL_LIMITS, type WeeklyGoal } from "@/lib/stats";
 import {
   elapsed,
   isIdle,
@@ -50,7 +50,7 @@ import {
   validateTopic,
   type TopicInput,
 } from "@/lib/topics";
-import { loadData } from "./migrate";
+import { loadData, parseBackup } from "./migrate";
 import { emptyData, type OnboardingState, type StudyData, type Theme } from "./state";
 import { CORRUPT_STORAGE_KEY, LEGACY_STORAGE_KEY, STORAGE_KEY } from "./storage-key";
 
@@ -106,15 +106,11 @@ interface StudyActions {
   removeTask: (taskId: string) => void;
 
   resetData: () => void;
+  exportBackup: () => string;
+  importBackup: (raw: string) => string | null;
 }
 
 type StudyStore = StudyData & StudyActions;
-
-const GOAL_LIMITS: Record<GoalType, { max: number; fallback: number }> = {
-  horas: { max: 100, fallback: 25 },
-  sessoes: { max: 100, fallback: 20 },
-  topicos: { max: 50, fallback: 5 },
-};
 
 // Avisa a interface quando o navegador recusa a gravação (cota cheia, modo privado, armazenamento bloqueado).
 export const useSaveStatus = create<{ failed: boolean }>(() => ({ failed: false }));
@@ -185,6 +181,24 @@ function recordSession(data: StudyData, seconds: number, state: SessionState, no
       : data.progress;
   const tasks = session.taskId ? applyFocusToTask(data.tasks, session.taskId, session.sec) : data.tasks;
   return { session, changes: { sessions: [...data.sessions, session], progress, tasks } };
+}
+
+function toStudyData(state: StudyData): StudyData {
+  return {
+    version: state.version,
+    demo: state.demo,
+    topics: state.topics,
+    progress: state.progress,
+    sessions: state.sessions,
+    tasks: state.tasks,
+    goal: state.goal,
+    planner: state.planner,
+    onboarding: state.onboarding,
+    theme: state.theme,
+    sound: state.sound,
+    showStreak: state.showStreak,
+    timer: state.timer,
+  };
 }
 
 export const useStudyStore = create<StudyStore>()(
@@ -403,6 +417,15 @@ export const useStudyStore = create<StudyStore>()(
           });
         },
 
+        exportBackup: () => JSON.stringify(toStudyData(get()), null, 2),
+
+        importBackup: (raw) => {
+          const data = parseBackup(raw);
+          if (!data) return "Este arquivo não parece um backup do ENEM Flow.";
+          set({ ...data, demo: false, timer: resetTimer(data.timer) });
+          return null;
+        },
+
         resetData: () => set({ ...emptyData(), theme: get().theme, sound: get().sound, showStreak: get().showStreak }),
       };
     },
@@ -410,21 +433,7 @@ export const useStudyStore = create<StudyStore>()(
       name: STORAGE_KEY,
       version: 2,
       storage: rawStorage,
-      partialize: (state): StudyData => ({
-        version: state.version,
-        demo: state.demo,
-        topics: state.topics,
-        progress: state.progress,
-        sessions: state.sessions,
-        tasks: state.tasks,
-        goal: state.goal,
-        planner: state.planner,
-        onboarding: state.onboarding,
-        theme: state.theme,
-        sound: state.sound,
-        showStreak: state.showStreak,
-        timer: state.timer,
-      }),
+      partialize: (state) => toStudyData(state),
     },
   ),
 );

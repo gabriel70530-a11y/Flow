@@ -7,6 +7,7 @@ import { addDays, mondayOf, toDateKey } from "@/lib/dates";
 import { useHydrated } from "@/store/study-store";
 import { AreaCard } from "./AreaCard";
 import { StudyTodayCard } from "./StudyTodayCard";
+import { SummaryCard } from "./SummaryCard";
 import { UpcomingReviews } from "./UpcomingReviews";
 import { WeekCard } from "./WeekCard";
 
@@ -38,12 +39,15 @@ export function PainelScreen() {
       <PageHeader title="Painel" subtitle={longDate.format(now)} />
       <StudyTodayCard today={today} />
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
-        <WeekCard
-          today={today}
-          monday={monday}
-          onPreviousWeek={() => setWeekOffset(weekOffset - 1)}
-          onNextWeek={weekOffset < 0 ? () => setWeekOffset(weekOffset + 1) : undefined}
-        />
+        <div className="grid gap-5">
+          <WeekCard
+            today={today}
+            monday={monday}
+            onPreviousWeek={() => setWeekOffset(weekOffset - 1)}
+            onNextWeek={weekOffset < 0 ? () => setWeekOffset(weekOffset + 1) : undefined}
+          />
+          <SummaryCard today={today} monday={monday} />
+        </div>
         <div className="grid gap-5">
           <AreaCard monday={monday} />
           <UpcomingReviews today={today} />

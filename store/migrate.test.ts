@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { loadData } from "./migrate";
+import { loadData, parseBackup } from "./migrate";
 import { emptyData } from "./state";
 
 const today = "2026-10-16";
@@ -69,5 +69,15 @@ describe("loadData", () => {
 
   it("starts from scratch when the old v1 data is unreadable", () => {
     expect(loadData({ current: null, legacy: "{oops" }, today)).toEqual({ data: emptyData(), corrupt: false });
+  });
+});
+
+describe("parseBackup", () => {
+  it("reads v2 backups and v1 prototype data, and refuses anything else", () => {
+    expect(parseBackup(JSON.stringify({ ...emptyData(), goal: { type: "sessoes", value: 8 } }))?.goal).toEqual({ type: "sessoes", value: 8 });
+    expect(parseBackup(JSON.stringify(prototypeData))?.sessions).toHaveLength(2);
+    expect(parseBackup("{oops")).toBeNull();
+    expect(parseBackup(JSON.stringify({ hello: "world" }))).toBeNull();
+    expect(parseBackup("[]")).toBeNull();
   });
 });

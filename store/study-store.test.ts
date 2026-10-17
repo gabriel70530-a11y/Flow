@@ -240,3 +240,22 @@ describe("plan", () => {
     expect(state().tasks[0].priority).toBe("media");
   });
 });
+
+describe("backup", () => {
+  it("exports and imports the data without the running timer", () => {
+    state().setTimerTopic("mat-2");
+    state().startTimer();
+    advance(600);
+    state().finishTimer();
+    state().startTimer();
+    const backup = state().exportBackup();
+    expect(JSON.parse(backup)).not.toHaveProperty("addTopic");
+
+    useStudyStore.setState(emptyData());
+    expect(state().importBackup("nope")).toMatch(/não parece/);
+    expect(state().importBackup(backup)).toBeNull();
+    expect(state().sessions).toHaveLength(1);
+    expect(state().timer.running).toBe(false);
+    expect(state().demo).toBe(false);
+  });
+});

@@ -1,12 +1,24 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
+import { linkStyles } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { inputStyles } from "@/components/ui/Field";
 import { IconButton } from "@/components/ui/IconButton";
 import { NumberInput } from "@/components/ui/NumberInput";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { shortDate } from "@/lib/dates";
-import { formatHours, secondsByDay, studyStreak, weekDays } from "@/lib/stats";
+import {
+  GOAL_LIMITS,
+  GOAL_UNITS,
+  formatHours,
+  goalProgress,
+  secondsByDay,
+  studyStreak,
+  weekDays,
+  type GoalType,
+} from "@/lib/stats";
 import { useStudyStore } from "@/store/study-store";
 
 const WEEKDAY_LABELS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
@@ -23,20 +35,26 @@ interface WeekCardProps {
 
 export function WeekCard({ today, monday, onPreviousWeek, onNextWeek }: WeekCardProps) {
   const sessions = useStudyStore((state) => state.sessions);
+  const progress = useStudyStore((state) => state.progress);
   const goal = useStudyStore((state) => state.goal);
+  const showStreak = useStudyStore((state) => state.showStreak);
   const setGoal = useStudyStore((state) => state.setGoal);
 
   const days = weekDays(monday);
   const perDay = secondsByDay(sessions, days);
   const total = perDay.reduce((sum, seconds) => sum + seconds, 0);
-  const dailyGoal = (goal.value * 3600) / 7;
-  const scale = Math.max(dailyGoal * 1.25, ...perDay);
-  const percent = Math.round((total / 3600 / goal.value) * 100);
+  const inHours = goal.type === "horas";
+  // A meta diária e a linha tracejada só existem quando a meta é em horas.
+  const dailyGoal = inHours ? (goal.value * 3600) / 7 : 0;
+  const scale = Math.max(dailyGoal * 1.25, ...perDay, 3600);
+  const { done, target } = goalProgress(goal, sessions, progress, days[0], days[6]);
+  const percent = Math.round((done / target) * 100);
   const streak = studyStreak(sessions, today);
+  const currentWeek = !onNextWeek;
 
   return (
     <Card>
-      <CardHeader title={onNextWeek ? "Semana" : "Esta semana"}>
+      <CardHeader title={currentWeek ? "Esta semana" : "Semana"}>
         <div className="flex items-center gap-1">
           <span className="text-[13px] text-muted tabular-nums">
             {shortDate(days[0])} – {shortDate(days[6])}
@@ -52,32 +70,63 @@ export function WeekCard({ today, monday, onPreviousWeek, onNextWeek }: WeekCard
 
       <div className="flex flex-wrap items-baseline gap-2">
         <strong className="font-heading text-5xl leading-none font-extrabold tracking-[-0.01em] font-stretch-120% italic tabular-nums">
-          {formatHours(total)}
+          {inHours ? formatHours(total) : done}
         </strong>
-        <span className="inline-flex items-center gap-1.5 text-muted">
-          horas de
+        <span className="inline-flex flex-wrap items-center gap-1.5 text-muted">
+          de
           <NumberInput
             value={goal.value}
             min={1}
-            max={100}
-            onCommit={(value) => setGoal({ type: "horas", value })}
-            aria-label="Meta semanal em horas"
+            max={GOAL_LIMITS[goal.type].max}
+            onCommit={(value) => setGoal({ type: goal.type, value })}
+            aria-label={`Meta semanal em ${GOAL_UNITS[goal.type].label}`}
             className="h-[30px] w-16"
           />
-          h
+          <select
+            value={goal.type}
+            onChange={(event) => {
+              const type = event.target.value as GoalType;
+              setGoal({ type, value: GOAL_LIMITS[type].fallback });
+            }}
+            aria-label="Unidade da meta semanal"
+            className={`${inputStyles} h-[30px] w-auto`}
+          >
+            {(Object.keys(GOAL_UNITS) as GoalType[]).map((type) => (
+              <option key={type} value={type}>
+                {GOAL_UNITS[type].label}
+              </option>
+            ))}
+          </select>
         </span>
       </div>
-      <ProgressBar value={percent / 100} label="Progresso da meta semanal" className="mt-3.5" />
+      <ProgressBar value={done / target} label="Progresso da meta semanal" className="mt-3.5" />
       <div className="mt-2 flex flex-wrap justify-between gap-3 text-[13px] text-muted tabular-nums">
         <span>{percent}% da meta</span>
-        {streak > 0 && (
+        {showStreak && streak > 0 && (
           <span>
             {streak} {streak === 1 ? "dia seguido" : "dias seguidos"} estudando
           </span>
         )}
       </div>
 
-      <div className="relative mt-7 grid h-[210px] grid-cols-7 items-end gap-1.5 md:gap-3">
+      {total === 0 && (
+        <p className="mt-4 text-sm text-muted">
+          {currentWeek ? "Nenhuma sessão registrada nesta semana ainda. " : "Nenhuma sessão registrada nesta semana. "}
+          {currentWeek && (
+            <>
+              Use o{" "}
+              <Link href="/timer" className={linkStyles}>
+                Timer
+              </Link>
+              : o tempo de foco entra aqui sozinho.
+            </>
+          )}
+        </p>
+      )}
+
+      <div className="relative mt-7 grid h-[210px] grid-cols-7 items-end gap-1.5 md:gap-3" role="img"
+        aria-label={`Horas estudadas por dia: ${days.map((date, index) => `${WEEKDAY_LABELS[index]} ${formatHours(perDay[index])} h`).join(", ")}`}
+      >
         {days.map((date, index) => {
           const seconds = perDay[index];
           return (
@@ -86,7 +135,7 @@ export function WeekCard({ today, monday, onPreviousWeek, onNextWeek }: WeekCard
                 {seconds > 0 && `${formatHours(seconds)}h`}
               </span>
               <div
-                className={`w-full max-w-11 rounded-t-md rounded-b-[2px] transition-[height] duration-300 ${seconds >= dailyGoal ? "bg-accent" : "bg-bar"}`}
+                className={`w-full max-w-11 rounded-t-md rounded-b-[2px] transition-[height] duration-300 ${inHours && seconds >= dailyGoal ? "bg-accent" : "bg-bar"}`}
                 style={{ height: (seconds / scale) * CHART_HEIGHT }}
               />
               <span
@@ -97,14 +146,16 @@ export function WeekCard({ today, monday, onPreviousWeek, onNextWeek }: WeekCard
             </div>
           );
         })}
-        <div
-          className="pointer-events-none absolute inset-x-0 border-t border-dashed border-muted opacity-70"
-          style={{ bottom: BAR_BASELINE + (dailyGoal / scale) * CHART_HEIGHT }}
-        >
-          <span className="absolute right-0 bottom-1 bg-surface pl-1.5 text-xs text-muted tabular-nums">
-            Meta diária {formatHours(dailyGoal)}h
-          </span>
-        </div>
+        {inHours && (
+          <div
+            className="pointer-events-none absolute inset-x-0 border-t border-dashed border-muted opacity-70"
+            style={{ bottom: BAR_BASELINE + (dailyGoal / scale) * CHART_HEIGHT }}
+          >
+            <span className="absolute right-0 bottom-1 bg-surface pl-1.5 text-xs text-muted tabular-nums">
+              Meta diária {formatHours(dailyGoal)}h
+            </span>
+          </div>
+        )}
       </div>
     </Card>
   );

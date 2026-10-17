@@ -1,3 +1,4 @@
+import { Settings } from "lucide-react";
 import Link from "next/link";
 import type { Theme } from "@/store/study-store";
 import { NAV_ITEMS } from "./nav-items";
@@ -39,7 +40,15 @@ export function Sidebar({ pathname, dueReviews, timerText, theme, onThemeChange 
           </Link>
         ))}
       </nav>
-      <div className="mt-auto">
+      <div className="mt-auto grid gap-3">
+        <Link
+          href="/ajustes"
+          aria-current={pathname.startsWith("/ajustes") ? "page" : undefined}
+          className="flex items-center gap-3 rounded-lg px-3 py-2.5 font-medium text-text hover:bg-hover aria-[current=page]:bg-accent-soft aria-[current=page]:font-semibold aria-[current=page]:text-accent"
+        >
+          <Settings size={22} strokeWidth={2} aria-hidden />
+          Ajustes
+        </Link>
         <ThemeSelect theme={theme} onChange={onThemeChange} />
       </div>
     </aside>
