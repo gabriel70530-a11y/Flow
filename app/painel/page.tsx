@@ -1,5 +1,5 @@
-import { PageHeader } from "@/components/ui/PageHeader";
+import { PainelScreen } from "@/components/painel/PainelScreen";
 
 export default function PainelPage() {
-  return <PageHeader title="Painel" subtitle="Resumo da sua semana de estudos." />;
+  return <PainelScreen />;
 }
