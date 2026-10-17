@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, dueLabel, mondayOf, shortDate, toDateKey } from "./dates";
+import { addDays, dayLabel, dueLabel, mondayOf, shortDate, toDateKey, weekdayIndex } from "./dates";
 
 describe("toDateKey", () => {
   it("uses the local date, not UTC", () => {
@@ -47,5 +47,14 @@ describe("dueLabel", () => {
     expect(dueLabel(today, today)).toBe("Hoje");
     expect(dueLabel("2026-10-17", today)).toBe("Amanhã");
     expect(dueLabel("2026-10-20", today)).toBe("20/10");
+  });
+});
+
+describe("dayLabel and weekdayIndex", () => {
+  it("names today, tomorrow and other days with weekday", () => {
+    expect(dayLabel("2026-10-16", "2026-10-16")).toBe("Hoje");
+    expect(dayLabel("2026-10-17", "2026-10-16")).toBe("Amanhã");
+    expect(dayLabel("2026-10-19", "2026-10-16")).toBe("seg 19/10");
+    expect(weekdayIndex("2026-10-18")).toBe(6);
   });
 });

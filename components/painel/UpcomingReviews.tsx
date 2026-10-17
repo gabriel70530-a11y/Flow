@@ -18,7 +18,7 @@ export function UpcomingReviews({ today }: { today: string }) {
   return (
     <Card>
       <CardHeader title="Próximas revisões">
-        <Link href="/revisoes" className={linkStyles}>
+        <Link href="/revisoes" className={`${linkStyles} shrink-0 whitespace-nowrap`}>
           Ver todas
         </Link>
       </CardHeader>

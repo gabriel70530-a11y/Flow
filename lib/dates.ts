@@ -40,3 +40,11 @@ export function dueLabel(due: string, today: string): string {
   if (due === addDays(today, 1)) return "Amanhã";
   return shortDate(due);
 }
+
+const WEEKDAY_SHORT = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"];
+
+export function dayLabel(date: string, today: string): string {
+  if (date === today) return "Hoje";
+  if (date === addDays(today, 1)) return "Amanhã";
+  return `${WEEKDAY_SHORT[weekdayIndex(date)]} ${shortDate(date)}`;
+}

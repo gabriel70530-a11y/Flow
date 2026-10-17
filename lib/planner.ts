@@ -22,7 +22,6 @@ export interface PlanTask {
 export interface PlannerSettings {
   availability: number[];
   sessionMinutes: number;
-  priorityAreas: AreaId[];
   difficultAreas: AreaId[];
   strongAreas: AreaId[];
   targetDate: string | null;
@@ -61,7 +60,6 @@ export interface TaskInput {
 export const DEFAULT_PLANNER: PlannerSettings = {
   availability: [120, 120, 120, 120, 120, 60, 0],
   sessionMinutes: 50,
-  priorityAreas: [],
   difficultAreas: [],
   strongAreas: [],
   targetDate: null,
@@ -114,8 +112,7 @@ export function regenerableTasks(tasks: readonly PlanTask[], today: string): Pla
 }
 
 function topicScore(topic: TopicRecord, status: TopicStatus, settings: PlannerSettings): number {
-  const focusAreas = new Set([...settings.priorityAreas, ...settings.difficultAreas]);
-  const areaBonus = focusAreas.has(topic.areaId) ? (settings.strategy === "prioridades" ? 15 : 5) : 0;
+  const areaBonus = settings.difficultAreas.includes(topic.areaId) ? (settings.strategy === "prioridades" ? 15 : 5) : 0;
   const strongPenalty = settings.strongAreas.includes(topic.areaId) ? 3 : 0;
   return (STATUS_SCORE[status] ?? 0) + PRIORITY_WEIGHT[topic.priority] * 6 + areaBonus - strongPenalty;
 }
