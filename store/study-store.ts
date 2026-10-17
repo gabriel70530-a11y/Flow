@@ -40,7 +40,7 @@ export interface StudyData {
   timer: TimerState;
 }
 
-export type TickResult = "focus-done" | "break-done" | null;
+type TickResult = "focus-done" | "break-done" | null;
 
 interface StudyActions {
   setStatus: (topicId: string, status: TopicStatus) => TopicProgress;
@@ -62,7 +62,7 @@ interface StudyActions {
   resetData: () => void;
 }
 
-export type StudyStore = StudyData & StudyActions;
+type StudyStore = StudyData & StudyActions;
 
 export function emptyData(): StudyData {
   return { version: 1, demo: false, progress: {}, sessions: [], goal: 25, theme: "system", timer: DEFAULT_TIMER };

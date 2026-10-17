@@ -1,6 +1,6 @@
 import { Book, CalendarCheck, LayoutDashboard, Timer, type LucideIcon } from "lucide-react";
 
-export interface NavItem {
+interface NavItem {
   href: "/painel" | "/materias" | "/timer" | "/revisoes";
   label: string;
   icon: LucideIcon;
