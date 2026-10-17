@@ -9,6 +9,8 @@ export interface TimerState {
   startedAt: number;
   banked: number;
   topicId: string;
+  sessionStart: number;
+  taskId: string;
 }
 
 export const DEFAULT_TIMER: TimerState = {
@@ -20,6 +22,8 @@ export const DEFAULT_TIMER: TimerState = {
   startedAt: 0,
   banked: 0,
   topicId: "",
+  sessionStart: 0,
+  taskId: "",
 };
 
 // O tempo vem do relógio, não de ticks, para continuar certo com a aba em segundo plano ou após recarregar.
@@ -47,7 +51,8 @@ export function isPhaseOver(timer: TimerState, now: number): boolean {
 }
 
 export function startTimer(timer: TimerState, now: number): TimerState {
-  return { ...timer, running: true, startedAt: now };
+  const sessionStart = timer.phase === "focus" && !timer.sessionStart ? now : timer.sessionStart;
+  return { ...timer, running: true, startedAt: now, sessionStart };
 }
 
 export function pauseTimer(timer: TimerState, now: number): TimerState {
@@ -55,11 +60,12 @@ export function pauseTimer(timer: TimerState, now: number): TimerState {
 }
 
 export function resetTimer(timer: TimerState): TimerState {
-  return { ...timer, phase: "focus", running: false, startedAt: 0, banked: 0 };
+  return { ...timer, phase: "focus", running: false, startedAt: 0, banked: 0, sessionStart: 0 };
 }
 
-export function nextPhase(timer: TimerState, now: number): TimerState {
-  if (timer.phase === "focus") return { ...timer, phase: "break", running: true, banked: 0, startedAt: now };
+// O fim de cada fase só oferece a próxima: o timer fica parado esperando o estudante.
+export function nextPhase(timer: TimerState): TimerState {
+  if (timer.phase === "focus") return { ...timer, phase: "break", running: false, banked: 0, startedAt: 0, sessionStart: 0 };
   return resetTimer(timer);
 }
 

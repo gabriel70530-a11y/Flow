@@ -6,12 +6,14 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { DueLabel } from "@/components/ui/DueLabel";
 import { ListRow } from "@/components/ui/ListRow";
 import { pendingReviews } from "@/lib/reviews";
-import { findTopic } from "@/lib/syllabus";
+import { findArea } from "@/lib/syllabus";
+import { findTopic } from "@/lib/topics";
 import { useStudyStore } from "@/store/study-store";
 
 export function UpcomingReviews({ today }: { today: string }) {
   const progress = useStudyStore((state) => state.progress);
-  const upcoming = pendingReviews(progress).slice(0, 4);
+  const topics = useStudyStore((state) => state.topics);
+  const upcoming = pendingReviews(progress, topics).slice(0, 4);
 
   return (
     <Card>
@@ -25,13 +27,13 @@ export function UpcomingReviews({ today }: { today: string }) {
           <li className="text-[13px] text-muted">Nenhuma revisão agendada.</li>
         ) : (
           upcoming.map(({ topicId, review }) => {
-            const topic = findTopic(topicId);
+            const topic = findTopic(topics, topicId);
             return (
               <ListRow
                 key={topicId}
                 compact
                 title={topic?.name}
-                subtitle={topic?.area.name}
+                subtitle={topic && findArea(topic.areaId).name}
                 end={
                   <span className="text-[13px] text-muted tabular-nums">
                     <DueLabel due={review.due} today={today} />

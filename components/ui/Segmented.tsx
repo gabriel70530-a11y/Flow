@@ -8,9 +8,10 @@ export interface SegmentedOption<Value> {
 
 interface SegmentedProps<Value> {
   options: SegmentedOption<Value>[];
-  value: Value;
+  value: Value | null;
   onChange: (value: Value) => void;
   disabled?: boolean;
+  wrap?: boolean;
   className?: string;
 }
 
@@ -19,10 +20,11 @@ export function Segmented<Value extends string | number>({
   value,
   onChange,
   disabled = false,
+  wrap = false,
   className = "",
 }: SegmentedProps<Value>) {
   return (
-    <div className={`flex rounded-[10px] bg-hover p-[3px] ${className}`}>
+    <div className={`${wrap ? "grid grid-cols-2 gap-[3px]" : "flex"} rounded-[10px] bg-hover p-[3px] ${className}`}>
       {options.map((option) => (
         <button
           key={option.value}

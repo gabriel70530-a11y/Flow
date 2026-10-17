@@ -1,15 +1,15 @@
 import { addDays } from "./dates";
-import { AREAS, findTopic, type AreaId } from "./syllabus";
-import type { TimerMode } from "./timer";
+import type { StudySession } from "./sessions";
+import { AREAS, type AreaId } from "./syllabus";
 
-export interface StudySession {
-  id: string;
-  topicId: string;
-  date: string;
-  sec: number;
-  mode: TimerMode;
-  ts: number;
+export type GoalType = "horas" | "sessoes" | "topicos";
+
+export interface WeeklyGoal {
+  type: GoalType;
+  value: number;
 }
+
+export const DEFAULT_GOAL: WeeklyGoal = { type: "horas", value: 25 };
 
 export function weekDays(monday: string): string[] {
   return Array.from({ length: 7 }, (_, index) => addDays(monday, index));
@@ -23,11 +23,12 @@ export function secondsByDay(sessions: StudySession[], days: string[]): number[]
   return days.map((date) => secondsOn(sessions, date));
 }
 
+// Usa a área gravada na sessão: renomear ou mudar um tópico de área não reescreve o histórico.
+// Sessões de "Estudo geral" não têm área e ficam fora desta soma.
 export function secondsByArea(sessions: StudySession[], from: string, to: string): Record<AreaId, number> {
   const totals = Object.fromEntries(AREAS.map((area) => [area.id, 0])) as Record<AreaId, number>;
   for (const session of sessions) {
-    const areaId = findTopic(session.topicId)?.area.id;
-    if (areaId && session.date >= from && session.date <= to) totals[areaId] += session.sec;
+    if (session.areaId && session.date >= from && session.date <= to) totals[session.areaId] += session.sec;
   }
   return totals;
 }

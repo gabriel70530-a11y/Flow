@@ -1,6 +1,7 @@
 import { addDays, fromDateKey, mondayOf } from "@/lib/dates";
 import { scheduleReviews, type Mastery, type ProgressMap } from "@/lib/reviews";
-import type { StudySession } from "@/lib/stats";
+import type { StudySession } from "@/lib/sessions";
+import type { AreaId } from "@/lib/syllabus";
 
 const currentWeek: [topicId: string, minutes: number][][] = [
   [["mat-3", 95], ["lin-3", 50]],
@@ -30,13 +31,17 @@ export function createDemoData(today: string): { progress: ProgressMap; sessions
     progress[topicId] = { status: "and", mastery, reviews: [] };
   };
   const addSession = (topicId: string, date: string, minutes: number, hour: number) => {
+    const start = fromDateKey(date).getTime() + hour * 3_600_000;
     sessions.push({
       id: `demo-${sessions.length}`,
       topicId,
+      areaId: topicId.split("-")[0] as AreaId,
       date,
+      start,
+      end: start + minutes * 60_000,
       sec: minutes * 60,
       mode: "pomodoro",
-      ts: fromDateKey(date).getTime() + hour * 3_600_000,
+      state: "concluida",
     });
   };
 

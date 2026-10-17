@@ -1,26 +1,21 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { useState } from "react";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { IconButton } from "@/components/ui/IconButton";
 import { ListRow } from "@/components/ui/ListRow";
-import { showToast } from "@/components/ui/Toast";
+import { REFLECTION_LABELS } from "@/lib/sessions";
 import { formatDuration, formatHours, secondsOn } from "@/lib/stats";
-import { findTopic } from "@/lib/syllabus";
+import { findArea } from "@/lib/syllabus";
 import { useStudyStore } from "@/store/study-store";
-
-const timeFormat = new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" });
+import { SessionDrawer } from "./SessionDrawer";
+import { sessionTitle, timeFormat } from "./session-format";
 
 export function TodaySessions({ today }: { today: string }) {
   const sessions = useStudyStore((state) => state.sessions);
-  const deleteSession = useStudyStore((state) => state.deleteSession);
-  const todaySessions = sessions.filter((session) => session.date === today).sort((first, second) => second.ts - first.ts);
-
-  const remove = (sessionId: string) => {
-    deleteSession(sessionId);
-    showToast("Sessão excluída.");
-  };
+  const topics = useStudyStore((state) => state.topics);
+  const [openSessionId, setOpenSessionId] = useState<string | null>(null);
+  const todaySessions = sessions.filter((session) => session.date === today).sort((first, second) => second.end - first.end);
 
   return (
     <Card flush>
@@ -30,34 +25,34 @@ export function TodaySessions({ today }: { today: string }) {
         )}
       </CardHeader>
       {todaySessions.length === 0 ? (
-        <EmptyState title="Nenhuma sessão hoje">Escolha um tópico e inicie o timer.</EmptyState>
+        <EmptyState title="Nenhuma sessão hoje">
+          Escolha um tópico ou &quot;Estudo geral&quot; e inicie o timer. Pausas não contam como estudo.
+        </EmptyState>
       ) : (
         <ul>
           {todaySessions.map((session) => {
-            const topic = findTopic(session.topicId);
-            const name = topic?.name ?? "Tópico removido";
+            const details = [
+              session.areaId ? findArea(session.areaId).name : "Sem área",
+              timeFormat.format(session.end),
+              session.state === "interrompida" ? "Interrompida" : null,
+              session.reflection ? REFLECTION_LABELS[session.reflection] : null,
+            ].filter(Boolean);
             return (
               <ListRow
                 key={session.id}
-                title={name}
-                subtitle={
-                  <span className="tabular-nums">
-                    {topic?.area.name} · {timeFormat.format(session.ts)}
-                  </span>
-                }
-                end={
-                  <>
-                    <span className="tabular-nums">{formatDuration(session.sec)}</span>
-                    <IconButton aria-label={`Excluir sessão de ${name}`} onClick={() => remove(session.id)}>
-                      <Trash2 size={18} aria-hidden />
-                    </IconButton>
-                  </>
-                }
+                onClick={() => setOpenSessionId(session.id)}
+                title={sessionTitle(session, topics)}
+                subtitle={<span className="tabular-nums">{details.join(" · ")}</span>}
+                end={<span className="tabular-nums">{formatDuration(session.sec)}</span>}
               />
             );
           })}
         </ul>
       )}
+      <SessionDrawer
+        session={sessions.find((session) => session.id === openSessionId)}
+        onClose={() => setOpenSessionId(null)}
+      />
     </Card>
   );
 }

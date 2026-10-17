@@ -6,9 +6,14 @@ import {
   groupReviews,
   nextReview,
   pendingReviews,
+  postponeNextReview,
+  rescheduleNextReview,
   scheduleReviews,
   type TopicProgress,
 } from "./reviews";
+import { defaultTopics, setTopicHidden } from "./topics";
+
+const topics = defaultTopics();
 
 const today = "2026-10-16";
 
@@ -107,7 +112,7 @@ describe("pendingReviews and groupReviews", () => {
   };
 
   it("lists the next pending review of each topic, sorted by due date", () => {
-    expect(pendingReviews(progress).map(({ topicId, review }) => [topicId, review.due])).toEqual([
+    expect(pendingReviews(progress, topics).map(({ topicId, review }) => [topicId, review.due])).toEqual([
       ["hum-0", "2026-09-02"],
       ["mat-0", "2026-10-11"],
       ["nat-0", "2026-10-13"],
@@ -117,14 +122,75 @@ describe("pendingReviews and groupReviews", () => {
 
   it("groups late, due today and the next 7 days", () => {
     const withUpcoming = { ...progress, "mat-1": changeStatus(EMPTY_PROGRESS, "concluido", "2026-10-22") };
-    const groups = groupReviews(pendingReviews(withUpcoming), today);
+    const groups = groupReviews(pendingReviews(withUpcoming, topics), today);
     expect(groups.late.map((item) => item.topicId)).toEqual(["hum-0", "mat-0", "nat-0"]);
     expect(groups.today.map((item) => item.topicId)).toEqual(["lin-0"]);
     expect(groups.upcoming.map((item) => item.topicId)).toEqual(["mat-1"]);
   });
 
-  it("leaves reviews more than 7 days ahead out of the upcoming group", () => {
+  it("puts reviews more than 7 days ahead in the later group", () => {
     const farAhead = { "mat-0": changeStatus(EMPTY_PROGRESS, "concluido", "2026-10-23") };
-    expect(groupReviews(pendingReviews(farAhead), today).upcoming).toEqual([]);
+    const groups = groupReviews(pendingReviews(farAhead, topics), today);
+    expect(groups.upcoming).toEqual([]);
+    expect(groups.later.map((item) => item.topicId)).toEqual(["mat-0"]);
+  });
+
+  it("keeps reviews of hidden topics stored but out of the list", () => {
+    const hidden = setTopicHidden(topics, "mat-0", true);
+    expect(pendingReviews(progress, hidden).map((item) => item.topicId)).not.toContain("mat-0");
+    expect(progress["mat-0"].reviews).toHaveLength(4);
+  });
+});
+
+describe("status changes", () => {
+  it("drops pending reviews when a concluded topic needs review again", () => {
+    const concluded = completeNextReview(changeStatus(EMPTY_PROGRESS, "concluido", "2026-10-01"), "2026-10-02");
+    const result = changeStatus(concluded, "revisar", today);
+    expect(result.status).toBe("revisar");
+    expect(result.reviews).toHaveLength(1);
+    expect(result.reviews[0].done).toBe("2026-10-02");
+  });
+});
+
+describe("feedback, postpone and reschedule", () => {
+  const concluded = changeStatus(EMPTY_PROGRESS, "concluido", "2026-10-10");
+
+  it("stores the optional feedback only on the completed review", () => {
+    const result = completeNextReview(concluded, today, "dificil");
+    expect(result.reviews[0]).toMatchObject({ done: today, feedback: "dificil" });
+    expect(result.reviews[1].feedback).toBeUndefined();
+  });
+
+  it("moves an overdue review to tomorrow and keeps the next stages", () => {
+    const result = postponeNextReview(concluded, today);
+    expect(result.reviews[0]).toMatchObject({
+      due: "2026-10-17",
+      reschedules: [{ from: "2026-10-11", to: "2026-10-17", at: today }],
+    });
+    expect(result.reviews.slice(1)).toEqual(concluded.reviews.slice(1));
+  });
+
+  it("moves a future review one day after its own date", () => {
+    const future = changeStatus(EMPTY_PROGRESS, "concluido", "2026-10-20");
+    expect(postponeNextReview(future, today).reviews[0].due).toBe("2026-10-22");
+  });
+
+  it("reschedules to a chosen date and keeps the whole history", () => {
+    const once = rescheduleNextReview(concluded, "2026-10-20", today);
+    const twice = rescheduleNextReview(once, "2026-10-25", "2026-10-18");
+    expect(twice.reviews[0].due).toBe("2026-10-25");
+    expect(twice.reviews[0].reschedules).toEqual([
+      { from: "2026-10-11", to: "2026-10-20", at: today },
+      { from: "2026-10-20", to: "2026-10-25", at: "2026-10-18" },
+    ]);
+  });
+
+  it("refuses dates in the past", () => {
+    expect(rescheduleNextReview(concluded, "2026-10-01", today)).toBe(concluded);
+  });
+
+  it("crosses year boundaries", () => {
+    const december = changeStatus(EMPTY_PROGRESS, "concluido", "2026-12-20");
+    expect(december.reviews.map((review) => review.due)).toEqual(["2026-12-21", "2026-12-27", "2027-01-04", "2027-01-19"]);
   });
 });

@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { toDateKey } from "@/lib/dates";
 import { useHydrated } from "@/store/study-store";
+import { ReflectionPrompt } from "./ReflectionPrompt";
 import { TimerCard } from "./TimerCard";
 import { TodaySessions } from "./TodaySessions";
 
@@ -17,7 +18,10 @@ export function TimerScreen() {
         {hydrated ? (
           <>
             <TimerCard />
-            <TodaySessions today={toDateKey(new Date())} />
+            <div className="grid gap-5">
+              <ReflectionPrompt />
+              <TodaySessions today={toDateKey(new Date())} />
+            </div>
           </>
         ) : (
           <>

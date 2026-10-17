@@ -2,18 +2,21 @@ import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { persist, type PersistStorage } from "zustand/middleware";
 import { toDateKey } from "@/lib/dates";
+import { applyFocusToTask } from "@/lib/planner";
 import {
   changeStatus,
   completeNextReview,
+  postponeNextReview,
   progressOf,
+  rescheduleNextReview,
   type Mastery,
-  type ProgressMap,
+  type ReviewFeedback,
   type TopicProgress,
   type TopicStatus,
 } from "@/lib/reviews";
-import type { StudySession } from "@/lib/stats";
+import { NOTE_MAX, createSession, type Reflection, type SessionState, type StudySession } from "@/lib/sessions";
+import type { GoalType, WeeklyGoal } from "@/lib/stats";
 import {
-  DEFAULT_TIMER,
   elapsed,
   isIdle,
   isPhaseOver,
@@ -25,90 +28,101 @@ import {
   type TimerMode,
   type TimerState,
 } from "@/lib/timer";
-import { createDemoData } from "./demo-data";
-import { STORAGE_KEY } from "./storage-key";
+import {
+  createTopic,
+  deleteTopic,
+  restoreDefaults,
+  setTopicHidden,
+  updateTopic,
+  validateTopic,
+  type TopicInput,
+} from "@/lib/topics";
+import { loadData } from "./migrate";
+import { emptyData, type StudyData, type Theme } from "./state";
+import { CORRUPT_STORAGE_KEY, LEGACY_STORAGE_KEY, STORAGE_KEY } from "./storage-key";
 
-export type Theme = "system" | "light" | "dark";
+export type { StudyData, Theme } from "./state";
 
-export interface StudyData {
-  version: 1;
-  demo: boolean;
-  progress: ProgressMap;
-  sessions: StudySession[];
-  goal: number;
-  theme: Theme;
-  timer: TimerState;
-}
-
-type TickResult = "focus-done" | "break-done" | null;
+type TickResult = { kind: "focus-done"; session: StudySession | null } | { kind: "break-done" } | null;
 
 interface StudyActions {
+  addTopic: (input: TopicInput) => { error: string } | { id: string };
+  editTopic: (id: string, input: TopicInput) => string | null;
+  setTopicHidden: (id: string, hidden: boolean) => void;
+  removeTopic: (id: string) => void;
+  restoreDefaultTopics: () => void;
+
   setStatus: (topicId: string, status: TopicStatus) => TopicProgress;
   toggleMastery: (topicId: string, level: Mastery) => void;
-  completeReview: (topicId: string) => TopicProgress;
-  setGoal: (hours: number) => void;
+
+  completeReview: (topicId: string, feedback?: ReviewFeedback) => TopicProgress;
+  setReviewFeedback: (topicId: string, stage: number, feedback: ReviewFeedback) => void;
+  postponeReview: (topicId: string) => void;
+  rescheduleReview: (topicId: string, date: string) => boolean;
+
+  setGoal: (goal: WeeklyGoal) => void;
   setTheme: (theme: Theme) => void;
+  setSound: (sound: boolean) => void;
+  setShowStreak: (showStreak: boolean) => void;
+
   setTimerMode: (mode: TimerMode) => void;
   setTimerTopic: (topicId: string) => void;
   setFocusMinutes: (minutes: number) => void;
   setBreakMinutes: (minutes: number) => void;
-  studyTopic: (topicId: string) => boolean;
+  studyTopic: (topicId: string, task?: { id: string; minutes: number }) => boolean;
   startTimer: () => boolean;
   pauseTimer: () => void;
-  finishTimer: () => number | null;
+  finishTimer: () => StudySession | null;
+  discardTimer: () => void;
   skipBreak: () => void;
   tick: () => TickResult;
+
   deleteSession: (sessionId: string) => void;
+  setSessionReflection: (sessionId: string, reflection: Reflection) => void;
+  setSessionNote: (sessionId: string, note: string) => void;
+
   resetData: () => void;
 }
 
 type StudyStore = StudyData & StudyActions;
 
-export function emptyData(): StudyData {
-  return { version: 1, demo: false, progress: {}, sessions: [], goal: 25, theme: "system", timer: DEFAULT_TIMER };
-}
+const GOAL_LIMITS: Record<GoalType, { max: number; fallback: number }> = {
+  horas: { max: 100, fallback: 25 },
+  sessoes: { max: 100, fallback: 20 },
+  topicos: { max: 50, fallback: 5 },
+};
 
-export function parseSavedData(raw: string | null, today: string): StudyData {
-  if (raw === null) return { ...emptyData(), demo: true, ...createDemoData(today) };
+// Avisa a interface quando o navegador recusa a gravação (cota cheia, modo privado, armazenamento bloqueado).
+export const useSaveStatus = create<{ failed: boolean }>(() => ({ failed: false }));
+
+function readItem(key: string): string | null {
   try {
-    const saved = JSON.parse(raw);
-    if (saved?.version !== 1) return emptyData();
-    // A primeira versão do protótipo salvava o timer em outro formato.
-    const timer: TimerState =
-      saved.timer && "banked" in saved.timer
-        ? { ...DEFAULT_TIMER, ...saved.timer }
-        : { ...DEFAULT_TIMER, topicId: saved.timer?.topicId ?? "" };
-    return {
-      version: 1,
-      demo: Boolean(saved.demo),
-      progress: saved.progress ?? {},
-      sessions: saved.sessions ?? [],
-      goal: saved.goal ?? 25,
-      theme: saved.theme ?? "system",
-      timer,
-    };
+    return localStorage.getItem(key);
   } catch {
-    return emptyData();
+    return null;
   }
 }
 
-// Grava o estado cru, sem o envelope do persist, para manter o formato do protótipo.
-// Se o localStorage falhar (modo privado, cota), a app segue só em memória.
+function writeItem(key: string, value: string): boolean {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Grava o estado cru, sem o envelope do persist. Lê a v2 e, se ela não existir, migra da v1 do protótipo.
 const rawStorage: PersistStorage<StudyData> = {
   getItem: (name) => {
     if (typeof window === "undefined") return null;
-    let raw: string | null;
-    try {
-      raw = localStorage.getItem(name);
-    } catch {
-      return { state: emptyData(), version: 1 };
-    }
-    return { state: parseSavedData(raw, toDateKey(new Date())), version: 1 };
+    const current = readItem(name);
+    const { data, corrupt } = loadData({ current, legacy: readItem(LEGACY_STORAGE_KEY) }, toDateKey(new Date()));
+    if (corrupt && current !== null) writeItem(CORRUPT_STORAGE_KEY, current);
+    return { state: data, version: 2 };
   },
   setItem: (name, value) => {
-    try {
-      localStorage.setItem(name, JSON.stringify(value.state));
-    } catch {}
+    useSaveStatus.setState({ failed: !writeItem(name, JSON.stringify(value.state)) });
   },
   removeItem: (name) => {
     try {
@@ -117,28 +131,36 @@ const rawStorage: PersistStorage<StudyData> = {
   },
 };
 
-function newId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+function newId(prefix = ""): string {
+  return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
 
 function clamp(value: number, min: number, max: number, fallback: number): number {
   return Number.isFinite(value) && value > 0 ? Math.min(max, Math.max(min, Math.round(value))) : fallback;
 }
 
-function withSession(data: StudyData, seconds: number, now: number): Pick<StudyData, "sessions" | "progress"> {
-  const { topicId, mode } = data.timer;
-  const session: StudySession = {
+// Grava a sessão, passa "Não iniciado" para "Em andamento" e soma o foco na tarefa ativa do cronograma.
+function recordSession(data: StudyData, seconds: number, state: SessionState, now: number) {
+  const { timer } = data;
+  const session = createSession({
     id: newId(),
-    topicId,
-    date: toDateKey(new Date(now)),
-    sec: Math.round(seconds),
-    mode,
-    ts: now,
-  };
-  const current = progressOf(data.progress, topicId);
+    topicId: timer.topicId,
+    topics: data.topics,
+    mode: timer.mode,
+    state,
+    seconds,
+    start: timer.sessionStart,
+    end: now,
+    taskId: timer.taskId || undefined,
+  });
+  if (!session) return { session: null, changes: {} };
+  const current = session.topicId ? progressOf(data.progress, session.topicId) : null;
   const progress =
-    current.status === "nao" ? { ...data.progress, [topicId]: { ...current, status: "and" as const } } : data.progress;
-  return { sessions: [...data.sessions, session], progress };
+    session.topicId && current?.status === "nao"
+      ? { ...data.progress, [session.topicId]: { ...current, status: "and" as const } }
+      : data.progress;
+  const tasks = session.taskId ? applyFocusToTask(data.tasks, session.taskId, session.sec) : data.tasks;
+  return { session, changes: { sessions: [...data.sessions, session], progress, tasks } };
 }
 
 export const useStudyStore = create<StudyStore>()(
@@ -148,61 +170,122 @@ export const useStudyStore = create<StudyStore>()(
       const updateIdleTimer = (changes: Partial<TimerState>) => {
         if (isIdle(get().timer)) updateTimer(changes);
       };
+      const updateProgress = (topicId: string, change: (progress: TopicProgress) => TopicProgress) => {
+        const updated = change(progressOf(get().progress, topicId));
+        set({ progress: { ...get().progress, [topicId]: updated } });
+        return updated;
+      };
+      const updateSession = (sessionId: string, changes: Partial<StudySession>) =>
+        set({ sessions: get().sessions.map((session) => (session.id === sessionId ? { ...session, ...changes } : session)) });
+      const today = () => toDateKey(new Date());
 
       return {
         ...emptyData(),
 
-        setStatus: (topicId, status) => {
-          const updated = changeStatus(progressOf(get().progress, topicId), status, toDateKey(new Date()));
-          set({ progress: { ...get().progress, [topicId]: updated } });
-          return updated;
+        addTopic: (input) => {
+          const error = validateTopic(input, get().topics);
+          if (error) return { error };
+          const id = newId("custom-");
+          set({ topics: createTopic(get().topics, input, id) });
+          return { id };
         },
 
-        toggleMastery: (topicId, level) => {
-          const current = progressOf(get().progress, topicId);
-          const mastery = current.mastery === level ? 0 : level;
-          set({ progress: { ...get().progress, [topicId]: { ...current, mastery } } });
+        editTopic: (id, input) => {
+          const error = validateTopic(input, get().topics, id);
+          if (!error) set({ topics: updateTopic(get().topics, id, input) });
+          return error;
         },
 
-        completeReview: (topicId) => {
-          const updated = completeNextReview(progressOf(get().progress, topicId), toDateKey(new Date()));
-          set({ progress: { ...get().progress, [topicId]: updated } });
-          return updated;
+        setTopicHidden: (id, hidden) => set({ topics: setTopicHidden(get().topics, id, hidden) }),
+
+        // Sessões ficam no histórico; somem o progresso e as tarefas ainda não feitas do tópico.
+        removeTopic: (id) => {
+          const { topics, progress, tasks } = get();
+          const remaining = deleteTopic(topics, id);
+          if (remaining.length === topics.length) return;
+          set({
+            topics: remaining,
+            progress: Object.fromEntries(Object.entries(progress).filter(([topicId]) => topicId !== id)),
+            tasks: tasks.filter((task) => task.topicId !== id || task.status === "concluida"),
+          });
         },
 
-        setGoal: (hours) => set({ goal: clamp(hours, 1, 100, get().goal) }),
+        restoreDefaultTopics: () => set({ topics: restoreDefaults(get().topics) }),
+
+        setStatus: (topicId, status) => updateProgress(topicId, (current) => changeStatus(current, status, today())),
+
+        toggleMastery: (topicId, level) =>
+          updateProgress(topicId, (current) => ({ ...current, mastery: current.mastery === level ? 0 : level })),
+
+        completeReview: (topicId, feedback) =>
+          updateProgress(topicId, (current) => completeNextReview(current, today(), feedback)),
+
+        setReviewFeedback: (topicId, stage, feedback) =>
+          updateProgress(topicId, (current) => ({
+            ...current,
+            reviews: current.reviews.map((review) => (review.stage === stage && review.done ? { ...review, feedback } : review)),
+          })),
+
+        postponeReview: (topicId) => updateProgress(topicId, (current) => postponeNextReview(current, today())),
+
+        rescheduleReview: (topicId, date) => {
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date < today()) return false;
+          updateProgress(topicId, (current) => rescheduleNextReview(current, date, today()));
+          return true;
+        },
+
+        setGoal: ({ type, value }) =>
+          set({ goal: { type, value: clamp(value, 1, GOAL_LIMITS[type].max, GOAL_LIMITS[type].fallback) } }),
         setTheme: (theme) => set({ theme }),
+        setSound: (sound) => set({ sound }),
+        setShowStreak: (showStreak) => set({ showStreak }),
 
         setTimerMode: (mode) => updateIdleTimer({ mode }),
         setTimerTopic: (topicId) => {
-          if (!get().timer.running) updateTimer({ topicId });
+          if (!get().timer.running) updateTimer({ topicId, taskId: "" });
         },
         setFocusMinutes: (minutes) => updateIdleTimer({ focus: clamp(minutes, 1, 120, 25) }),
         setBreakMinutes: (minutes) => updateIdleTimer({ brk: clamp(minutes, 1, 60, 5) }),
 
-        studyTopic: (topicId) => {
-          if (get().timer.running) return false;
-          updateTimer({ topicId });
+        // Abrir o timer a partir de uma tarefa usa a duração dela como bloco de foco do Pomodoro.
+        studyTopic: (topicId, task) => {
+          const { timer } = get();
+          if (timer.running || !isIdle(timer)) return false;
+          updateTimer({
+            topicId,
+            taskId: task?.id ?? "",
+            ...(task ? { mode: "pomodoro" as const, focus: clamp(task.minutes, 1, 120, timer.focus) } : {}),
+          });
           return true;
         },
 
         startTimer: () => {
-          const { timer } = get();
+          const { timer, tasks } = get();
           if (!timer.topicId) return false;
-          set({ timer: startTimer(timer, Date.now()) });
+          const startingTask = timer.phase === "focus" && timer.taskId;
+          set({
+            timer: startTimer(timer, Date.now()),
+            ...(startingTask
+              ? { tasks: tasks.map((task) => (task.id === timer.taskId && task.status === "planejada" ? { ...task, status: "iniciada" as const } : task)) }
+              : {}),
+          });
           return true;
         },
 
         pauseTimer: () => set({ timer: pauseTimer(get().timer, Date.now()) }),
 
+        // Zera o timer no mesmo `set` que grava: um segundo clique encontra o timer vazio e não duplica a sessão.
         finishTimer: () => {
           const data = get();
+          if (data.timer.phase !== "focus") return null;
           const now = Date.now();
-          const seconds = elapsed(data.timer, now);
-          const recorded = seconds >= 60 && Boolean(data.timer.topicId);
-          set({ ...(recorded ? withSession(data, seconds, now) : {}), timer: resetTimer(data.timer) });
-          return recorded ? seconds : null;
+          const state: SessionState = data.timer.mode === "pomodoro" ? "interrompida" : "concluida";
+          const { session, changes } = recordSession(data, elapsed(data.timer, now), state, now);
+          set({ ...changes, timer: resetTimer(data.timer) });
+          return session;
         },
+
+        discardTimer: () => set({ timer: resetTimer(get().timer) }),
 
         skipBreak: () => set({ timer: resetTimer(get().timer) }),
 
@@ -211,35 +294,48 @@ export const useStudyStore = create<StudyStore>()(
           const now = Date.now();
           if (!isPhaseOver(data.timer, now)) return null;
           if (data.timer.phase === "break") {
-            set({ timer: nextPhase(data.timer, now) });
-            return "break-done";
+            set({ timer: nextPhase(data.timer) });
+            return { kind: "break-done" };
           }
-          set({ ...withSession(data, phaseSeconds(data.timer), now), timer: nextPhase(data.timer, now) });
-          return "focus-done";
+          const { session, changes } = recordSession(data, phaseSeconds(data.timer), "concluida", now);
+          set({ ...changes, timer: nextPhase(data.timer) });
+          return { kind: "focus-done", session };
         },
 
-        deleteSession: (sessionId) =>
-          set({ sessions: get().sessions.filter((session) => session.id !== sessionId) }),
+        deleteSession: (sessionId) => set({ sessions: get().sessions.filter((session) => session.id !== sessionId) }),
+        setSessionReflection: (sessionId, reflection) => updateSession(sessionId, { reflection }),
+        setSessionNote: (sessionId, note) => updateSession(sessionId, { note: note.trim().slice(0, NOTE_MAX) || undefined }),
 
-        resetData: () => set({ ...emptyData(), theme: get().theme }),
+        resetData: () => set({ ...emptyData(), theme: get().theme, sound: get().sound, showStreak: get().showStreak }),
       };
     },
     {
       name: STORAGE_KEY,
-      version: 1,
+      version: 2,
       storage: rawStorage,
-      partialize: ({ version, demo, progress, sessions, goal, theme, timer }) => ({
-        version,
-        demo,
-        progress,
-        sessions,
-        goal,
-        theme,
-        timer,
+      partialize: (state): StudyData => ({
+        version: state.version,
+        demo: state.demo,
+        topics: state.topics,
+        progress: state.progress,
+        sessions: state.sessions,
+        tasks: state.tasks,
+        goal: state.goal,
+        planner: state.planner,
+        onboarding: state.onboarding,
+        theme: state.theme,
+        sound: state.sound,
+        showStreak: state.showStreak,
+        timer: state.timer,
       }),
     },
   ),
 );
+
+// Regrava o estado atual; usado pelo aviso de falha ao salvar.
+export function retrySave() {
+  useStudyStore.setState({});
+}
 
 export function useHydrated(): boolean {
   return useSyncExternalStore(

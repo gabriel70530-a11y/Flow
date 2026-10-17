@@ -3,6 +3,7 @@ import { STATUS_LABELS, type TopicStatus } from "@/lib/reviews";
 const statusStyles: Record<TopicStatus, string> = {
   nao: "bg-hover text-muted",
   and: "bg-accent-soft text-accent",
+  revisar: "bg-hover text-danger",
   concluido: "bg-success-soft text-success",
 };
 

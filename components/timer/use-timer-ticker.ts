@@ -11,6 +11,7 @@ import { useNow } from "./use-now";
 export function useTimerTicker(hydrated: boolean): string | null {
   const timer = useStudyStore((state) => state.timer);
   const tick = useStudyStore((state) => state.tick);
+  const sound = useStudyStore((state) => state.sound);
   const now = useNow(hydrated && timer.running);
   const text = hydrated && !isIdle(timer) ? clockText(displaySeconds(timer, now || timer.startedAt)) : null;
 
@@ -18,9 +19,13 @@ export function useTimerTicker(hydrated: boolean): string | null {
     if (!hydrated) return;
     const result = tick();
     if (!result) return;
-    chime();
-    showToast(result === "focus-done" ? "Bloco de foco registrado. Pausa iniciada." : "Pausa encerrada.");
-  }, [hydrated, now, tick]);
+    if (sound) chime();
+    showToast(
+      result.kind === "focus-done"
+        ? "Bloco de foco registrado. Comece a pausa quando quiser."
+        : "Pausa encerrada. Comece o próximo bloco quando quiser.",
+    );
+  }, [hydrated, now, tick, sound]);
 
   useEffect(() => {
     document.title = text && timer.running ? `${text} · ENEM Flow` : "ENEM Flow";

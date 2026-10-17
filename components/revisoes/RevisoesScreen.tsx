@@ -11,12 +11,14 @@ import { showToast } from "@/components/ui/Toast";
 import { useStudyTopic } from "@/components/timer/use-study-topic";
 import { toDateKey } from "@/lib/dates";
 import { groupReviews, nextReview, pendingReviews, type PendingReview } from "@/lib/reviews";
-import { findTopic } from "@/lib/syllabus";
+import { findArea } from "@/lib/syllabus";
+import { findTopic } from "@/lib/topics";
 import { useHydrated, useStudyStore } from "@/store/study-store";
 
 export function RevisoesScreen() {
   const hydrated = useHydrated();
   const progress = useStudyStore((state) => state.progress);
+  const topics = useStudyStore((state) => state.topics);
   const completeReview = useStudyStore((state) => state.completeReview);
   const studyTopic = useStudyTopic();
 
@@ -34,7 +36,7 @@ export function RevisoesScreen() {
   }
 
   const today = toDateKey(new Date());
-  const groups = groupReviews(pendingReviews(progress), today);
+  const groups = groupReviews(pendingReviews(progress, topics), today);
   const sections: [string, PendingReview[]][] = [
     ["Atrasadas", groups.late],
     ["Hoje", groups.today],
@@ -66,14 +68,14 @@ export function RevisoesScreen() {
             </CardHeader>
             <ul>
               {items.map(({ topicId, review }) => {
-                const topic = findTopic(topicId);
+                const topic = findTopic(topics, topicId);
                 return (
                   <ListRow
                     key={topicId}
                     title={topic?.name}
                     subtitle={
                       <span className="tabular-nums">
-                        {topic?.area.name} · Revisão {review.stage} de 4 · <DueLabel due={review.due} today={today} />
+                        {topic && findArea(topic.areaId).name} · Revisão {review.stage} de 4 · <DueLabel due={review.due} today={today} />
                       </span>
                     }
                     end={

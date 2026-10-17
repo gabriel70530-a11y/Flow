@@ -6,12 +6,7 @@ export interface Area {
   topics: readonly string[];
 }
 
-export interface Topic {
-  id: string;
-  name: string;
-  area: Area;
-}
-
+// Semente dos tópicos padrão. A lista que o estudante vê e edita fica em `topics` na store.
 export const AREAS: readonly Area[] = [
   {
     id: "mat",
@@ -89,12 +84,6 @@ export const AREAS: readonly Area[] = [
   },
 ];
 
-export const TOPICS: readonly Topic[] = AREAS.flatMap((area) =>
-  area.topics.map((name, index) => ({ id: `${area.id}-${index}`, name, area })),
-);
-
-const topicsById = new Map(TOPICS.map((topic) => [topic.id, topic]));
-
-export function findTopic(id: string): Topic | undefined {
-  return topicsById.get(id);
+export function findArea(id: AreaId): Area {
+  return AREAS.find((area) => area.id === id) ?? AREAS[0];
 }

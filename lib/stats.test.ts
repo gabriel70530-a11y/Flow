@@ -6,11 +6,22 @@ import {
   secondsByDay,
   studyStreak,
   weekDays,
-  type StudySession,
 } from "./stats";
+import type { StudySession } from "./sessions";
+import type { AreaId } from "./syllabus";
 
 function session(topicId: string, date: string, minutes: number): StudySession {
-  return { id: `${topicId}-${date}`, topicId, date, sec: minutes * 60, mode: "pomodoro", ts: 0 };
+  return {
+    id: `${topicId}-${date}`,
+    topicId,
+    areaId: topicId.split("-")[0] as AreaId,
+    date,
+    start: 0,
+    end: minutes * 60_000,
+    sec: minutes * 60,
+    mode: "pomodoro",
+    state: "concluida",
+  };
 }
 
 const sessions = [
@@ -53,8 +64,14 @@ describe("secondsByArea", () => {
     });
   });
 
-  it("ignores sessions of unknown topics", () => {
-    expect(secondsByArea([session("xyz-0", "2026-10-12", 30)], "2026-10-12", "2026-10-18").mat).toBe(0);
+  it("leaves general study out of the area totals", () => {
+    const general = { ...session("mat-0", "2026-10-12", 30), topicId: null, areaId: null };
+    expect(Object.values(secondsByArea([general], "2026-10-12", "2026-10-18")).every((seconds) => seconds === 0)).toBe(true);
+  });
+
+  it("keeps the area recorded on the session even if the topic moves later", () => {
+    const moved = { ...session("mat-0", "2026-10-12", 30), areaId: "lin" as const };
+    expect(secondsByArea([moved], "2026-10-12", "2026-10-18")).toMatchObject({ mat: 0, lin: 1800 });
   });
 });
 

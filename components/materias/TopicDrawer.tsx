@@ -15,7 +15,8 @@ import {
   type Mastery,
   type TopicStatus,
 } from "@/lib/reviews";
-import type { Topic } from "@/lib/syllabus";
+import { findArea } from "@/lib/syllabus";
+import type { TopicRecord } from "@/lib/topics";
 import { useStudyStore } from "@/store/study-store";
 
 const statusOptions = (Object.keys(STATUS_LABELS) as TopicStatus[]).map((status) => ({
@@ -30,7 +31,7 @@ const masteryOptions: SegmentedOption<Mastery>[] = ([1, 2, 3, 4, 5] as const).ma
 }));
 
 interface TopicDrawerProps {
-  topic: Topic | undefined;
+  topic: TopicRecord | undefined;
   today: string;
   onClose: () => void;
 }
@@ -50,9 +51,9 @@ export function TopicDrawer({ topic, today, onClose }: TopicDrawerProps) {
   };
 
   return (
-    <Drawer open onClose={onClose} eyebrow={topic.area.name} title={topic.name}>
+    <Drawer open onClose={onClose} eyebrow={findArea(topic.areaId).name} title={topic.name}>
       <DrawerSection title="Status">
-        <Segmented options={statusOptions} value={progress.status} onChange={handleStatus} />
+        <Segmented options={statusOptions} value={progress.status} onChange={handleStatus} wrap />
         {progress.status !== "concluido" && (
           <p className="text-[13px] text-muted">
             Ao concluir, as revisões de 1, 7, 15 e 30 dias são agendadas automaticamente.

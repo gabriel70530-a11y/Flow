@@ -10,7 +10,8 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { toDateKey } from "@/lib/dates";
 import { nextReview, progressOf } from "@/lib/reviews";
-import { AREAS, TOPICS, findTopic, type AreaId } from "@/lib/syllabus";
+import { AREAS, type AreaId } from "@/lib/syllabus";
+import { findTopic, visibleTopics } from "@/lib/topics";
 import { useHydrated, useStudyStore } from "@/store/study-store";
 import { TopicDrawer } from "./TopicDrawer";
 
@@ -19,6 +20,7 @@ const HINT = "Clique em um tópico para atualizar.";
 export function MateriasScreen() {
   const hydrated = useHydrated();
   const progress = useStudyStore((state) => state.progress);
+  const allTopics = useStudyStore((state) => state.topics);
   const [areaFilter, setAreaFilter] = useState<AreaId | "all">("all");
   const [openTopicId, setOpenTopicId] = useState<string | null>(null);
   const closeDrawer = useCallback(() => setOpenTopicId(null), []);
@@ -34,12 +36,13 @@ export function MateriasScreen() {
   }
 
   const today = toDateKey(new Date());
-  const concluded = TOPICS.filter((topic) => progressOf(progress, topic.id).status === "concluido").length;
+  const topics = visibleTopics(allTopics);
+  const concluded = topics.filter((topic) => progressOf(progress, topic.id).status === "concluido").length;
   const filters = [{ id: "all" as const, name: "Todas" }, ...AREAS];
 
   return (
     <div className="grid gap-5">
-      <PageHeader title="Matérias" subtitle={`${concluded} de ${TOPICS.length} tópicos concluídos. ${HINT}`} />
+      <PageHeader title="Matérias" subtitle={`${concluded} de ${topics.length} tópicos concluídos. ${HINT}`} />
 
       <div className="flex max-w-full gap-1.5 overflow-x-auto">
         {filters.map((filter) => (
@@ -56,20 +59,20 @@ export function MateriasScreen() {
       </div>
 
       {AREAS.filter((area) => areaFilter === "all" || area.id === areaFilter).map((area) => {
-        const topics = TOPICS.filter((topic) => topic.area === area);
-        const done = topics.filter((topic) => progressOf(progress, topic.id).status === "concluido").length;
+        const areaTopics = topics.filter((topic) => topic.areaId === area.id);
+        const done = areaTopics.filter((topic) => progressOf(progress, topic.id).status === "concluido").length;
         return (
           <Card key={area.id} flush>
             <CardHeader flush title={area.name} className="border-b border-line">
               <div className="flex items-center gap-3">
                 <span className="text-[13px] text-muted tabular-nums">
-                  {done}/{topics.length}
+                  {done}/{areaTopics.length}
                 </span>
-                <ProgressBar thin value={done / topics.length} className="hidden w-[120px] md:block" />
+                <ProgressBar thin value={areaTopics.length ? done / areaTopics.length : 0} className="hidden w-[120px] md:block" />
               </div>
             </CardHeader>
             <ul>
-              {topics.map((topic) => {
+              {areaTopics.map((topic) => {
                 const topicProgress = progressOf(progress, topic.id);
                 const review = nextReview(topicProgress);
                 return (
@@ -100,7 +103,7 @@ export function MateriasScreen() {
         );
       })}
 
-      <TopicDrawer topic={openTopicId ? findTopic(openTopicId) : undefined} today={today} onClose={closeDrawer} />
+      <TopicDrawer topic={findTopic(allTopics, openTopicId)} today={today} onClose={closeDrawer} />
     </div>
   );
 }

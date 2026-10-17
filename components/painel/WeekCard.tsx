@@ -29,9 +29,9 @@ export function WeekCard({ today, monday, onPreviousWeek, onNextWeek }: WeekCard
   const days = weekDays(monday);
   const perDay = secondsByDay(sessions, days);
   const total = perDay.reduce((sum, seconds) => sum + seconds, 0);
-  const dailyGoal = (goal * 3600) / 7;
+  const dailyGoal = (goal.value * 3600) / 7;
   const scale = Math.max(dailyGoal * 1.25, ...perDay);
-  const percent = Math.round((total / 3600 / goal) * 100);
+  const percent = Math.round((total / 3600 / goal.value) * 100);
   const streak = studyStreak(sessions, today);
 
   return (
@@ -57,10 +57,10 @@ export function WeekCard({ today, monday, onPreviousWeek, onNextWeek }: WeekCard
         <span className="inline-flex items-center gap-1.5 text-muted">
           horas de
           <NumberInput
-            value={goal}
+            value={goal.value}
             min={1}
             max={100}
-            onCommit={setGoal}
+            onCommit={(value) => setGoal({ type: "horas", value })}
             aria-label="Meta semanal em horas"
             className="h-[30px] w-16"
           />

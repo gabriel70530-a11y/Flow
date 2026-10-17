@@ -77,14 +77,22 @@ describe("pomodoro phases", () => {
     expect(isPhaseOver({ ...focusing, mode: "cronometro" }, seconds(25 * 60))).toBe(false);
   });
 
-  it("starts the break automatically when focus ends", () => {
-    const breaking = nextPhase(focusing, seconds(25 * 60));
-    expect(breaking).toMatchObject({ phase: "break", running: true, banked: 0, startedAt: seconds(25 * 60) });
+  it("offers the break when focus ends instead of starting it", () => {
+    const breaking = nextPhase(focusing);
+    expect(breaking).toMatchObject({ phase: "break", running: false, banked: 0, sessionStart: 0 });
+    expect(isIdle(breaking)).toBe(false);
   });
 
   it("goes back to a stopped focus when the break ends", () => {
-    const breaking = nextPhase(focusing, seconds(25 * 60));
-    expect(nextPhase(breaking, seconds(30 * 60))).toMatchObject({ phase: "focus", running: false, banked: 0 });
+    const breakRunning = startTimer(nextPhase(focusing), seconds(25 * 60));
+    expect(breakRunning.sessionStart).toBe(0);
+    expect(nextPhase(breakRunning)).toMatchObject({ phase: "focus", running: false, banked: 0 });
+  });
+
+  it("remembers when the focus session started across pauses", () => {
+    const resumed = startTimer(pauseTimer(focusing, seconds(60)), seconds(300));
+    expect(resumed.sessionStart).toBe(start);
+    expect(resetTimer(resumed).sessionStart).toBe(0);
   });
 });
 
