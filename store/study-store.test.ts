@@ -194,3 +194,49 @@ describe("reviews and settings", () => {
     expect(state().topics).toHaveLength(44);
   });
 });
+
+describe("plan", () => {
+  it("finishes onboarding with a suggested plan inside the availability", () => {
+    const settings = { ...state().planner, availability: [60, 60, 60, 60, 60, 0, 0], sessionMinutes: 30 };
+    expect(state().finishOnboarding(settings, "sugerido")).toBeNull();
+    expect(state().onboarding.status).toBe("concluido");
+    expect(state().tasks.length).toBeGreaterThan(0);
+    expect(state().tasks.filter((task) => task.date === today).reduce((sum, task) => sum + task.minutes, 0)).toBeLessThanOrEqual(60);
+  });
+
+  it("saves preferences without a plan in manual mode and rejects invalid availability", () => {
+    expect(state().finishOnboarding({ ...state().planner, availability: [60, -5, 0, 0, 0, 0, 0] }, "manual")).toMatch(/16 horas/);
+    expect(state().finishOnboarding({ ...state().planner, availability: [60, 60, 0, 0, 0, 0, 0] }, "manual")).toBeNull();
+    expect(state().tasks).toEqual([]);
+  });
+
+  it("keeps completed tasks when regenerating", () => {
+    state().regeneratePlan();
+    const first = state().tasks[0];
+    state().setTaskDone(first.id, true);
+    state().regeneratePlan();
+    expect(state().tasks.find((task) => task.id === first.id)?.status).toBe("concluida");
+    expect(new Set(state().tasks.map((task) => `${task.kind}:${task.topicId}`)).size).toBe(state().tasks.length);
+  });
+
+  it("validates manual tasks and unlinks the timer when a task is removed", () => {
+    expect(state().addTask({ topicId: "mat-0", date: "2026-10-01", minutes: 30, priority: "media" })).toMatch(/data/);
+    expect(state().addTask({ topicId: "mat-0", date: today, minutes: 30, priority: "media" })).toBeNull();
+    const task = state().tasks[0];
+    expect(task).toMatchObject({ origin: "manual", areaId: "mat", status: "planejada" });
+    state().studyTopic("mat-0", { id: task.id, minutes: task.minutes });
+    state().removeTask(task.id);
+    expect(state().tasks).toEqual([]);
+    expect(state().timer.taskId).toBe("");
+  });
+
+  it("moves tasks only to today or later and to another week", () => {
+    state().addTask({ topicId: "mat-0", date: today, minutes: 30, priority: "alta" });
+    const { id } = state().tasks[0];
+    expect(state().moveTask(id, "2026-10-01")).toBe(false);
+    expect(state().moveTask(id, null)).toBe(true);
+    expect(state().tasks[0]).toMatchObject({ date: null, status: "adiada" });
+    state().lowerTaskPriority(id);
+    expect(state().tasks[0].priority).toBe("media");
+  });
+});

@@ -1,8 +1,20 @@
 import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { persist, type PersistStorage } from "zustand/middleware";
-import { toDateKey } from "@/lib/dates";
-import { applyFocusToTask } from "@/lib/planner";
+import { isDateKey, toDateKey } from "@/lib/dates";
+import {
+  applyFocusToTask,
+  generatePlan,
+  lowerPriority,
+  rescheduleTask,
+  splitTask,
+  validateAvailability,
+  validateTask,
+  type PlanResult,
+  type PlanTask,
+  type PlannerSettings,
+  type TaskInput,
+} from "@/lib/planner";
 import {
   changeStatus,
   completeNextReview,
@@ -31,6 +43,7 @@ import {
 import {
   createTopic,
   deleteTopic,
+  findTopic,
   restoreDefaults,
   setTopicHidden,
   updateTopic,
@@ -38,7 +51,7 @@ import {
   type TopicInput,
 } from "@/lib/topics";
 import { loadData } from "./migrate";
-import { emptyData, type StudyData, type Theme } from "./state";
+import { emptyData, type OnboardingState, type StudyData, type Theme } from "./state";
 import { CORRUPT_STORAGE_KEY, LEGACY_STORAGE_KEY, STORAGE_KEY } from "./storage-key";
 
 export type { StudyData, Theme } from "./state";
@@ -80,6 +93,17 @@ interface StudyActions {
   deleteSession: (sessionId: string) => void;
   setSessionReflection: (sessionId: string, reflection: Reflection) => void;
   setSessionNote: (sessionId: string, note: string) => void;
+
+  savePlanner: (settings: PlannerSettings) => string | null;
+  finishOnboarding: (settings: PlannerSettings, planMode: OnboardingState["planMode"]) => string | null;
+  skipOnboarding: () => void;
+  regeneratePlan: () => PlanResult;
+  addTask: (input: TaskInput) => string | null;
+  moveTask: (taskId: string, date: string | null) => boolean;
+  setTaskDone: (taskId: string, done: boolean) => void;
+  splitPlanTask: (taskId: string) => void;
+  lowerTaskPriority: (taskId: string) => void;
+  removeTask: (taskId: string) => void;
 
   resetData: () => void;
 }
@@ -229,7 +253,7 @@ export const useStudyStore = create<StudyStore>()(
         postponeReview: (topicId) => updateProgress(topicId, (current) => postponeNextReview(current, today())),
 
         rescheduleReview: (topicId, date) => {
-          if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date < today()) return false;
+          if (!isDateKey(date) || date < today()) return false;
           updateProgress(topicId, (current) => rescheduleNextReview(current, date, today()));
           return true;
         },
@@ -305,6 +329,79 @@ export const useStudyStore = create<StudyStore>()(
         deleteSession: (sessionId) => set({ sessions: get().sessions.filter((session) => session.id !== sessionId) }),
         setSessionReflection: (sessionId, reflection) => updateSession(sessionId, { reflection }),
         setSessionNote: (sessionId, note) => updateSession(sessionId, { note: note.trim().slice(0, NOTE_MAX) || undefined }),
+
+        savePlanner: (settings) => {
+          const error = validateAvailability(settings.availability);
+          if (error) return error;
+          set({ planner: { ...settings, sessionMinutes: clamp(settings.sessionMinutes, 15, 120, 50) } });
+          return null;
+        },
+
+        finishOnboarding: (settings, planMode) => {
+          const error = get().savePlanner(settings);
+          if (error) return error;
+          set({ onboarding: { status: "concluido", planMode } });
+          if (planMode === "sugerido") get().regeneratePlan();
+          return null;
+        },
+
+        skipOnboarding: () => set({ onboarding: { ...get().onboarding, status: "pulado" } }),
+
+        regeneratePlan: () => {
+          const { topics, progress, tasks, planner } = get();
+          const result = generatePlan({ today: today(), topics, progress, tasks, settings: planner, newId: () => newId("task-") });
+          set({ tasks: result.tasks });
+          return result;
+        },
+
+        addTask: (input) => {
+          const error = validateTask(input, today());
+          if (error) return error;
+          const topic = findTopic(get().topics, input.topicId);
+          const task: PlanTask = {
+            id: newId("task-"),
+            topicId: topic?.id ?? null,
+            areaId: topic?.areaId ?? null,
+            kind: "estudo",
+            date: input.date,
+            minutes: input.minutes,
+            priority: input.priority,
+            status: "planejada",
+            origin: "manual",
+            focusSec: 0,
+          };
+          set({ tasks: [...get().tasks, task] });
+          return null;
+        },
+
+        moveTask: (taskId, date) => {
+          if (date !== null && (!isDateKey(date) || date < today())) return false;
+          set({ tasks: rescheduleTask(get().tasks, taskId, date) });
+          return true;
+        },
+
+        setTaskDone: (taskId, done) =>
+          set({
+            tasks: get().tasks.map((task) =>
+              task.id === taskId ? { ...task, status: done ? "concluida" : task.focusSec > 0 ? "iniciada" : "planejada" } : task,
+            ),
+          }),
+
+        splitPlanTask: (taskId) =>
+          set({ tasks: splitTask(get().tasks, taskId, get().planner, today(), () => newId("task-")) }),
+
+        lowerTaskPriority: (taskId) =>
+          set({
+            tasks: get().tasks.map((task) => (task.id === taskId ? { ...task, priority: lowerPriority(task.priority) } : task)),
+          }),
+
+        removeTask: (taskId) => {
+          const { tasks, timer } = get();
+          set({
+            tasks: tasks.filter((task) => task.id !== taskId),
+            ...(timer.taskId === taskId ? { timer: { ...timer, taskId: "" } } : {}),
+          });
+        },
 
         resetData: () => set({ ...emptyData(), theme: get().theme, sound: get().sound, showStreak: get().showStreak }),
       };

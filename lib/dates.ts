@@ -4,6 +4,10 @@ export function toDateKey(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
+export function isDateKey(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
 export function fromDateKey(key: string): Date {
   const [year, month, day] = key.split("-").map(Number);
   return new Date(year, month - 1, day);
@@ -19,6 +23,11 @@ export function mondayOf(key: string): string {
   // getDay() começa no domingo (0); a semana do app começa na segunda.
   const daysSinceMonday = (fromDateKey(key).getDay() + 6) % 7;
   return addDays(key, -daysSinceMonday);
+}
+
+// 0 = segunda, 6 = domingo.
+export function weekdayIndex(key: string): number {
+  return (fromDateKey(key).getDay() + 6) % 7;
 }
 
 export function shortDate(key: string): string {
