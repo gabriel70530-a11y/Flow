@@ -15,6 +15,8 @@
   --danger: #c42b3f;
   --bar: #dcdfe6;
   --card-shadow: 0 1px 2px rgba(15, 27, 45, 0.06), 0 1px 3px rgba(15, 27, 45, 0.04);
+  /* O toast é escuro nos dois temas. */
+  --toast: #1c1e21;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -69,6 +71,7 @@
   --color-success-soft: var(--success-soft);
   --color-danger: var(--danger);
   --color-bar: var(--bar);
+  --color-toast: var(--toast);
   --shadow-card: var(--card-shadow);
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-heading: var(--font-display), "Arial Black", system-ui, sans-serif;

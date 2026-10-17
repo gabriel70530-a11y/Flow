@@ -27,6 +27,21 @@ export interface PendingReview {
 
 export const REVIEW_DAYS = [1, 7, 15, 30] as const;
 
+export const STATUS_LABELS: Record<TopicStatus, string> = {
+  nao: "Não iniciado",
+  and: "Em andamento",
+  concluido: "Concluído",
+};
+
+export const MASTERY_LABELS: Record<Mastery, string> = {
+  0: "Sem avaliação",
+  1: "Muito fraco",
+  2: "Fraco",
+  3: "Razoável",
+  4: "Bom",
+  5: "Domina",
+};
+
 export const EMPTY_PROGRESS: TopicProgress = { status: "nao", mastery: 0, reviews: [] };
 
 export function progressOf(progress: ProgressMap, topicId: string): TopicProgress {
