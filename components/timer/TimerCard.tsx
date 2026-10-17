@@ -1,5 +1,6 @@
 "use client";
 
+import { Volume2, VolumeX } from "lucide-react";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -25,6 +26,7 @@ export function TimerCard() {
   const timer = useStudyStore((state) => state.timer);
   const topics = useStudyStore((state) => state.topics);
   const tasks = useStudyStore((state) => state.tasks);
+  const sound = useStudyStore((state) => state.sound);
   const actions = useStudyStore.getState();
   const now = useNow(timer.running) || timer.startedAt;
   const topicSelect = useRef<HTMLSelectElement>(null);
@@ -168,11 +170,22 @@ export function TimerCard() {
             </Button>
           )}
         </div>
-        {!idle && !onBreak && (
-          <button type="button" onClick={discard} className="justify-self-center py-1 text-[13px] text-muted underline underline-offset-3">
-            {confirmingDiscard ? "Clique de novo para descartar sem registrar" : "Descartar este tempo"}
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-[13px] text-muted">
+          <button
+            type="button"
+            aria-pressed={sound}
+            onClick={() => actions.setSound(!sound)}
+            className="inline-flex min-h-9 items-center gap-1.5"
+          >
+            {sound ? <Volume2 size={16} aria-hidden /> : <VolumeX size={16} aria-hidden />}
+            Aviso sonoro {sound ? "ligado" : "desligado"}
           </button>
-        )}
+          {!idle && !onBreak && (
+            <button type="button" onClick={discard} className="min-h-9 underline underline-offset-3">
+              {confirmingDiscard ? "Clique de novo para descartar sem registrar" : "Descartar este tempo"}
+            </button>
+          )}
+        </div>
       </div>
     </Card>
   );
