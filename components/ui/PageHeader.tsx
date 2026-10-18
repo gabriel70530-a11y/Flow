@@ -4,7 +4,7 @@ export function PageHeader({ title, subtitle }: { title: string; subtitle: React
   return (
     <div>
       <h1>{title}</h1>
-      <p className="mt-0.5 text-[13px] text-muted">{subtitle}</p>
+      <p className="mt-1.5 text-[15px] text-muted">{subtitle}</p>
     </div>
   );
 }

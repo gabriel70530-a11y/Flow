@@ -67,24 +67,24 @@ export function AppShell({ children }: { children: ReactNode }) {
         onThemeChange={setTheme}
       />
 
-      <header className="sticky top-[env(safe-area-inset-top,0px)] z-20 flex h-[52px] items-center justify-between border-b border-line bg-surface pr-[max(16px,env(safe-area-inset-right,0px))] pl-[max(16px,env(safe-area-inset-left,0px))] md:hidden">
+      <header className="sticky top-[env(safe-area-inset-top,0px)] z-20 flex h-[60px] items-center justify-between border-b-2 border-edge bg-surface pr-[max(16px,env(safe-area-inset-right,0px))] pl-[max(16px,env(safe-area-inset-left,0px))] md:hidden">
         <Wordmark size="sm" />
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <Link
             href="/ajustes"
             aria-label="Ajustes"
             aria-current={pathname.startsWith("/ajustes") ? "page" : undefined}
-            className="grid size-9 place-items-center rounded-full text-muted hover:bg-hover aria-[current=page]:text-accent"
+            className="grid size-9 place-items-center rounded-full border-2 border-edge bg-hover text-text aria-[current=page]:bg-action aria-[current=page]:text-on-action"
           >
-            <Settings size={20} aria-hidden />
+            <Settings size={18} aria-hidden />
           </Link>
-          <IconButton onClick={cycleTheme} aria-label="Alternar aparência" className="size-9">
-            <Contrast size={20} aria-hidden />
+          <IconButton onClick={cycleTheme} aria-label="Alternar aparência" className="size-9 border-2 border-edge bg-hover text-text">
+            <Contrast size={18} aria-hidden />
           </IconButton>
         </div>
       </header>
 
-      <main id="conteudo" tabIndex={-1} className="max-w-[1180px] outline-none pt-5 pr-[max(16px,env(safe-area-inset-right,0px))] pb-[calc(84px+env(safe-area-inset-bottom,0px))] pl-[max(16px,env(safe-area-inset-left,0px))] md:ml-60 md:pt-[calc(28px+env(safe-area-inset-top,0px))] md:pr-[max(32px,env(safe-area-inset-right,0px))] md:pb-12 md:pl-[max(32px,env(safe-area-inset-left,0px))]">
+      <main id="conteudo" tabIndex={-1} className="max-w-[1180px] outline-none pt-5 pr-[max(16px,env(safe-area-inset-right,0px))] pb-[calc(84px+env(safe-area-inset-bottom,0px))] pl-[max(16px,env(safe-area-inset-left,0px))] md:ml-60 md:pt-[calc(40px+env(safe-area-inset-top,0px))] md:pr-[max(48px,env(safe-area-inset-right,0px))] md:pb-14 md:pl-[max(24px,env(safe-area-inset-left,0px))]">
         <SaveFailureNotice />
         {hydrated && demo && <DemoNotice />}
         {children}

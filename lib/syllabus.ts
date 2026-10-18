@@ -4,6 +4,8 @@ export type SubjectId = "qui" | "fis" | "bio" | "geo" | "his" | "fil" | "soc";
 export interface Area {
   id: AreaId;
   name: string;
+  // Nome curto para filtros e listas apertadas.
+  shortName: string;
 }
 
 export interface Subject {
@@ -14,11 +16,11 @@ export interface Subject {
 
 // O app só traz as cinco áreas do ENEM. Os tópicos de cada uma o estudante cria do jeito dele.
 export const AREAS: readonly Area[] = [
-  { id: "mat", name: "Matemática" },
-  { id: "lin", name: "Linguagens" },
-  { id: "nat", name: "Ciências da Natureza" },
-  { id: "hum", name: "Ciências Humanas" },
-  { id: "red", name: "Redação" },
+  { id: "mat", name: "Matemática", shortName: "Matemática" },
+  { id: "lin", name: "Linguagens", shortName: "Linguagens" },
+  { id: "nat", name: "Ciências da Natureza", shortName: "Natureza" },
+  { id: "hum", name: "Ciências Humanas", shortName: "Humanas" },
+  { id: "red", name: "Redação", shortName: "Redação" },
 ];
 
 // Natureza e Humanas se dividem em matérias; todo tópico dessas áreas pertence a uma delas.

@@ -39,7 +39,7 @@ export function AjustesScreen() {
   const hydrated = useHydrated();
   if (!hydrated) {
     return (
-      <div className="grid gap-5">
+      <div className="grid gap-6">
         <PageHeader title="Ajustes" subtitle={SUBTITLE} />
         <Skeleton className="h-96" />
       </div>
@@ -106,11 +106,11 @@ function Settings() {
   };
 
   return (
-    <div className="grid gap-5">
+    <div className="grid gap-6">
       <PageHeader title="Ajustes" subtitle={SUBTITLE} />
 
       <div className="grid items-start gap-5 lg:grid-cols-2">
-        <div className="grid gap-5">
+        <div className="grid gap-6">
           <Card>
             <CardHeader title="Preferências" />
             <div className="grid gap-2">
@@ -218,7 +218,7 @@ function Settings() {
           </Card>
         </div>
 
-        <div className="grid gap-5">
+        <div className="grid gap-6">
           <Card>
             <CardHeader title="Cronograma">
               <Link href="/comecar" className={`${linkStyles} shrink-0`}>

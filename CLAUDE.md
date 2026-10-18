@@ -128,7 +128,8 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 - Natureza se divide em Química, Física e Biologia; Humanas em Geografia, História, Filosofia e Sociologia. Todo tópico dessas áreas pertence a uma matéria (`subjectId`), e a tela de Matérias agrupa por ela. Tarefas e sessões guardam a matéria do tópico.
 - O estudante cria, edita, oculta, reexibe e exclui tópicos (excluir pede confirmação e não apaga sessões, que passam a aparecer como "Tópico excluído").
 - Ocultar não apaga sessões, revisões nem progresso; tópicos ocultos saem das listas e do cronograma até serem reexibidos.
-- Busca por nome; filtros por área, status e prioridade; ordenação por nome, prioridade, status ou próxima revisão.
+- Busca por nome e filtro por área sempre visíveis; status, prioridade, ordenação e ocultos ficam atrás do botão de filtros.
+- Cada área é um card recolhível (só o resumo até abrir). Abre sozinha a primeira área com tópicos, a área filtrada e as que têm resultado de busca.
 
 **Revisão espaçada**
 - Ao marcar um tópico como Concluído, agende 4 revisões a partir de hoje: +1, +7, +15 e +30 dias.
@@ -188,7 +189,7 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 
 ## Design system
 
-A identidade vem do logo: azul-marinho sobre off-white, com tipografia expandida em itálico. O visual é limpo e corporativo: superfícies brancas sobre fundo claro, uma cor de ação, muito espaço em branco e nada de gradientes, emojis ou ornamentos. Novas telas reutilizam os mesmos tokens e componentes; não crie um segundo sistema visual.
+A identidade vem do logo e da paleta azul escolhida pelo estudante (#135487, #2F87B5, #47BCDF, #85B0C6, #B0E1F1). O visual é limpo, moderno e com pouca poluição visual: muito espaço, uma cor de ação e um único bloco de destaque por tela. Os cards e botões principais têm contorno de 2px e sombra de carimbo (deslocada, sem desfoque), herdados do Clube do Filme. Nada de gradientes, emojis ou ornamentos. A referência aprovada é `docs/previa-design.html`; novas telas reutilizam os mesmos tokens e componentes.
 
 ### Cores
 
@@ -196,18 +197,20 @@ As cores são variáveis CSS em `globals.css`, mapeadas no Tailwind (`bg-surface
 
 | Token | Claro | Escuro | Uso |
 |---|---|---|---|
-| `bg` | `#f4f3ee` | `#0b111c` | fundo da página |
-| `surface` | `#ffffff` | `#131b2a` | cards, barra lateral, painel lateral |
-| `hover` | `#efeee8` | `#1c2638` | hover, botão secundário, trilho do segmented |
-| `line` | `#e3e2db` | `#253047` | divisórias |
-| `text` | `#0f1b2d` | `#e8ebf1` | texto principal |
-| `muted` | `#5b6475` | `#9aa5b8` | texto secundário |
-| `accent` | `#14213d` | `#dfe6f3` | botão primário, aba ativa, progresso, barras que atingiram a meta |
-| `accent-soft` | `#e4e8f0` | `#1f2b42` | fundo do item ativo, pill "Em andamento" |
-| `on-accent` | `#ffffff` | `#0f1b2d` | texto sobre `accent` |
-| `success` / `success-soft` | `#2e7d4f` / `#e3f1e8` | `#6fcf97` / `#17301f` | pill "Concluído", indicadores positivos |
-| `danger` | `#c42b3f` | `#ff7a8a` | atrasos, contador de revisões, alertas |
-| `bar` | `#dcdfe6` | `#253047` | trilho de progresso, barras abaixo da meta |
+| `bg` | `#f3f8fb` | `#061829` | fundo da página e da barra lateral |
+| `surface` | `#ffffff` | `#0b2238` | cards, barra superior, abas |
+| `hover` | `#e9f4f9` | `#102d48` | hover, botão secundário, trilho do segmented |
+| `line` | `#dcebf2` | `#15344f` | divisórias e contorno de campos |
+| `text` | `#0b2a42` | `#e6f3f9` | texto principal |
+| `muted` | `#4f6f83` | `#85b0c6` | texto secundário |
+| `accent` | `#135487` | `#47bcdf` | links, números, barras que atingiram a meta |
+| `action` / `on-action` | `#135487` / branco | `#135487` / branco | botão primário, filtro e opção ativos |
+| `mid` | `#2f87b5` | `#47bcdf` | só barras, trilhos preenchidos e bolinhas (sem contraste AA como texto) |
+| `edge` | `#135487` | `#eef7fb` | contorno de 2px e sombra de carimbo |
+| `hero` | `#0f4470` | `#135487` | faixa de destaque (Estudar hoje, topo da landing), com `hero-soft` #B0E1F1, `hero-bright` #47BCDF e `hero-edge` |
+| `brand` | `#135487` | branco | nome FLOW no logo |
+| `success` / `danger` | `#2e7d4f` / `#c42b3f` | `#6fcf97` / `#ff7a8a` | concluído; atrasos e alertas |
+| `bar` / `track` | `#b0e1f1` / `#dcebf2` | `#1d4a6b` / `#15344f` | barras abaixo da meta; trilho de progresso |
 
 O tema tem três estados: Automático (segue o sistema e não define `data-theme`), Claro e Escuro. Os blocos `@media (prefers-color-scheme: dark) :root:not([data-theme="light"])` e `:root[data-theme="dark"]` redefinem as variáveis.
 
@@ -215,29 +218,31 @@ O tema tem três estados: Automático (segue o sistema e não define `data-theme
 
 - **Saira** (Google Fonts, variável com eixo `wdth`) via `next/font/google`, variável CSS `--font-display`, utilitário `font-heading`.
 - **Corpo:** pilha do sistema, 15px, line-height 1.45 (também nos tamanhos `text-xs`, `text-sm` e `text-base`).
-- **Títulos de página (h1):** Saira 700, 26px, `font-stretch: 112%`.
-- **Títulos de card (h2):** Saira 600, 17px, `font-stretch: 108%`.
+- **Títulos de página (h1):** Saira 700, 26px no celular e 32px no computador, `font-stretch: 112%`. No Painel, o h1 é a saudação (Bom dia, Boa tarde, Boa noite).
+- **Títulos de card (h2):** Saira 600, 18px, `font-stretch: 108%`.
+- **Landing:** títulos de seção em caixa alta, Saira 700–800 expandida; benefícios numerados 01, 02, 03.
 - **Títulos e metadados:** `"Página · Flow"`; a página inicial usa "Flow · Sua preparação para o ENEM, no ritmo certo."
-- **Números de destaque:** o total de horas usa Saira itálico 800, 48px, `font-stretch: 120%`. O relógio do timer usa Saira itálico 300, até 92px, `font-stretch: 120%`.
+- **Números de destaque:** o total de horas usa Saira itálico 800, 48px, `font-stretch: 120%`. O total da semana usa 56px. O relógio do timer usa Saira itálico 300, até 92px, `font-stretch: 120%`.
 - Todo número em coluna ou que muda (horas, relógio, datas) usa `tabular-nums`.
 - Itálico só no logo e nesses dois números.
 
 ### Logo (componente `Wordmark`)
 
-Recriado em texto, nunca como imagem: "FLOW" em Saira itálico 800, `font-stretch: 125%`, em caixa alta. Tamanhos: 24px nas barras superiores, 32px na barra lateral e 64–88px em destaque. A versão com slogan põe "Sua preparação para o ENEM, / no ritmo certo." centralizado embaixo, em Saira itálico 400 com `letter-spacing: .08em`. Cor `text`, `aria-label="Flow"`. Nomes internos (chave `enem-flow:v2`, pacote) continuam como estão para não perder dados.
+Recriado em texto, nunca como imagem: o símbolo (quadrado azul `action` com o F em itálico, o mesmo de `app/icon.svg`, com contorno e carimbo) seguido de "FLOW" em Saira itálico 800, `font-stretch: 125%`, caixa alta, na cor `brand` (branco no tema escuro). Sobre a faixa azul, `onHero` deixa o nome branco nos dois temas. Tamanhos: 24px nas barras superiores, 30px na barra lateral e 64–88px em destaque (versão com slogan, sem símbolo, com "Sua preparação para o ENEM, / no ritmo certo." embaixo). `aria-label="Flow"`. Nomes internos (chave `enem-flow:v2`, pacote) continuam como estão para não perder dados.
 
 ### Forma e espaçamento
 
-- Raios: cards 12px, botões e inputs 8px, pills e filtros 999px.
-- Sombra dos cards: `0 1px 2px rgba(15,27,45,.06), 0 1px 3px rgba(15,27,45,.04)`. Sem borda nos cards.
-- Espaçamento interno: 20px nos cards (16px no celular). Gap de 20px entre cards.
-- Botões: 36px de altura (44px no timer e no painel lateral), peso 600. Primário em `accent`; secundário em `hover`.
+- Raios: cards 18px (faixa de destaque 22px), campos 10px, botões, busca, filtros e opções 999px.
+- Cards: contorno `2px edge` e sombra de carimbo `4px 4px 0 edge`. Botão primário: contorno e carimbo de 3px, sobe 1px no hover e "afunda" ao clicar.
+- Espaçamento interno: 28px nos cards (20px no celular). Gap de 24px entre cards e seções da tela.
+- Botões: 36px de altura (44px nos principais), peso 600. Primário em `action`; secundário em `hover`.
+- Status de tópico: bolinha colorida + texto (nunca só cor).
 
 ### Layout
 
-- **Desktop (> 760px):** barra lateral fixa de 240px com o logo, os itens de navegação (ícone + texto) e, no rodapé, Ajustes e o seletor de aparência. Conteúdo com até 1180px e 32px de margem lateral.
-- **Celular (≤ 760px):** barra superior com o logo, Ajustes e o botão de tema, mais uma barra inferior fixa com as abas (ícone + rótulo). Respeite as `safe-area-inset`.
-- Navegação: Painel, Cronograma, Matérias, Timer, Revisões. O item ativo fica com fundo `accent-soft`. Revisões mostra um contador vermelho com as pendentes de hoje + atrasadas. Timer mostra o tempo enquanto há uma sessão em andamento.
+- **Desktop (> 760px):** barra lateral fixa de 240px, sem fundo próprio, com o logo, os itens de navegação (ícone + texto) e, no rodapé, Ajustes e o seletor de aparência. Item ativo: fundo `surface`, contorno e carimbo. Conteúdo com até 1180px, 40px no topo e 48px à direita.
+- **Celular (≤ 760px):** barra superior com o logo, Ajustes e o botão de tema (botões redondos com contorno) e um traço de 2px `edge` embaixo, mais uma barra inferior fixa com as abas (ícone + rótulo). Respeite as `safe-area-inset`.
+- Navegação: Painel, Cronograma, Matérias, Timer, Revisões. Revisões mostra um contador vermelho com as pendentes de hoje + atrasadas. Timer mostra o tempo enquanto há uma sessão em andamento.
 - Cada página abre com h1 + uma linha de subtítulo em `muted`.
 - Formulários e listas longas usam o Drawer (folha inferior no celular).
 

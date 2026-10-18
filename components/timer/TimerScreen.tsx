@@ -12,13 +12,13 @@ export function TimerScreen() {
   const hydrated = useHydrated();
 
   return (
-    <div className="grid gap-5">
+    <div className="grid gap-6">
       <PageHeader title="Timer" subtitle="O tempo de foco entra sozinho no painel da semana." />
       <div className="grid items-start gap-5 lg:grid-cols-2">
         {hydrated ? (
           <>
             <TimerCard />
-            <div className="grid gap-5">
+            <div className="grid gap-6">
               <ReflectionPrompt />
               <TodaySessions today={toDateKey(new Date())} />
             </div>

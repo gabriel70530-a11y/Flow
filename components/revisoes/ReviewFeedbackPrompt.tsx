@@ -33,7 +33,7 @@ export function ReviewFeedbackPrompt({ topic, stage, onClose }: ReviewFeedbackPr
             key={option}
             aria-pressed={feedback === option}
             onClick={() => setReviewFeedback(topic.id, stage, option)}
-            className="whitespace-nowrap aria-pressed:bg-accent aria-pressed:text-on-accent"
+            className="whitespace-nowrap aria-pressed:bg-action aria-pressed:text-on-action"
           >
             {FEEDBACK_LABELS[option]}
           </Button>

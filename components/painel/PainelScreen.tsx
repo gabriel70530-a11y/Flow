@@ -13,16 +13,25 @@ import { WeekCard } from "./WeekCard";
 
 const longDate = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long" });
 
+function greeting(hour: number): string {
+  if (hour < 5 || hour >= 18) return "Boa noite";
+  return hour < 12 ? "Bom dia" : "Boa tarde";
+}
+
+function capitalize(text: string): string {
+  return text.charAt(0).toLocaleUpperCase("pt-BR") + text.slice(1);
+}
+
 export function PainelScreen() {
   const hydrated = useHydrated();
   const [weekOffset, setWeekOffset] = useState(0);
 
   if (!hydrated) {
     return (
-      <div className="grid gap-5">
+      <div className="grid gap-6">
         <PageHeader title="Painel" subtitle={" "} />
         <Skeleton className="h-40" />
-        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
           <Skeleton className="h-[420px]" />
           <Skeleton className="h-[420px]" />
         </div>
@@ -35,11 +44,11 @@ export function PainelScreen() {
   const monday = addDays(mondayOf(today), weekOffset * 7);
 
   return (
-    <div className="grid gap-5">
-      <PageHeader title="Painel" subtitle={longDate.format(now)} />
+    <div className="grid gap-6">
+      <PageHeader title={greeting(now.getHours())} subtitle={capitalize(longDate.format(now))} />
       <StudyTodayCard today={today} />
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
-        <div className="grid gap-5">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <div className="grid gap-6">
           <WeekCard
             today={today}
             monday={monday}
@@ -48,7 +57,7 @@ export function PainelScreen() {
           />
           <SummaryCard today={today} monday={monday} />
         </div>
-        <div className="grid gap-5">
+        <div className="grid gap-6">
           <AreaCard monday={monday} />
           <UpcomingReviews today={today} />
         </div>

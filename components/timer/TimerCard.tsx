@@ -102,7 +102,7 @@ export function TimerCard() {
           value={timer.topicId}
           disabled={timer.running}
           onChange={(event) => actions.setTimerTopic(event.target.value)}
-          className="h-[42px] w-full rounded-lg border border-line bg-surface px-2.5 text-[15px] font-normal text-text"
+          className="h-11 w-full rounded-[10px] border-2 border-line bg-surface px-3 focus:border-edge text-[15px] font-normal text-text"
         >
           <option value="">Escolha uma área ou tópico</option>
           <option value={GENERAL_STUDY}>Estudo geral (sem área)</option>

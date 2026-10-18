@@ -8,12 +8,14 @@ interface NumberInputProps {
   max: number;
   onCommit: (value: number) => void;
   disabled?: boolean;
+  // Versão pequena, em pílula, para usar no meio de uma frase.
+  compact?: boolean;
   className?: string;
   "aria-label"?: string;
 }
 
 // Só grava ao sair do campo ou apertar Enter, para não corrigir o número no meio da digitação.
-export function NumberInput({ value, min, max, onCommit, disabled, className = "", ...props }: NumberInputProps) {
+export function NumberInput({ value, min, max, onCommit, disabled, compact = false, className = "", ...props }: NumberInputProps) {
   const [resetKey, setResetKey] = useState(0);
 
   const commit = (input: HTMLInputElement) => {
@@ -36,7 +38,7 @@ export function NumberInput({ value, min, max, onCommit, disabled, className = "
       disabled={disabled}
       onBlur={(event) => commit(event.currentTarget)}
       onKeyDown={handleKeyDown}
-      className={`h-9 rounded-lg border border-line bg-surface px-2.5 text-text tabular-nums ${className}`}
+      className={`${compact ? "h-8 rounded-full px-2.5 text-center" : "h-10 rounded-[10px] px-3"} border-2 border-line bg-surface text-text tabular-nums focus:border-edge ${className}`}
       {...props}
     />
   );

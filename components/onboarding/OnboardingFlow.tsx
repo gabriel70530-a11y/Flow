@@ -34,7 +34,7 @@ export function OnboardingFlow() {
   const hydrated = useHydrated();
   if (!hydrated) {
     return (
-      <div className="grid gap-5">
+      <div className="grid gap-6">
         <PageHeader title="Montar meu plano" subtitle="Leva uns 2 minutos. Dá para pular e mudar tudo depois." />
         <Skeleton className="h-96" />
       </div>
@@ -107,7 +107,7 @@ function OnboardingSteps() {
   ];
 
   return (
-    <div className="grid gap-5">
+    <div className="grid gap-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <PageHeader title="Montar meu plano" subtitle="Leva uns 2 minutos. Dá para pular e mudar tudo depois." />
         <button type="button" onClick={skip} className="min-h-9 text-sm text-muted underline underline-offset-3">
@@ -136,7 +136,7 @@ function OnboardingSteps() {
         )}
 
         {step === 1 && (
-          <div className="grid gap-5">
+          <div className="grid gap-6">
             <div className="grid gap-1.5">
               <span className="text-[13px] font-semibold text-muted">Em quais dias você quer estudar?</span>
               <StudyDaysFields value={settings.studyDays} onChange={(studyDays) => update({ studyDays })} />
@@ -149,7 +149,7 @@ function OnboardingSteps() {
         )}
 
         {step === 2 && (
-          <div className="grid gap-5">
+          <div className="grid gap-6">
             <AreaChips
               label="Quais áreas estão mais difíceis ou são prioridade?"
               hint="Elas recebem mais sessões no plano."
@@ -177,7 +177,7 @@ function OnboardingSteps() {
         )}
 
         {step === 4 && (
-          <div className="grid gap-5">
+          <div className="grid gap-6">
             <div className="grid gap-1.5">
               <span className="text-[13px] font-semibold text-muted">Como você prefere organizar a semana?</span>
               <Segmented options={planModeOptions} value={planMode} onChange={setPlanMode} />

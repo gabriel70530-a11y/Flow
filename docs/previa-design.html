@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prévia do design · Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira:ital,wdth,wght@0,100..125,300..800;1,100..125,300..800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f3f8fb;
+    --surface: #ffffff;
+    --soft: #e9f4f9;
+    --line: #dcebf2;
+    --text: #0b2a42;
+    --muted: #4f6f83;
+    --accent: #135487;
+    --accent-soft: #e2f3fa;
+    --on-accent: #ffffff;
+    --mid: #2f87b5;
+    --bright: #47bcdf;
+    --success: #2e7d4f;
+    --success-soft: #e6f3ea;
+    --danger: #c42b3f;
+    --bar: #b0e1f1;
+    --track: #dcebf2;
+    --hero: #0f4470;
+    --edge: #135487;
+    --shadow: 0 1px 2px rgba(19, 84, 135, .05), 0 10px 28px rgba(19, 84, 135, .07);
+  }
+  :root[data-theme="dark"] {
+    --bg: #061829;
+    --surface: #0b2238;
+    --soft: #102d48;
+    --line: #15344f;
+    --text: #e6f3f9;
+    --muted: #85b0c6;
+    --accent: #47bcdf;
+    --accent-soft: #10324f;
+    --on-accent: #062033;
+    --mid: #47bcdf;
+    --bright: #47bcdf;
+    --success: #6fcf97;
+    --success-soft: #16291d;
+    --danger: #ff7a8a;
+    --bar: #1d4a6b;
+    --track: #15344f;
+    --hero: #135487;
+    --edge: #eef7fb;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 28px rgba(0, 0, 0, .25);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  .heading { font-family: "Saira", sans-serif; }
+
+  /* Barra de controle da prévia (não faz parte do design) */
+  .preview-bar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center;
+    padding: 12px 16px; background: #0b2a42; color: #fff; font-size: 13px;
+  }
+  .preview-bar .label { opacity: .6; margin-right: 4px; }
+  .preview-bar .group { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(255,255,255,.1); }
+  .preview-bar button { padding: 6px 14px; border-radius: 999px; color: #fff; font-weight: 600; }
+  .preview-bar button[aria-pressed="true"] { background: #fff; color: #135487; }
+  .palette { display: flex; justify-content: center; gap: 0; margin: 16px auto 0; width: max-content; border-radius: 10px; overflow: hidden; box-shadow: var(--shadow); }
+  .palette span { width: 56px; height: 28px; }
+  .preview-note { max-width: 760px; margin: 24px auto 0; padding: 0 16px; color: var(--muted); font-size: 14px; text-align: center; }
+
+  .stage { display: flex; justify-content: center; padding: 24px 16px 64px; }
+  .frame {
+    width: 100%; max-width: 1280px; background: var(--bg); border-radius: 20px; overflow: hidden;
+    box-shadow: 0 0 0 1px var(--line), 0 30px 60px rgba(15,27,45,.08); transition: max-width .3s;
+  }
+  .frame.phone { max-width: 400px; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ---------- App ---------- */
+  .app { display: grid; grid-template-columns: 232px 1fr; min-height: 760px; }
+  .phone .app { grid-template-columns: 1fr; }
+  .sidebar { padding: 28px 16px; display: flex; flex-direction: column; gap: 32px; }
+  .phone .sidebar { display: none; }
+  .wordmark { font-family: "Saira", sans-serif; font-style: italic; font-weight: 800; font-stretch: 125%; font-size: 30px; letter-spacing: .01em; padding: 0 12px; }
+  /* Logo: símbolo azul com o F e o nome na cor de destaque, para não se confundir com os títulos. */
+  .brand { display: inline-flex; align-items: center; gap: 10px; padding: 0 8px; }
+  .brand .wordmark { padding: 0; color: var(--accent); }
+  :root[data-theme="dark"] .brand .wordmark { color: #fff; }
+  .brand-mark {
+    width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 10px;
+    background: #135487; border: 2px solid var(--edge); box-shadow: 2px 2px 0 var(--edge);
+  }
+  .brand-mark svg { width: 24px; height: 24px; }
+  .phone .brand { padding: 0; }
+  .phone .brand-mark { width: 32px; height: 32px; }
+  .nav { display: grid; gap: 4px; }
+  .nav a {
+    display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px;
+    color: var(--muted); text-decoration: none; font-weight: 500;
+  }
+  .nav a { border: 2px solid transparent; }
+  .nav a.active { background: var(--surface); color: var(--text); font-weight: 600; border-color: var(--edge); box-shadow: 3px 3px 0 var(--edge); }
+  .nav svg { width: 18px; height: 18px; flex: none; }
+  .nav .count { margin-left: auto; min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--danger); color: #fff; font-size: 11px; font-weight: 700; text-align: center; line-height: 20px; }
+
+  .topbar { display: none; align-items: center; justify-content: space-between; padding: 14px 16px; margin-bottom: 12px; border-bottom: 2px solid var(--edge); background: var(--surface); }
+  .phone .topbar { display: flex; }
+  .phone .wordmark { font-size: 24px; padding: 0; }
+  .tabbar { display: none; }
+  .phone .tabbar {
+    display: grid; grid-template-columns: repeat(5, 1fr); position: sticky; bottom: 0;
+    background: var(--surface); box-shadow: 0 -1px 0 var(--line); padding: 8px 4px 10px;
+  }
+  .tabbar a { display: grid; justify-items: center; gap: 2px; font-size: 11px; color: var(--muted); text-decoration: none; }
+  .tabbar a.active { color: var(--text); font-weight: 600; }
+  .tabbar svg { width: 20px; height: 20px; }
+
+  .content { padding: 40px 48px 56px 24px; display: grid; gap: 24px; align-content: start; max-width: 1040px; }
+  .phone .content { padding: 4px 16px 24px; gap: 16px; }
+  .page-head h1 { font-family: "Saira", sans-serif; font-weight: 700; font-stretch: 112%; font-size: 32px; line-height: 1.1; letter-spacing: -.01em; }
+  .phone .page-head h1 { font-size: 26px; }
+  .page-head p { margin-top: 6px; color: var(--muted); }
+
+  /* Contorno de 2px e sombra de carimbo (deslocada, sem desfoque), como no Clube do Filme. */
+  .card, .area { border: 2px solid var(--edge); box-shadow: 4px 4px 0 var(--edge); }
+  .card { background: var(--surface); border-radius: 18px; padding: 28px; }
+  .phone .card { padding: 20px; border-radius: 16px; }
+  .card h2 { font-family: "Saira", sans-serif; font-weight: 600; font-stretch: 108%; font-size: 18px; }
+  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 44px; padding: 0 22px; border-radius: 999px; font-weight: 600; white-space: nowrap;
+  }
+  .btn-primary { background: var(--accent); color: var(--on-accent); border: 2px solid var(--edge); box-shadow: 3px 3px 0 var(--edge); transition: transform .1s, box-shadow .1s; }
+  .btn-primary:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--edge); }
+  .btn-primary:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--edge); }
+  :root[data-theme="dark"] .btn-primary { background: #135487; color: #fff; }
+  .btn-soft { background: var(--soft); }
+  .btn-ghost { color: var(--muted); padding: 0 12px; }
+  .btn-sm { height: 36px; padding: 0 16px; font-size: 14px; }
+
+  /* Painel */
+  .today {
+    background: var(--hero); color: #fff; border-radius: 22px; padding: 32px;
+    display: grid; gap: 24px; border: 2px solid var(--edge); box-shadow: 4px 4px 0 var(--edge);
+  }
+  .phone .today { padding: 22px; border-radius: 18px; }
+  .today .eyebrow { color: inherit; opacity: .65; }
+  .today-topics { display: grid; gap: 4px; }
+  .today-topic { font-family: "Saira", sans-serif; font-weight: 700; font-stretch: 115%; font-size: 30px; line-height: 1.15; }
+  .phone .today-topic { font-size: 24px; }
+  .today-meta { opacity: .7; }
+  .today-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .today .btn-primary { background: #fff; color: #135487; border-color: #0b2a42; box-shadow: 3px 3px 0 #0b2a42; }
+  :root[data-theme="dark"] .today .btn-primary { background: #fff; color: #135487; border-color: #eef7fb; box-shadow: 3px 3px 0 #0b2a42; }
+  .today-topic.next { color: var(--bar); opacity: 1; }
+  :root[data-theme="dark"] .today-topic.next { color: #b0e1f1; opacity: .75; }
+  .today .btn-ghost { color: inherit; opacity: .8; }
+
+  .grid-2 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 24px; align-items: start; }
+  .phone .grid-2 { grid-template-columns: 1fr; gap: 16px; }
+  .week-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .big-number { font-family: "Saira", sans-serif; font-style: italic; font-weight: 800; font-stretch: 120%; font-size: 56px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .big-number small { font-size: 18px; font-style: normal; font-weight: 500; color: var(--muted); margin-left: 6px; }
+  .bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; align-items: end; height: 200px; margin-top: 28px; }
+  .bar { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 8px; height: 100%; }
+  .bar span { width: 100%; max-width: 28px; border-radius: 8px; background: var(--bar); }
+  .bar span.hit { background: var(--accent); }
+  .bar small { font-size: 12px; color: var(--muted); }
+  .bar.current small { color: var(--text); font-weight: 700; }
+  .stack { display: grid; gap: 24px; align-content: start; }
+  .phone .stack { gap: 16px; }
+  .area-row { display: grid; gap: 6px; }
+  .area-row + .area-row { margin-top: 14px; }
+  .area-row div { display: flex; justify-content: space-between; font-size: 14px; }
+  .area-row div span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .track { height: 6px; border-radius: 999px; background: var(--track); overflow: hidden; }
+  .track i { display: block; height: 100%; border-radius: 999px; background: var(--mid); }
+  .review { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; }
+  .review + .review { border-top: 1px solid var(--line); }
+  .review span:last-child { color: var(--muted); font-size: 14px; white-space: nowrap; }
+
+  /* Matérias */
+  .toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .search {
+    flex: 1; min-width: 200px; height: 44px; padding: 0 18px 0 42px; border-radius: 999px; border: 0;
+    background: var(--surface); border: 2px solid var(--edge); color: var(--text); font: inherit;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236b7384' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: 16px center;
+  }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { height: 34px; padding: 0 14px; border-radius: 999px; font-size: 14px; color: var(--muted); }
+  .chip { border: 2px solid transparent; }
+  .chip[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); font-weight: 600; border-color: var(--edge); }
+  :root[data-theme="dark"] .chip[aria-pressed="true"] { background: #135487; color: #fff; }
+
+  .area { background: var(--surface); border-radius: 18px; overflow: hidden; }
+  .area-toggle { width: 100%; display: flex; align-items: center; gap: 16px; padding: 22px 28px; text-align: left; }
+  .phone .area-toggle { padding: 18px 20px; gap: 12px; }
+  .area-toggle h2 { font-family: "Saira", sans-serif; font-weight: 600; font-stretch: 108%; font-size: 18px; }
+  .area-summary { color: var(--muted); font-size: 14px; }
+  .area-progress { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+  .area-progress .track { width: 120px; }
+  .phone .area-progress .track { display: none; }
+  .chevron { width: 32px; height: 32px; border-radius: 999px; display: grid; place-items: center; background: var(--soft); border: 2px solid var(--edge); transition: transform .2s; flex: none; }
+  .area[data-open="true"] .chevron { transform: rotate(180deg); }
+  .area-body { display: none; padding: 0 28px 24px; }
+  .phone .area-body { padding: 0 20px 20px; }
+  .area[data-open="true"] .area-body { display: block; }
+  .subject { padding-top: 12px; }
+  .subject + .subject { margin-top: 8px; }
+  .subject-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .topic {
+    display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin: 0 -14px; border-radius: 12px;
+  }
+  .topic:hover { background: var(--soft); }
+  .topic-name { flex: 1; }
+  .topic-meta { font-size: 13px; color: var(--muted); }
+  .status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .status::before { content: ""; width: 7px; height: 7px; border-radius: 999px; background: var(--muted); opacity: .5; }
+  .status.and { color: var(--accent); }
+  .status.and::before { background: var(--mid); opacity: 1; }
+  .status.ok::before, .status.rev::before { opacity: 1; }
+  .status.ok { color: var(--success); }
+  .status.ok::before { background: var(--success); }
+  .status.rev { color: var(--danger); }
+  .status.rev::before { background: var(--danger); }
+  .add { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .add:hover { background: var(--soft); color: var(--text); }
+  .empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
+
+  /* ---------- Site ---------- */
+  .site-header { display: flex; align-items: center; justify-content: space-between; padding: 22px 48px; background: #0f4470; color: #fff; }
+  .phone .site-header { padding: 16px 20px; }
+  .site-header nav { display: flex; gap: 28px; font-size: 14px; opacity: .8; }
+  .phone .site-header nav { display: none; }
+  .hero { background: #0f4470; color: #fff; padding: 96px 48px 120px; position: relative; overflow: hidden; }
+  .phone .hero { padding: 48px 20px 64px; }
+  .hero::after {
+    content: ""; position: absolute; right: -120px; top: -80px; width: 520px; height: 520px; border-radius: 50%;
+    border: 1px solid rgba(71,188,223,.18); box-shadow: 0 0 0 80px rgba(71,188,223,.05), 0 0 0 160px rgba(71,188,223,.03);
+  }
+  .hero-kicker { font-size: 13px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #b0e1f1; }
+  .hero h1 {
+    margin-top: 20px; max-width: 900px; font-family: "Saira", sans-serif; font-weight: 800; font-stretch: 118%;
+    font-size: clamp(38px, 6vw, 76px); line-height: 1.02; letter-spacing: -.01em; text-transform: uppercase;
+  }
+  .hero h1 em { font-style: italic; color: #47bcdf; }
+  .hero p { margin-top: 24px; max-width: 540px; font-size: 18px; color: #d3ebf5; }
+  .phone .hero p { font-size: 16px; }
+  .hero-actions { margin-top: 36px; display: flex; flex-wrap: wrap; gap: 12px; }
+  .hero .btn-primary { background: #fff; color: #135487; height: 52px; padding: 0 28px; }
+  .btn-outline { border: 2px solid #eef7fb; color: #fff; height: 52px; padding: 0 28px; }
+  .hero .btn-primary { border-color: #eef7fb; box-shadow: 4px 4px 0 #47bcdf; }
+  .site-section { padding: 88px 48px; display: grid; gap: 40px; }
+  .phone .site-section { padding: 48px 20px; gap: 28px; }
+  .section-title { font-family: "Saira", sans-serif; font-weight: 700; font-stretch: 115%; font-size: clamp(26px, 3.4vw, 40px); line-height: 1.1; text-transform: uppercase; max-width: 640px; }
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px 48px; }
+  .phone .features { grid-template-columns: 1fr; gap: 28px; }
+  .feature-number { font-family: "Saira", sans-serif; font-style: italic; font-weight: 800; font-stretch: 120%; font-size: 15px; color: var(--accent); }
+  .feature h3 { margin-top: 10px; font-family: "Saira", sans-serif; font-weight: 600; font-stretch: 108%; font-size: 19px; }
+  .feature p { margin-top: 8px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="preview-bar">
+  <span class="label">Tela</span>
+  <div class="group" data-control="screen">
+    <button aria-pressed="true" data-value="site">Página inicial</button>
+    <button aria-pressed="false" data-value="painel">Painel</button>
+    <button aria-pressed="false" data-value="materias">Matérias</button>
+  </div>
+  <span class="label">Tema</span>
+  <div class="group" data-control="theme">
+    <button aria-pressed="true" data-value="light">Claro</button>
+    <button aria-pressed="false" data-value="dark">Escuro</button>
+  </div>
+  <span class="label">Tamanho</span>
+  <div class="group" data-control="size">
+    <button aria-pressed="true" data-value="desktop">Computador</button>
+    <button aria-pressed="false" data-value="phone">Celular</button>
+  </div>
+</div>
+
+<div class="palette" title="Paleta: #135487, #2F87B5, #47BCDF, #85B0C6, #B0E1F1"><span style="background:#135487"></span><span style="background:#2f87b5"></span><span style="background:#47bcdf"></span><span style="background:#85b0c6"></span><span style="background:#b0e1f1"></span></div>
+<p class="preview-note">Prévia do novo visual do Flow com a paleta azul. Os dados são de exemplo. Em Matérias, clique numa área para abrir ou recolher os tópicos.</p>
+
+<div class="stage">
+  <div class="frame" id="frame">
+
+    <!-- Página inicial -->
+    <section class="screen active" data-screen="site">
+      <header class="site-header">
+        <span class="brand" style="padding:0"><span class="brand-mark"><svg viewBox="0 0 64 64" aria-hidden="true"><path fill="#fff" d="M23 13h28l-2.4 8H31.2l-1.6 5.4h15.2l-2.4 8H27.2L22.4 51h-9.6z"/></svg></span><span class="wordmark" style="font-size:26px;color:#fff">FLOW</span></span>
+        <nav><span>Como funciona</span><span>Planos</span><span>Dúvidas</span></nav>
+        <button class="btn btn-sm" style="background:#fff;color:#135487">Abrir o app</button>
+      </header>
+      <div class="hero">
+        <p class="hero-kicker">Organizador de estudos para o ENEM</p>
+        <h1>Sua preparação para o ENEM, <em>no ritmo certo.</em></h1>
+        <p>Saiba o que estudar hoje, organize a semana sem rigidez e lembre das revisões na hora certa. Grátis e sem cadastro.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary">Começar agora</button>
+          <button class="btn btn-outline">Ver como funciona</button>
+        </div>
+      </div>
+      <div class="site-section">
+        <h2 class="section-title">Menos caos. Mais foco no que importa hoje.</h2>
+        <div class="features">
+          <div class="feature"><span class="feature-number">01</span><h3>O que estudar hoje</h3><p>O painel abre com as matérias do dia e um botão para começar.</p></div>
+          <div class="feature"><span class="feature-number">02</span><h3>Semana sem rigidez</h3><p>Até 2 matérias por dia, do mesmo assunto. O que não der passa para o dia seguinte.</p></div>
+          <div class="feature"><span class="feature-number">03</span><h3>Revisões na hora certa</h3><p>Ao concluir um tópico, as revisões de 1, 7, 15 e 30 dias são agendadas.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Painel -->
+    <section class="screen" data-screen="painel">
+      <div class="app">
+        <aside class="sidebar" data-nav="painel"></aside>
+        <div>
+          <div class="topbar"><span class="brand"><span class="brand-mark"><svg viewBox="0 0 64 64" aria-hidden="true"><path fill="#fff" d="M23 13h28l-2.4 8H31.2l-1.6 5.4h15.2l-2.4 8H27.2L22.4 51h-9.6z"/></svg></span><span class="wordmark">FLOW</span></span><button class="chevron" aria-label="Tema">◐</button></div>
+          <main class="content">
+            <div class="page-head">
+              <h1>Bom dia</h1>
+              <p>Sábado, 17 de outubro</p>
+            </div>
+
+            <div class="today">
+              <span class="eyebrow">Estudar hoje</span>
+              <div class="today-topics">
+                <span class="today-topic">Razão e proporção</span>
+                <span class="today-topic next" style="color:#b0e1f1">Porcentagem e juros</span>
+              </div>
+              <span class="today-meta">Matemática · estude o tempo que quiser, até sentir que dominou</span>
+              <div class="today-actions">
+                <button class="btn btn-primary">Começar a estudar</button>
+                <button class="btn btn-ghost">Ver a semana</button>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="card">
+                <div class="week-head">
+                  <h2>Esta semana</h2>
+                  <span class="area-summary">12/10 – 18/10</span>
+                </div>
+                <div style="margin-top:20px">
+                  <span class="big-number">14,5<small>de 25 h</small></span>
+                </div>
+                <div class="bars">
+                  <div class="bar"><span class="hit" style="height:90%"></span><small>Seg</small></div>
+                  <div class="bar"><span style="height:55%"></span><small>Ter</small></div>
+                  <div class="bar"><span class="hit" style="height:100%"></span><small>Qua</small></div>
+                  <div class="bar"><span style="height:40%"></span><small>Qui</small></div>
+                  <div class="bar"><span class="hit" style="height:95%"></span><small>Sex</small></div>
+                  <div class="bar current"><span style="height:20%"></span><small>Sáb</small></div>
+                  <div class="bar"><span style="height:4%"></span><small>Dom</small></div>
+                </div>
+              </div>
+              <div class="stack">
+                <div class="card">
+                  <h2>Por área</h2>
+                  <div style="margin-top:18px">
+                    <div class="area-row"><div><span>Matemática</span><span>6 h</span></div><div class="track"><i style="width:80%"></i></div></div>
+                    <div class="area-row"><div><span>Natureza</span><span>3,5 h</span></div><div class="track"><i style="width:48%"></i></div></div>
+                    <div class="area-row"><div><span>Humanas</span><span>3 h</span></div><div class="track"><i style="width:40%"></i></div></div>
+                    <div class="area-row"><div><span>Linguagens</span><span>1,5 h</span></div><div class="track"><i style="width:20%"></i></div></div>
+                    <div class="area-row"><div><span>Redação</span><span>0,5 h</span></div><div class="track"><i style="width:8%"></i></div></div>
+                  </div>
+                </div>
+                <div class="card">
+                  <h2>Próximas revisões</h2>
+                  <div style="margin-top:10px">
+                    <div class="review"><span>Genética</span><span>Hoje</span></div>
+                    <div class="review"><span>Era Vargas</span><span>Amanhã</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </main>
+          <nav class="tabbar" data-tabs="painel"></nav>
+        </div>
+      </div>
+    </section>
+
+    <!-- Matérias -->
+    <section class="screen" data-screen="materias">
+      <div class="app">
+        <aside class="sidebar" data-nav="materias"></aside>
+        <div>
+          <div class="topbar"><span class="brand"><span class="brand-mark"><svg viewBox="0 0 64 64" aria-hidden="true"><path fill="#fff" d="M23 13h28l-2.4 8H31.2l-1.6 5.4h15.2l-2.4 8H27.2L22.4 51h-9.6z"/></svg></span><span class="wordmark">FLOW</span></span><button class="chevron" aria-label="Tema">◐</button></div>
+          <main class="content">
+            <div class="page-head" style="display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap">
+              <div>
+                <h1>Matérias</h1>
+                <p>15 tópicos · 2 concluídos</p>
+              </div>
+              <button class="btn btn-primary">+ Novo tópico</button>
+            </div>
+
+            <div class="toolbar">
+              <input class="search" placeholder="Buscar tópico">
+            </div>
+            <div class="chips">
+              <button class="chip" aria-pressed="true">Todas</button>
+              <button class="chip">Matemática</button>
+              <button class="chip">Linguagens</button>
+              <button class="chip">Natureza</button>
+              <button class="chip">Humanas</button>
+              <button class="chip">Redação</button>
+            </div>
+
+            <div class="area" data-open="true">
+              <button class="area-toggle" aria-expanded="true">
+                <div><h2>Matemática</h2><span class="area-summary">3 tópicos · 1 concluído</span></div>
+                <span class="area-progress"><span class="track"><i style="width:33%"></i></span><span class="chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span>
+              </button>
+              <div class="area-body">
+                <div class="topic"><span class="topic-name">Razão e proporção<div class="topic-meta">Prioridade alta</div></span><span class="status and">Em andamento</span></div>
+                <div class="topic"><span class="topic-name">Porcentagem e juros</span><span class="status ok">Concluído</span></div>
+                <div class="topic"><span class="topic-name">Estatística<div class="topic-meta">Revisão 2: amanhã</div></span><span class="status rev">Precisa revisar</span></div>
+                <button class="add">+ Adicionar em Matemática</button>
+              </div>
+            </div>
+
+            <div class="area" data-open="false">
+              <button class="area-toggle" aria-expanded="false">
+                <div><h2>Ciências da Natureza</h2><span class="area-summary">7 tópicos · Química, Física e Biologia</span></div>
+                <span class="area-progress"><span class="track"><i style="width:14%"></i></span><span class="chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span>
+              </button>
+              <div class="area-body">
+                <div class="subject">
+                  <div class="subject-head"><span class="eyebrow">Física</span><button class="add">+ Adicionar</button></div>
+                  <div class="topic"><span class="topic-name">Ondulatória</span><span class="status">Não iniciado</span></div>
+                  <div class="topic"><span class="topic-name">Cinemática</span><span class="status and">Em andamento</span></div>
+                </div>
+                <div class="subject">
+                  <div class="subject-head"><span class="eyebrow">Biologia</span><button class="add">+ Adicionar</button></div>
+                  <div class="topic"><span class="topic-name">Genética</span><span class="status ok">Concluído</span></div>
+                </div>
+                <div class="subject">
+                  <div class="subject-head"><span class="eyebrow">Química</span><button class="add">+ Adicionar</button></div>
+                  <p class="empty">Nenhum tópico ainda.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="area" data-open="false">
+              <button class="area-toggle" aria-expanded="false">
+                <div><h2>Ciências Humanas</h2><span class="area-summary">2 tópicos · Geografia, História, Filosofia e Sociologia</span></div>
+                <span class="area-progress"><span class="track"><i style="width:0%"></i></span><span class="chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span>
+              </button>
+              <div class="area-body">
+                <div class="subject">
+                  <div class="subject-head"><span class="eyebrow">História</span><button class="add">+ Adicionar</button></div>
+                  <div class="topic"><span class="topic-name">Era Vargas</span><span class="status">Não iniciado</span></div>
+                  <div class="topic"><span class="topic-name">Brasil Colônia</span><span class="status">Não iniciado</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="area" data-open="false">
+              <button class="area-toggle" aria-expanded="false">
+                <div><h2>Linguagens</h2><span class="area-summary">3 tópicos</span></div>
+                <span class="area-progress"><span class="track"><i style="width:0%"></i></span><span class="chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span>
+              </button>
+              <div class="area-body">
+                <div class="topic"><span class="topic-name">Tipologia textual</span><span class="status">Não iniciado</span></div>
+                <div class="topic"><span class="topic-name">Figuras de linguagem</span><span class="status">Não iniciado</span></div>
+                <button class="add">+ Adicionar em Linguagens</button>
+              </div>
+            </div>
+
+            <div class="area" data-open="false">
+              <button class="area-toggle" aria-expanded="false">
+                <div><h2>Redação</h2><span class="area-summary">Nenhum tópico ainda</span></div>
+                <span class="area-progress"><span class="chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span>
+              </button>
+              <div class="area-body">
+                <p class="empty">Adicione o que você vai estudar, do jeito que preferir.</p>
+                <button class="add">+ Adicionar em Redação</button>
+              </div>
+            </div>
+          </main>
+          <nav class="tabbar" data-tabs="materias"></nav>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  const icons = {
+    painel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>',
+    cronograma: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+    materias: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>',
+    timer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M10 2h4"/></svg>',
+    revisoes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
+  };
+  const labels = { painel: "Painel", cronograma: "Cronograma", materias: "Matérias", timer: "Timer", revisoes: "Revisões" };
+
+  document.querySelectorAll("[data-nav]").forEach((aside) => {
+    const active = aside.dataset.nav;
+    aside.innerHTML =
+      '<span class="brand"><span class=\"brand-mark\"><svg viewBox=\"0 0 64 64\" aria-hidden=\"true\"><path fill=\"#fff\" d=\"M23 13h28l-2.4 8H31.2l-1.6 5.4h15.2l-2.4 8H27.2L22.4 51h-9.6z\"/></svg></span><span class="wordmark">FLOW</span></span><nav class="nav">' +
+      Object.keys(labels)
+        .map((key) => `<a href="#" class="${key === active ? "active" : ""}">${icons[key]}${labels[key]}${key === "revisoes" ? '<span class="count">2</span>' : ""}</a>`)
+        .join("") +
+      "</nav>";
+  });
+  document.querySelectorAll("[data-tabs]").forEach((nav) => {
+    const active = nav.dataset.tabs;
+    nav.innerHTML = Object.keys(labels)
+      .map((key) => `<a href="#" class="${key === active ? "active" : ""}">${icons[key]}${labels[key]}</a>`)
+      .join("");
+  });
+
+  const frame = document.getElementById("frame");
+  const apply = {
+    screen: (value) => document.querySelectorAll(".screen").forEach((screen) => screen.classList.toggle("active", screen.dataset.screen === value)),
+    theme: (value) => document.documentElement.setAttribute("data-theme", value),
+    size: (value) => frame.classList.toggle("phone", value === "phone"),
+  };
+  document.querySelectorAll("[data-control]").forEach((group) => {
+    group.addEventListener("click", (event) => {
+      const button = event.target.closest("button");
+      if (!button) return;
+      group.querySelectorAll("button").forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
+      apply[group.dataset.control](button.dataset.value);
+    });
+  });
+
+  document.querySelectorAll(".area-toggle").forEach((toggle) => {
+    toggle.addEventListener("click", () => {
+      const area = toggle.closest(".area");
+      const open = area.dataset.open !== "true";
+      area.dataset.open = String(open);
+      toggle.setAttribute("aria-expanded", String(open));
+    });
+  });
+</script>
+</body>
+</html>

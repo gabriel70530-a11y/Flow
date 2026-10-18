@@ -24,7 +24,7 @@ export function Segmented<Value extends string | number>({
   className = "",
 }: SegmentedProps<Value>) {
   return (
-    <div className={`${wrap ? "grid grid-cols-2 gap-[3px]" : "flex"} rounded-[10px] bg-hover p-[3px] ${className}`}>
+    <div className={`${wrap ? "grid grid-cols-2 gap-[3px]" : "flex"} rounded-[20px] bg-hover p-[3px] ${className}`}>
       {options.map((option) => (
         <button
           key={option.value}
@@ -33,7 +33,7 @@ export function Segmented<Value extends string | number>({
           aria-label={option.ariaLabel}
           disabled={disabled}
           onClick={() => onChange(option.value)}
-          className="h-8 flex-1 rounded-lg px-3 text-sm font-semibold whitespace-nowrap text-muted tabular-nums aria-pressed:bg-surface aria-pressed:text-text aria-pressed:shadow-card"
+          className="h-8 flex-1 rounded-full px-3 text-sm font-semibold whitespace-nowrap text-muted tabular-nums aria-pressed:bg-action aria-pressed:text-on-action"
         >
           {option.label}
         </button>

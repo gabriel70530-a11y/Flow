@@ -1,27 +1,30 @@
 import Link from "next/link";
-import { buttonStyles, linkStyles } from "@/components/ui/Button";
+import { linkStyles } from "@/components/ui/Button";
 import { Wordmark } from "@/components/shell/Wordmark";
 import { contactEmail } from "@/lib/plan";
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-20 border-b border-line bg-surface pt-[env(safe-area-inset-top,0px)]">
-      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4 md:px-8">
+    <header className="sticky top-0 z-20 border-b-2 border-white/10 bg-hero pt-[env(safe-area-inset-top,0px)] text-white">
+      <div className="mx-auto flex h-[72px] max-w-6xl items-center justify-between gap-4 px-5 md:px-12">
         <Link href="/" aria-label="Flow, página inicial">
-          <Wordmark size="sm" />
+          <Wordmark size="sm" onHero />
         </Link>
-        <nav className="hidden items-center gap-6 text-sm font-medium md:flex" aria-label="Seções">
-          <a href="#como-funciona" className="hover:text-accent">
+        <nav className="hidden items-center gap-7 text-sm text-white/80 md:flex" aria-label="Seções">
+          <Link href="/#como-funciona" className="hover:text-white">
             Como funciona
-          </a>
-          <a href="#planos" className="hover:text-accent">
+          </Link>
+          <Link href="/#planos" className="hover:text-white">
             Planos
-          </a>
-          <a href="#perguntas" className="hover:text-accent">
-            Perguntas
-          </a>
+          </Link>
+          <Link href="/#perguntas" className="hover:text-white">
+            Dúvidas
+          </Link>
         </nav>
-        <Link href="/painel" className={buttonStyles("primary")}>
+        <Link
+          href="/painel"
+          className="inline-flex h-9 items-center rounded-full bg-white px-4 text-sm font-semibold whitespace-nowrap text-action"
+        >
           Abrir o app
         </Link>
       </div>
@@ -32,8 +35,8 @@ export function SiteHeader() {
 export function SiteFooter() {
   const email = contactEmail();
   return (
-    <footer className="border-t border-line bg-surface pb-[env(safe-area-inset-bottom,0px)]">
-      <div className="mx-auto grid max-w-5xl gap-4 px-4 py-8 text-sm text-muted md:px-8">
+    <footer className="border-t-2 border-edge bg-surface pb-[env(safe-area-inset-bottom,0px)]">
+      <div className="mx-auto grid max-w-6xl gap-4 px-5 py-10 text-sm text-muted md:px-12">
         <div className="flex flex-wrap gap-x-6 gap-y-2">
           <Link href="/privacidade" className={linkStyles}>
             Privacidade

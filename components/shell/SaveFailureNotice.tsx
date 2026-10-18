@@ -8,7 +8,7 @@ export function SaveFailureNotice() {
   if (!failed) return null;
 
   return (
-    <div role="alert" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-surface px-4 py-3 text-sm shadow-card">
+    <div role="alert" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[18px] border-2 border-danger bg-surface px-4 py-3 text-sm shadow-card">
       <span>
         <strong className="text-danger">Não foi possível salvar.</strong> O navegador recusou a gravação (armazenamento
         cheio ou bloqueado). O que está na tela continua aqui, mas pode se perder ao fechar a aba.

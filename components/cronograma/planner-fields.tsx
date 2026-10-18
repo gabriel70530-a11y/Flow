@@ -25,7 +25,7 @@ export function StudyDaysFields({ value, onChange }: { value: boolean[]; onChang
             type="button"
             aria-pressed={value[index]}
             onClick={() => onChange(value.map((studies, day) => (day === index ? !studies : studies)))}
-            className="min-h-11 rounded-lg bg-hover text-sm font-semibold text-muted aria-pressed:bg-accent aria-pressed:text-on-accent"
+            className="min-h-11 rounded-full bg-hover text-sm font-semibold text-muted aria-pressed:bg-action aria-pressed:text-on-action"
           >
             {weekday}
           </button>
@@ -60,7 +60,7 @@ export function AreaChips({ label, hint, value, onChange }: AreaChipsProps) {
             type="button"
             aria-pressed={value.includes(area.id)}
             onClick={() => toggle(area.id)}
-            className="min-h-9 rounded-full bg-hover px-3.5 text-sm font-semibold text-muted aria-pressed:bg-accent aria-pressed:text-on-accent"
+            className="min-h-9 rounded-full bg-hover px-3.5 text-sm font-semibold text-muted aria-pressed:bg-action aria-pressed:text-on-action"
           >
             {area.name}
           </button>

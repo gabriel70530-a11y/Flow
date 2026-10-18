@@ -1,59 +1,90 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #f4f3ee;
+  --bg: #f3f8fb;
   --surface: #ffffff;
-  --hover: #efeee8;
-  --line: #e3e2db;
-  --text: #0f1b2d;
-  --muted: #5b6475;
-  --accent: #14213d;
-  --accent-soft: #e4e8f0;
+  --hover: #e9f4f9;
+  --line: #dcebf2;
+  --text: #0b2a42;
+  --muted: #4f6f83;
+  --accent: #135487;
+  --accent-soft: #e2f3fa;
   --on-accent: #ffffff;
+  /* Ação principal (botões, filtro ativo): o azul profundo da paleta nos dois temas. */
+  --action: #135487;
+  --on-action: #ffffff;
+  /* Azul médio da paleta: só em barras, trilhos e marcadores (como texto não tem contraste AA). */
+  --mid: #2f87b5;
   --success: #2e7d4f;
   --success-soft: #e3f1e8;
   --danger: #c42b3f;
-  --bar: #dcdfe6;
-  --card-shadow: 0 1px 2px rgba(15, 27, 45, 0.06), 0 1px 3px rgba(15, 27, 45, 0.04);
+  --bar: #b0e1f1;
+  --track: #dcebf2;
+  /* Contorno de 2px e sombra de carimbo (deslocada, sem desfoque) dos cards e botões. */
+  --edge: #135487;
+  --hero: #0f4470;
+  /* Faixa de destaque (Estudar hoje, topo da landing): azul profundo nos dois temas, com texto claro. */
+  --hero-soft: #b0e1f1;
+  --hero-bright: #47bcdf;
+  --hero-edge: #0b2a42;
+  --brand: #135487;
   /* O toast é escuro nos dois temas. */
-  --toast: #1c1e21;
+  --toast: #0b2a42;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0b111c;
-    --surface: #131b2a;
-    --hover: #1c2638;
-    --line: #253047;
-    --text: #e8ebf1;
-    --muted: #9aa5b8;
-    --accent: #dfe6f3;
-    --accent-soft: #1f2b42;
-    --on-accent: #0f1b2d;
+    --bg: #061829;
+    --surface: #0b2238;
+    --hover: #102d48;
+    --line: #15344f;
+    --text: #e6f3f9;
+    --muted: #85b0c6;
+    --accent: #47bcdf;
+    --accent-soft: #10324f;
+    --on-accent: #062033;
+    --action: #135487;
+    --on-action: #ffffff;
+    --mid: #47bcdf;
     --success: #6fcf97;
-    --success-soft: #17301f;
+    --success-soft: #16291d;
     --danger: #ff7a8a;
-    --bar: #253047;
-    --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --bar: #1d4a6b;
+    --track: #15344f;
+    --edge: #eef7fb;
+    --hero: #135487;
+    --hero-soft: #b0e1f1;
+    --hero-bright: #47bcdf;
+    --hero-edge: #eef7fb;
+    --brand: #ffffff;
     color-scheme: dark;
   }
 }
 
 :root[data-theme="dark"] {
-  --bg: #0b111c;
-  --surface: #131b2a;
-  --hover: #1c2638;
-  --line: #253047;
-  --text: #e8ebf1;
-  --muted: #9aa5b8;
-  --accent: #dfe6f3;
-  --accent-soft: #1f2b42;
-  --on-accent: #0f1b2d;
+  --bg: #061829;
+  --surface: #0b2238;
+  --hover: #102d48;
+  --line: #15344f;
+  --text: #e6f3f9;
+  --muted: #85b0c6;
+  --accent: #47bcdf;
+  --accent-soft: #10324f;
+  --on-accent: #062033;
+  --action: #135487;
+  --on-action: #ffffff;
+  --mid: #47bcdf;
   --success: #6fcf97;
-  --success-soft: #17301f;
+  --success-soft: #16291d;
   --danger: #ff7a8a;
-  --bar: #253047;
-  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --bar: #1d4a6b;
+  --track: #15344f;
+  --edge: #eef7fb;
+  --hero: #135487;
+  --hero-soft: #b0e1f1;
+  --hero-bright: #47bcdf;
+  --hero-edge: #eef7fb;
+  --brand: #ffffff;
   color-scheme: dark;
 }
 
@@ -71,8 +102,20 @@
   --color-success-soft: var(--success-soft);
   --color-danger: var(--danger);
   --color-bar: var(--bar);
+  --color-track: var(--track);
+  --color-mid: var(--mid);
+  --color-action: var(--action);
+  --color-on-action: var(--on-action);
+  --color-edge: var(--edge);
+  --color-hero: var(--hero);
+  --color-hero-soft: var(--hero-soft);
+  --color-hero-bright: var(--hero-bright);
+  --color-hero-edge: var(--hero-edge);
+  --color-brand: var(--brand);
   --color-toast: var(--toast);
-  --shadow-card: var(--card-shadow);
+  --shadow-card: 4px 4px 0 var(--edge);
+  --shadow-stamp: 3px 3px 0 var(--edge);
+  --shadow-stamp-sm: 2px 2px 0 var(--edge);
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-heading: var(--font-display), "Arial Black", system-ui, sans-serif;
   /* O protótipo herda line-height 1.45 do body em todos os tamanhos pequenos. */
@@ -98,15 +141,21 @@
     font-family: var(--font-heading);
     font-weight: 700;
     font-size: 26px;
-    line-height: 1.2;
+    line-height: 1.1;
     font-stretch: 112%;
     letter-spacing: -0.01em;
+  }
+
+  @media (width >= 761px) {
+    h1 {
+      font-size: 32px;
+    }
   }
 
   h2 {
     font-family: var(--font-heading);
     font-weight: 600;
-    font-size: 17px;
+    font-size: 18px;
     line-height: 1.3;
     font-stretch: 108%;
   }

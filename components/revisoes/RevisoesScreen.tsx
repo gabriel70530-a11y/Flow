@@ -36,7 +36,7 @@ export function RevisoesScreen() {
 
   if (!hydrated) {
     return (
-      <div className="grid gap-5">
+      <div className="grid gap-6">
         {header}
         <Skeleton className="h-64" />
       </div>
@@ -65,7 +65,7 @@ export function RevisoesScreen() {
   };
 
   return (
-    <div className="grid gap-5">
+    <div className="grid gap-6">
       {header}
 
       {completed && completedTopic && (

@@ -9,8 +9,10 @@ interface ButtonProps extends ComponentProps<"button"> {
 }
 
 const variants: Record<Variant, string> = {
-  primary: "bg-accent text-on-accent",
-  secondary: "bg-hover text-text",
+  // Contorno e sombra de carimbo: o botão "afunda" ao ser pressionado.
+  primary:
+    "border-2 border-edge bg-action text-on-action shadow-stamp transition-transform hover:-translate-x-px hover:-translate-y-px active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:translate-none",
+  secondary: "border-2 border-transparent bg-hover text-text hover:brightness-96",
 };
 
 const sizes: Record<Size, string> = {
@@ -20,14 +22,14 @@ const sizes: Record<Size, string> = {
 
 // Também usado em links que levam a outra tela e precisam parecer botão.
 export function buttonStyles(variant: Variant = "secondary", size: Size = "md"): string {
-  return `inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold hover:brightness-96 ${variants[variant]} ${sizes[size]}`;
+  return `inline-flex items-center justify-center gap-1.5 rounded-full font-semibold whitespace-nowrap ${variants[variant]} ${sizes[size]}`;
 }
 
 export function Button({ variant = "secondary", size = "md", className = "", type = "button", ...props }: ButtonProps) {
   return (
     <button
       type={type}
-      className={`${buttonStyles(variant, size)} disabled:hover:filter-none ${className}`}
+      className={`${buttonStyles(variant, size)} disabled:hover:filter-none disabled:hover:translate-none ${className}`}
       {...props}
     />
   );

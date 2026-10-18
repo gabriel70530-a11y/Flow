@@ -20,7 +20,7 @@ export function ThemeSelect({ theme, onChange }: ThemeSelectProps) {
       <select
         value={theme}
         onChange={(event) => onChange(event.target.value as Theme)}
-        className="h-9 rounded-lg border border-line bg-surface px-2.5 text-[15px] text-text"
+        className="h-10 rounded-[10px] border-2 border-line bg-surface px-3 text-[15px] text-text"
       >
         {THEME_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>

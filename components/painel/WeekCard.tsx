@@ -4,10 +4,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { linkStyles } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
-import { inputStyles } from "@/components/ui/Field";
 import { IconButton } from "@/components/ui/IconButton";
 import { NumberInput } from "@/components/ui/NumberInput";
-import { ProgressBar } from "@/components/ui/ProgressBar";
 import { shortDate } from "@/lib/dates";
 import {
   GOAL_LIMITS,
@@ -69,7 +67,7 @@ export function WeekCard({ today, monday, onPreviousWeek, onNextWeek }: WeekCard
       </CardHeader>
 
       <div className="flex flex-wrap items-baseline gap-2">
-        <strong className="font-heading text-5xl leading-none font-extrabold tracking-[-0.01em] font-stretch-120% italic tabular-nums">
+        <strong className="font-heading text-[56px] leading-none font-extrabold tracking-[-0.01em] font-stretch-120% italic tabular-nums">
           {inHours ? formatHours(total) : done}
         </strong>
         <span className="inline-flex flex-wrap items-center gap-1.5 text-muted">
@@ -80,7 +78,8 @@ export function WeekCard({ today, monday, onPreviousWeek, onNextWeek }: WeekCard
             max={GOAL_LIMITS[goal.type].max}
             onCommit={(value) => setGoal({ type: goal.type, value })}
             aria-label={`Meta semanal em ${GOAL_UNITS[goal.type].label}`}
-            className="h-[30px] w-16"
+            compact
+            className="w-14"
           />
           <select
             value={goal.type}
@@ -89,7 +88,7 @@ export function WeekCard({ today, monday, onPreviousWeek, onNextWeek }: WeekCard
               setGoal({ type, value: GOAL_LIMITS[type].fallback });
             }}
             aria-label="Unidade da meta semanal"
-            className={`${inputStyles} h-[30px] w-auto`}
+            className="h-8 rounded-full border-2 border-line bg-surface px-2.5 text-[15px] text-text focus:border-edge"
           >
             {(Object.keys(GOAL_UNITS) as GoalType[]).map((type) => (
               <option key={type} value={type}>
@@ -99,15 +98,11 @@ export function WeekCard({ today, monday, onPreviousWeek, onNextWeek }: WeekCard
           </select>
         </span>
       </div>
-      <ProgressBar value={done / target} label="Progresso da meta semanal" className="mt-3.5" />
-      <div className="mt-2 flex flex-wrap justify-between gap-3 text-[13px] text-muted tabular-nums">
-        <span>{percent}% da meta</span>
-        {showStreak && streak > 0 && (
-          <span>
-            {streak} {streak === 1 ? "dia seguido" : "dias seguidos"} estudando
-          </span>
-        )}
-      </div>
+      {showStreak && streak > 0 && (
+        <p className="mt-2 text-[13px] text-muted tabular-nums">
+          {streak} {streak === 1 ? "dia seguido" : "dias seguidos"} estudando · {percent}% da meta
+        </p>
+      )}
 
       {total === 0 && (
         <p className="mt-4 text-sm text-muted">
@@ -135,7 +130,7 @@ export function WeekCard({ today, monday, onPreviousWeek, onNextWeek }: WeekCard
                 {seconds > 0 && `${formatHours(seconds)}h`}
               </span>
               <div
-                className={`w-full max-w-11 rounded-t-md rounded-b-[2px] transition-[height] duration-300 ${inHours && seconds >= dailyGoal ? "bg-accent" : "bg-bar"}`}
+                className={`w-full max-w-7 rounded-[8px] transition-[height] duration-300 ${inHours && seconds >= dailyGoal ? "bg-accent" : "bg-bar"}`}
                 style={{ height: (seconds / scale) * CHART_HEIGHT }}
               />
               <span

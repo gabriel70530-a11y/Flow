@@ -9,7 +9,7 @@ interface CardProps {
 export function Card({ flush = false, className = "", children }: CardProps) {
   return (
     <section
-      className={`rounded-xl bg-surface shadow-card ${flush ? "overflow-hidden" : "p-4 md:p-5"} ${className}`}
+      className={`rounded-[18px] border-2 border-edge bg-surface shadow-card ${flush ? "overflow-hidden" : "p-5 md:p-7"} ${className}`}
     >
       {children}
     </section>
@@ -26,7 +26,7 @@ interface CardHeaderProps {
 export function CardHeader({ title, flush = false, className = "", children }: CardHeaderProps) {
   return (
     <div
-      className={`flex items-center justify-between gap-3 ${flush ? "mb-2 px-4 pt-3.5 md:px-5 md:pt-4" : "mb-4"} ${className}`}
+      className={`flex items-center justify-between gap-3 ${flush ? "mb-2 px-5 pt-5 md:px-7 md:pt-6" : "mb-4"} ${className}`}
     >
       <h2>{title}</h2>
       {children}

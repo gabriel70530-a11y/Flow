@@ -78,7 +78,7 @@ export function SessionDrawer({ session, onClose }: SessionDrawerProps) {
           rows={3}
           onBlur={(event) => setSessionNote(session.id, event.target.value)}
           placeholder="O que ficou claro, o que travou, o que retomar."
-          className="w-full resize-none rounded-lg border border-line bg-surface px-2.5 py-2 text-text"
+          className="w-full resize-none rounded-[10px] border-2 border-line bg-surface px-3 py-2 focus:border-edge text-text"
           aria-label="Nota da sessão"
         />
         <span className="text-xs text-muted">A nota é salva quando você sai do campo.</span>

@@ -89,7 +89,7 @@ export function ReflectionPrompt() {
             key={reflection}
             aria-pressed={latest.reflection === reflection}
             onClick={() => answer(reflection)}
-            className="whitespace-nowrap aria-pressed:bg-accent aria-pressed:text-on-accent"
+            className="whitespace-nowrap aria-pressed:bg-action aria-pressed:text-on-action"
           >
             {REFLECTION_LABELS[reflection]}
           </Button>

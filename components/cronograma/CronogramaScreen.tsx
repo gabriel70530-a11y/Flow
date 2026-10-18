@@ -55,7 +55,7 @@ export function CronogramaScreen() {
 
   if (!hydrated) {
     return (
-      <div className="grid gap-5">
+      <div className="grid gap-6">
         <PageHeader title="Cronograma" subtitle={SUBTITLE} />
         <Skeleton className="h-40" />
         <Skeleton className="h-64" />
@@ -116,7 +116,7 @@ export function CronogramaScreen() {
   };
 
   return (
-    <div className="grid gap-5">
+    <div className="grid gap-6">
       <PageHeader title="Cronograma" subtitle={SUBTITLE} />
 
       <div className="flex flex-wrap gap-2">

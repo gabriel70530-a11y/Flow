@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 export const inputStyles =
-  "h-9 w-full rounded-lg border border-line bg-surface px-2.5 text-[15px] font-normal text-text disabled:opacity-45";
+  "h-10 w-full rounded-[10px] border-2 border-line bg-surface px-3 text-[15px] font-normal text-text focus:border-edge disabled:opacity-45";
 
 interface FieldProps {
   label: ReactNode;

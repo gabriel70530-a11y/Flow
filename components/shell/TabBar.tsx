@@ -15,7 +15,7 @@ export function TabBar({ pathname, dueReviews, timerText }: TabBarProps) {
           key={href}
           href={href}
           aria-current={pathname.startsWith(href) ? "page" : undefined}
-          className="relative flex flex-col items-center gap-0.5 py-1 text-[11px] font-semibold text-muted aria-[current=page]:text-accent"
+          className="relative flex flex-col items-center gap-0.5 py-1 text-[11px] font-medium text-muted aria-[current=page]:font-semibold aria-[current=page]:text-text"
         >
           <Icon size={22} strokeWidth={2} aria-hidden />
           {href === "/timer" && timerText ? (
@@ -27,7 +27,7 @@ export function TabBar({ pathname, dueReviews, timerText }: TabBarProps) {
             label
           )}
           {href === "/revisoes" && dueReviews > 0 && (
-            <span className="absolute top-0 left-[calc(50%+6px)] rounded-full bg-danger px-[5px] text-[10px] text-on-accent tabular-nums">
+            <span className="absolute top-0 left-[calc(50%+6px)] rounded-full bg-danger px-[5px] text-[10px] font-bold text-white tabular-nums">
               {dueReviews}
             </span>
           )}
