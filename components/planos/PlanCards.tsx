@@ -45,11 +45,15 @@ export function PlanCards({ inApp = false }: { inApp?: boolean }) {
 
       <Card className="grid gap-4">
         <CardHeader title="Flow Pro" className="mb-0">
-          <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent">Preço experimental</span>
+          <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent">
+            {inApp ? "Preço experimental" : "Em validação"}
+          </span>
         </CardHeader>
-        <p>
-          <strong className="font-heading text-3xl font-extrabold font-stretch-120% italic tabular-nums">{PRO_PRICE}</strong>
-        </p>
+        {inApp && (
+          <p>
+            <strong className="font-heading text-3xl font-extrabold font-stretch-120% italic tabular-nums">{PRO_PRICE}</strong>
+          </p>
+        )}
         <p className="text-sm text-muted">Para quem quer o plano da semana pronto e acompanhamento detalhado.</p>
         <FeatureList items={PRO_FEATURES} />
         <div className="grid gap-2 rounded-[12px] bg-hover p-3.5 text-[13px]">

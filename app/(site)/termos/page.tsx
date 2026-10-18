@@ -41,7 +41,7 @@ export default function TermosPage() {
         <ul>
           <li>O plano gratuito não tem prazo e não exige pagamento.</li>
           <li>
-            O Flow Pro está em validação, com preço experimental de R$ 19,90/mês. Hoje não há venda nem cobrança. Antes de
+            O Flow Pro está em validação. Hoje não há venda nem cobrança. Antes de
             qualquer assinatura existir, preço, forma de cobrança, renovação, cancelamento e reembolso serão informados.
           </li>
         </ul>

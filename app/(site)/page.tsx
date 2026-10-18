@@ -40,7 +40,7 @@ const FAQ = [
   ["Funciona no celular?", "Sim, direto no navegador do celular, do tablet ou do computador."],
   [
     "Quanto custa?",
-    "O plano gratuito é gratuito de verdade. O Flow Pro tem preço experimental de R$ 19,90/mês, mas ainda não é vendido: durante o teste, os recursos Pro estão liberados.",
+    "O plano gratuito é gratuito de verdade. O Flow Pro está em validação e ainda não é vendido: durante o teste, os recursos Pro estão liberados.",
   ],
   ["E se eu não conseguir seguir o plano?", "Normal. O que não deu para estudar passa sozinho para o próximo dia, e você pode mover qualquer matéria quando quiser."],
   [
