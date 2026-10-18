@@ -54,7 +54,7 @@ Copie `.env.example` para `.env.local` e preencha o que quiser. Sem as variávei
 | `NEXT_PUBLIC_PRO_INTEREST_URL` | link https para a lista de interesse do Pro (ex.: formulário). Sem ela, a tela diz que a lista ainda não está aberta. |
 | `NEXT_PUBLIC_CONTACT_EMAIL` | e-mail de contato no rodapé do site. |
 | `NEXT_PUBLIC_ANALYTICS_URL` | endpoint https que recebe eventos anônimos. Só envia se o estudante ativar em Ajustes. |
-| `NEXT_PUBLIC_SITE_URL` | endereço público do site (ex.: `https://flow.exemplo.com`), usado no sitemap, no robots e nos cartões de compartilhamento. Sem ela, esses links apontam para `http://localhost:3000`. |
+| `NEXT_PUBLIC_SITE_URL` | endereço público do site (ex.: `https://flow.exemplo.com`), usado no sitemap, no robots e nos cartões de compartilhamento. Só é preciso com domínio próprio: na Vercel, sem ela, vale o endereço de produção do projeto (hoje `https://flow-black.vercel.app`); fora da Vercel, `http://localhost:3000`. |
 
 ## O que ainda depende de decisão ou serviço externo
 
