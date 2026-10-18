@@ -30,8 +30,10 @@ export default function TermosPage() {
       <section>
         <h2>Seus dados</h2>
         <p>
-          Os dados ficam no seu navegador. Se forem apagados (por você, pelo navegador ou por falta de espaço), não há como
-          recuperar sem um backup. Recomendamos baixar backups de tempos em tempos em Ajustes.
+          Sem conta, os dados ficam só no seu navegador: se forem apagados (por você, pelo navegador ou por falta de espaço), não
+          há como recuperar sem um backup. Com a conta opcional, uma cópia fica na nuvem e é sincronizada entre os seus aparelhos;
+          apagar os dados em um aparelho conectado apaga também a cópia. Recomendamos baixar backups de tempos em tempos em
+          Ajustes.
         </p>
       </section>
       <section>

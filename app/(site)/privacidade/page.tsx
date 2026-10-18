@@ -9,9 +9,32 @@ export default function PrivacidadePage() {
       <section>
         <h2>Onde ficam seus dados</h2>
         <p>
-          O Flow não tem conta nem servidor de dados. Tópicos, sessões, revisões, cronograma, caderno de erros, simulados, redações e preferências ficam salvos no
+          Sem conta, tópicos, sessões, revisões, cronograma, caderno de erros, simulados, redações e preferências ficam salvos só no
           armazenamento local do seu navegador, neste aparelho. Nós não recebemos esse conteúdo.
         </p>
+      </section>
+      <section>
+        <h2>Se você criar uma conta</h2>
+        <p>A conta é opcional e serve só para guardar uma cópia dos seus dados e usá-los em outros aparelhos.</p>
+        <ul>
+          <li>
+            Guardamos o seu e-mail (e, se entrar com o Google, o identificador da conta Google) e os dados de estudo listados acima.
+            Não pedimos nome, telefone, endereço, escola nem idade.
+          </li>
+          <li>
+            Os dados ficam no Supabase, com servidores em São Paulo. Cada conta só acessa os próprios dados. Os e-mails de login são
+            enviados por esse mesmo serviço.
+          </li>
+          <li>Não vendemos dados, não usamos para anúncios e não compartilhamos com escolas nem com outras empresas.</li>
+          <li>
+            A base legal é a execução do serviço que você pediu (LGPD, art. 7º, V). Com menos de 18 anos, use a conta com o
+            conhecimento de um responsável.
+          </li>
+          <li>
+            Você pode baixar tudo em Ajustes (&quot;Baixar backup&quot;) e excluir a conta quando quiser (&quot;Excluir conta&quot;):
+            a conta e a cópia na nuvem são apagadas na hora.
+          </li>
+        </ul>
       </section>
       <section>
         <h2>O que pode sair do seu aparelho</h2>
@@ -32,22 +55,24 @@ export default function PrivacidadePage() {
       <section>
         <h2>Como apagar</h2>
         <p>
-          Em Ajustes, &quot;Apagar todos os dados&quot; remove o conteúdo do app neste navegador. Limpar os dados do site nas
-          configurações do navegador também apaga tudo.
+          Em Ajustes, &quot;Apagar todos os dados&quot; remove o conteúdo do app neste navegador e, se você tiver conta, também na
+          nuvem. &quot;Excluir conta&quot; apaga a conta e a cópia na nuvem. Limpar os dados do site nas configurações do navegador
+          apaga o que está no aparelho.
         </p>
       </section>
       <section>
         <h2>Menores de idade</h2>
         <p>
-          Muitos estudantes têm menos de 18 anos. Por isso o app não pede dados pessoais e o compartilhamento de uso fica desligado
-          até alguém ativá-lo. Se você for menor, converse com um responsável antes de ativar.
+          Muitos estudantes têm menos de 18 anos. Por isso o app funciona sem conta, a conta pede só o e-mail e o compartilhamento de
+          uso fica desligado até alguém ativá-lo. Se você for menor, converse com um responsável antes de criar a conta ou de ativar o
+          compartilhamento.
         </p>
       </section>
       <section>
         <h2>Seus direitos</h2>
         <p>
-          O Flow segue os princípios da LGPD: coletar o mínimo, com finalidade clara e controle seu. Como não guardamos seus
-          dados de estudo, o acesso, a correção e a exclusão estão nas suas mãos, no próprio app.
+          O Flow segue os princípios da LGPD: coletar o mínimo, com finalidade clara e controle seu. O acesso, a correção, a
+          portabilidade (backup em arquivo) e a exclusão estão nas suas mãos, no próprio app.
         </p>
       </section>
     </LegalPage>
