@@ -28,7 +28,7 @@ export function DemoNotice() {
   };
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-accent-soft px-4 py-3 text-sm">
+    <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[18px] border-2 border-edge bg-accent-soft px-4 py-3 text-sm md:px-5">
       <span>Você está vendo dados de exemplo.</span>
       <button type="button" onClick={handleClick} className={linkStyles}>
         {confirming ? "Clique de novo para confirmar" : "Apagar e começar do zero"}

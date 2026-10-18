@@ -190,7 +190,7 @@ function Settings() {
                 <input ref={fileInput} type="file" accept="application/json,.json" onChange={chooseFile} className="sr-only" tabIndex={-1} aria-hidden />
               </div>
               {pendingImport && (
-                <div className="grid gap-2 rounded-lg bg-accent-soft p-3">
+                <div className="grid gap-2 rounded-[12px] bg-accent-soft p-3.5">
                   <p>Importar substitui todos os dados atuais deste navegador pelos do arquivo. Quer continuar?</p>
                   <div className="flex gap-2">
                     <Button variant="primary" onClick={confirmImport}>

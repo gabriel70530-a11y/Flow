@@ -49,7 +49,7 @@ export function PlanCards({ inApp = false }: { inApp?: boolean }) {
         </p>
         <p className="text-sm text-muted">Para quem quer o plano da semana pronto e acompanhamento detalhado.</p>
         <FeatureList items={PRO_FEATURES} />
-        <div className="grid gap-2 rounded-lg bg-hover p-3 text-[13px]">
+        <div className="grid gap-2 rounded-[12px] bg-hover p-3.5 text-[13px]">
           <p>
             <strong>Ainda não é possível assinar.</strong> O Pro está em validação: durante o teste, estes recursos estão
             liberados para todos, sem cartão e sem cobrança.

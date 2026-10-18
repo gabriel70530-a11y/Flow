@@ -19,7 +19,7 @@ export function ReinforceSuggestion({ topic, show }: { topic: TopicRecord; show:
   };
 
   return (
-    <div className="grid gap-2 rounded-lg bg-accent-soft p-3 text-sm">
+    <div className="grid gap-2 rounded-[12px] bg-accent-soft p-3.5 text-sm">
       <p>
         Quer marcar <strong>{topic.name}</strong> como Precisa revisar? Ele ganha prioridade no cronograma.
         {status === "concluido" && " As revisões ainda não feitas deste tópico serão removidas."}

@@ -40,7 +40,7 @@ export function Drawer({ open, onClose, eyebrow, title, children }: DrawerProps)
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="fixed inset-x-0 bottom-0 z-31 flex max-h-[88%] flex-col overflow-y-auto rounded-t-2xl bg-surface pt-4 pr-[max(20px,env(safe-area-inset-right,0px))] pb-[calc(24px+env(safe-area-inset-bottom,0px))] pl-[max(20px,env(safe-area-inset-left,0px))] shadow-[-8px_0_24px_rgba(0,0,0,0.12)] md:top-0 md:left-auto md:max-h-none md:w-[min(420px,100%)] md:rounded-none md:pt-[calc(16px+env(safe-area-inset-top,0px))] md:pr-[max(24px,env(safe-area-inset-right,0px))] md:pl-6"
+        className="fixed inset-x-0 bottom-0 z-31 flex max-h-[88%] flex-col overflow-y-auto rounded-t-2xl border-t-2 border-edge bg-surface md:border-t-0 md:border-l-2 pt-4 pr-[max(20px,env(safe-area-inset-right,0px))] pb-[calc(24px+env(safe-area-inset-bottom,0px))] pl-[max(20px,env(safe-area-inset-left,0px))] shadow-[-8px_0_24px_rgba(0,0,0,0.12)] md:top-0 md:left-auto md:max-h-none md:w-[min(420px,100%)] md:rounded-none md:pt-[calc(16px+env(safe-area-inset-top,0px))] md:pr-[max(24px,env(safe-area-inset-right,0px))] md:pl-6"
       >
         <div className="mb-6 flex items-start justify-between gap-3">
           <div>
