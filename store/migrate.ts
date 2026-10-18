@@ -32,6 +32,10 @@ function parseJson(raw: string): unknown {
   }
 }
 
+function records(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value) ? value.filter(isRecord) : [];
+}
+
 function without(record: Record<string, unknown>, keys: string[]): Record<string, unknown> {
   return Object.fromEntries(Object.entries(record).filter(([key]) => !keys.includes(key)));
 }
@@ -50,6 +54,8 @@ function normalizePlanner(saved: unknown): PlannerSettings {
     ...DEFAULT_PLANNER,
     ...(without(saved, ["availability", "sessionMinutes", "studyDays"]) as Partial<PlannerSettings>),
     studyDays: days.some(Boolean) ? days : DEFAULT_PLANNER.studyDays,
+    lightDays:
+      Array.isArray(saved.lightDays) && saved.lightDays.length === 7 ? saved.lightDays.map(Boolean) : DEFAULT_PLANNER.lightDays,
   };
 }
 
@@ -119,6 +125,11 @@ function fillDefaults(saved: Record<string, unknown>): StudyData {
     progress: isRecord(saved.progress) ? (saved.progress as StudyData["progress"]) : {},
     sessions: Array.isArray(saved.sessions) ? (saved.sessions as StudySession[]) : [],
     tasks: normalizeTasks(saved.tasks),
+    mistakes: records(saved.mistakes) as unknown as StudyData["mistakes"],
+    mockExams: records(saved.mockExams) as unknown as StudyData["mockExams"],
+    essays: records(saved.essays) as unknown as StudyData["essays"],
+    repertoire: records(saved.repertoire) as unknown as StudyData["repertoire"],
+    examChecklist: Array.isArray(saved.examChecklist) ? saved.examChecklist.filter((id) => typeof id === "string") : [],
     goal: {
       type: GOAL_TYPES.includes(goal.type as GoalType) ? (goal.type as GoalType) : base.goal.type,
       value: Number.isFinite(goalValue) && goalValue > 0 ? goalValue : base.goal.value,

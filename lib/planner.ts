@@ -1,4 +1,5 @@
 import { addDays, isDateKey, weekdayIndex } from "./dates";
+import { isFinalStretch } from "./exam";
 import { pendingReviews, progressOf, type ProgressMap, type TopicStatus } from "./reviews";
 import { focusName, type AreaId, type SubjectId } from "./syllabus";
 import { PRIORITY_WEIGHT, findTopic, visibleTopics, type Priority, type TopicRecord } from "./topics";
@@ -25,6 +26,8 @@ export interface PlanTask {
 export interface PlannerSettings {
   // De segunda (0) a domingo (6): em quais dias a pessoa quer receber matérias. Não limita horas.
   studyDays: boolean[];
+  // Dias corridos (escola integral, trabalho): recebem só uma matéria no plano gerado.
+  lightDays: boolean[];
   difficultAreas: AreaId[];
   strongAreas: AreaId[];
   targetDate: string | null;
@@ -70,6 +73,7 @@ export interface RepeatResult {
 
 export const DEFAULT_PLANNER: PlannerSettings = {
   studyDays: [true, true, true, true, true, true, false],
+  lightDays: [false, false, false, false, false, false, false],
   difficultAreas: [],
   strongAreas: [],
   targetDate: null,
@@ -100,6 +104,11 @@ export function isStudyDay(settings: PlannerSettings, date: string): boolean {
   return settings.studyDays[weekdayIndex(date)] ?? false;
 }
 
+// Quantas matérias o plano coloca no dia: 2, ou 1 nos dias corridos.
+export function dayCapacity(settings: PlannerSettings, date: string): number {
+  return settings.lightDays?.[weekdayIndex(date)] ? 1 : MAX_TOPICS_PER_DAY;
+}
+
 function dayTasks(tasks: readonly PlanTask[], date: string): PlanTask[] {
   return tasks.filter((task) => task.date === date && task.status !== "adiada");
 }
@@ -116,10 +125,12 @@ export function regenerableTasks(tasks: readonly PlanTask[], today: string): Pla
   return tasks.filter((task) => isRegenerable(task, today));
 }
 
-function topicScore(topic: TopicRecord, status: TopicStatus, settings: PlannerSettings): number {
+function topicScore(topic: TopicRecord, status: TopicStatus, settings: PlannerSettings, finalStretch: boolean): number {
+  // Na reta final, conteúdo novo perde espaço para o que precisa ser revisado ou já está em andamento.
+  const newContentPenalty = finalStretch && status === "nao" ? 25 : 0;
   const areaBonus = settings.difficultAreas.includes(topic.areaId) ? (settings.strategy === "prioridades" ? 15 : 5) : 0;
   const strongPenalty = settings.strongAreas.includes(topic.areaId) ? 3 : 0;
-  return (STATUS_SCORE[status] ?? 0) + PRIORITY_WEIGHT[topic.priority] * 6 + areaBonus - strongPenalty;
+  return (STATUS_SCORE[status] ?? 0) + PRIORITY_WEIGHT[topic.priority] * 6 + areaBonus - strongPenalty - newContentPenalty;
 }
 
 /*
@@ -173,6 +184,7 @@ export function generatePlan({ today, topics, progress, tasks, settings, newId }
   const added: PlanTask[] = [];
   const leftovers: PlanLeftover[] = [];
   const visible = visibleTopics(topics);
+  const finalStretch = isFinalStretch(settings.targetDate, today);
   // Um tópico que já tem tarefa nestes dias, mesmo concluída, não ganha outra: evita duplicar ao regenerar.
   const scheduled = new Set(
     kept
@@ -191,7 +203,7 @@ export function generatePlan({ today, topics, progress, tasks, settings, newId }
   const candidates = visible
     .map((topic, order) => ({ topic, order, status: progressOf(progress, topic.id).status }))
     .filter(({ topic, status }) => status !== "concluido" && !scheduled.has(`estudo:${topic.id}`))
-    .map((candidate) => ({ ...candidate, score: topicScore(candidate.topic, candidate.status, settings) }));
+    .map((candidate) => ({ ...candidate, score: topicScore(candidate.topic, candidate.status, settings, finalStretch) }));
   const loadPenalty = settings.strategy === "equilibrada" ? 4 : 1.5;
 
   const pickTopic = (focus: StudyFocus | null): TopicRecord | null => {
@@ -227,7 +239,7 @@ export function generatePlan({ today, topics, progress, tasks, settings, newId }
   for (const date of days) {
     if (!isStudyDay(settings, date)) continue;
     let focus = dayFocus(kept, date);
-    let slots = MAX_TOPICS_PER_DAY - topicsOn(kept, date);
+    let slots = dayCapacity(settings, date) - topicsOn(kept, date);
     while (slots > 0) {
       const reviewIndex = reviews.findIndex(({ topicId, review }) => {
         const topic = findTopic(visible, topicId);
@@ -270,7 +282,7 @@ export function suggestDay(
   return (
     planDays(today, SUGGESTION_DAYS).find((date) => {
       const onDay = dayTasks(others, date);
-      return isStudyDay(settings, date) && onDay.length < MAX_TOPICS_PER_DAY && fitsDay(onDay, focus);
+      return isStudyDay(settings, date) && onDay.length < dayCapacity(settings, date) && fitsDay(onDay, focus);
     }) ?? null
   );
 }
@@ -299,7 +311,7 @@ function findSlot(
     const onDay = dayTasks(tasks, date);
     const flexible = onDay.filter((item) => isRegenerable(item, today));
     if (fitsDay(onDay, focus)) {
-      if (onDay.length < MAX_TOPICS_PER_DAY) return { date, displaced: [] };
+      if (onDay.length < dayCapacity(settings, date)) return { date, displaced: [] };
       const displaced = flexible.filter((item) => item.kind === "estudo").at(-1) ?? flexible.at(-1);
       if (displaced) return { date, displaced: [displaced] };
     } else if (onDay.length > 0 && flexible.length === onDay.length) {
@@ -377,6 +389,29 @@ export function carryOverMissed(
   for (const task of missed) {
     const carried: PlanTask = { ...task, origin: task.origin === "gerada" ? "transferida" : task.origin };
     const result = placeInPlan(current, carried, settings, today, today);
+    current = result.tasks;
+    moved.push(result.placed);
+  }
+  return { tasks: current, moved };
+}
+
+/*
+ * Dia leve: hoje fica só a primeira matéria ainda não feita (a iniciada, se houver). As outras planejadas
+ * passam para o próximo dia de estudo com vaga, pela mesma regra das transferências.
+ */
+export function lightenDay(
+  tasks: readonly PlanTask[],
+  settings: PlannerSettings,
+  today: string,
+): { tasks: PlanTask[]; moved: PlanTask[] } {
+  const open = dayTasks(tasks, today).filter((task) => task.status === "planejada" || task.status === "iniciada");
+  const keep = open.find((task) => task.status === "iniciada") ?? open[0];
+  const toMove = open.filter((task) => task !== keep && task.status === "planejada");
+  let current = [...tasks];
+  const moved: PlanTask[] = [];
+  for (const task of toMove) {
+    const carried: PlanTask = { ...task, origin: task.origin === "gerada" ? "transferida" : task.origin };
+    const result = placeInPlan(current, carried, settings, today, addDays(today, 1));
     current = result.tasks;
     moved.push(result.placed);
   }

@@ -73,12 +73,20 @@ describe("loadData", () => {
   });
 
   it("fills fields missing from older v2 data", () => {
-    const { topics, ...partial } = emptyData();
+    const { topics, mistakes, mockExams, essays, repertoire, examChecklist, ...partial } = emptyData();
     const current = JSON.stringify({ ...partial, planner: { strategy: "prioridades" } });
     const { data } = loadData({ current, legacy: null }, today);
     expect(data.topics).toEqual(topics);
     expect(data.planner.strategy).toBe("prioridades");
     expect(data.planner.studyDays).toHaveLength(7);
+    expect(data.planner.lightDays).toEqual(Array(7).fill(false));
+    expect({ mistakes, mockExams, essays, repertoire, examChecklist }).toEqual({
+      mistakes: data.mistakes,
+      mockExams: data.mockExams,
+      essays: data.essays,
+      repertoire: data.repertoire,
+      examChecklist: data.examChecklist,
+    });
   });
 
   it("gives old science and humanities topics their subject, also on their tasks", () => {

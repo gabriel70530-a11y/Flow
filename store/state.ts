@@ -1,3 +1,6 @@
+import type { Essay, RepertoireItem } from "@/lib/essays";
+import type { Mistake } from "@/lib/mistakes";
+import type { MockExam } from "@/lib/mock-exams";
 import { DEFAULT_PLANNER, type PlanTask, type PlannerSettings } from "@/lib/planner";
 import type { ProgressMap } from "@/lib/reviews";
 import type { StudySession } from "@/lib/sessions";
@@ -19,6 +22,12 @@ export interface StudyData {
   progress: ProgressMap;
   sessions: StudySession[];
   tasks: PlanTask[];
+  mistakes: Mistake[];
+  mockExams: MockExam[];
+  essays: Essay[];
+  repertoire: RepertoireItem[];
+  // Itens já conferidos no checklist do dia da prova.
+  examChecklist: string[];
   goal: WeeklyGoal;
   planner: PlannerSettings;
   onboarding: OnboardingState;
@@ -37,6 +46,11 @@ export function emptyData(): StudyData {
     progress: {},
     sessions: [],
     tasks: [],
+    mistakes: [],
+    mockExams: [],
+    essays: [],
+    repertoire: [],
+    examChecklist: [],
     goal: DEFAULT_GOAL,
     planner: DEFAULT_PLANNER,
     onboarding: { status: "pendente", planMode: "sugerido" },

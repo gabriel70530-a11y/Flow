@@ -20,6 +20,8 @@ export interface StudySession {
   reflection?: Reflection;
   note?: string;
   taskId?: string;
+  // Resposta opcional depois da sessão: o celular ou outra coisa tirou o foco?
+  distracted?: boolean;
 }
 
 // Valor do seletor do timer para estudar sem tópico; a sessão fica sem área.

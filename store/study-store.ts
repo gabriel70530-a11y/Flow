@@ -2,11 +2,23 @@ import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { persist, type PersistStorage } from "zustand/middleware";
 import { isDateKey, toDateKey } from "@/lib/dates";
+import { validateEssay, validateRepertoire, type EssayInput, type RepertoireInput } from "@/lib/essays";
+import { checklistIds, type ExamDay } from "@/lib/exam";
+import {
+  MISTAKES_TO_SUGGEST_REVIEW,
+  createMistake,
+  openMistakesOnTopic,
+  reviewMistake,
+  validateMistake,
+  type MistakeInput,
+} from "@/lib/mistakes";
+import { validateMockExam, type MockExamInput } from "@/lib/mock-exams";
 import {
   applyFocusToTask,
   carryOverMissed,
   dayConflict,
   generatePlan,
+  lightenDay,
   lowerPriority,
   repeatNextDay,
   rescheduleTask,
@@ -105,6 +117,22 @@ interface StudyActions {
   deleteSession: (sessionId: string) => void;
   setSessionReflection: (sessionId: string, reflection: Reflection) => void;
   setSessionNote: (sessionId: string, note: string) => void;
+  setSessionDistracted: (sessionId: string, distracted: boolean) => void;
+
+  addMistake: (input: MistakeInput) => { error: string } | { id: string; suggestReview: boolean };
+  answerMistake: (mistakeId: string, remembered: boolean) => void;
+  removeMistake: (mistakeId: string) => void;
+
+  addMockExam: (input: MockExamInput) => string | null;
+  removeMockExam: (mockId: string) => void;
+  addEssay: (input: EssayInput) => string | null;
+  removeEssay: (essayId: string) => void;
+  addRepertoire: (input: RepertoireInput) => string | null;
+  removeRepertoire: (itemId: string) => void;
+
+  toggleChecklistItem: (itemId: string) => void;
+  resetChecklist: (day: ExamDay) => void;
+  setTargetDate: (date: string | null) => void;
 
   savePlanner: (settings: PlannerSettings) => string | null;
   finishOnboarding: (settings: PlannerSettings, planMode: OnboardingState["planMode"]) => string | null;
@@ -115,6 +143,7 @@ interface StudyActions {
   setTaskDone: (taskId: string, done: boolean) => void;
   answerMastery: (taskId: string, mastered: boolean) => RepeatResult | null;
   carryOver: () => PlanTask[];
+  lightenToday: () => PlanTask[];
   lowerTaskPriority: (taskId: string) => void;
   removeTask: (taskId: string) => void;
 
@@ -204,6 +233,11 @@ function toStudyData(state: StudyData): StudyData {
     progress: state.progress,
     sessions: state.sessions,
     tasks: state.tasks,
+    mistakes: state.mistakes,
+    mockExams: state.mockExams,
+    essays: state.essays,
+    repertoire: state.repertoire,
+    examChecklist: state.examChecklist,
     goal: state.goal,
     planner: state.planner,
     onboarding: state.onboarding,
@@ -360,6 +394,68 @@ export const useStudyStore = create<StudyStore>()(
         deleteSession: (sessionId) => set({ sessions: get().sessions.filter((session) => session.id !== sessionId) }),
         setSessionReflection: (sessionId, reflection) => updateSession(sessionId, { reflection }),
         setSessionNote: (sessionId, note) => updateSession(sessionId, { note: note.trim().slice(0, NOTE_MAX) || undefined }),
+        setSessionDistracted: (sessionId, distracted) => updateSession(sessionId, { distracted }),
+
+        // Dois erros em aberto no mesmo tópico sugerem marcá-lo como "Precisa revisar"; a pessoa decide.
+        addMistake: (input) => {
+          const error = validateMistake(input);
+          if (error) return { error };
+          const mistake = createMistake(input, newId("erro-"), today());
+          const mistakes = [...get().mistakes, mistake];
+          set({ mistakes });
+          const status = input.topicId ? progressOf(get().progress, input.topicId).status : null;
+          const suggestReview =
+            input.topicId !== null &&
+            status !== "revisar" &&
+            openMistakesOnTopic(mistakes, input.topicId) >= MISTAKES_TO_SUGGEST_REVIEW;
+          return { id: mistake.id, suggestReview };
+        },
+
+        answerMistake: (mistakeId, remembered) =>
+          set({
+            mistakes: get().mistakes.map((mistake) => (mistake.id === mistakeId ? reviewMistake(mistake, today(), remembered) : mistake)),
+          }),
+
+        removeMistake: (mistakeId) => set({ mistakes: get().mistakes.filter((mistake) => mistake.id !== mistakeId) }),
+
+        addMockExam: (input) => {
+          const error = validateMockExam(input, today());
+          if (error) return error;
+          set({ mockExams: [...get().mockExams, { ...input, note: input.note.trim(), id: newId("simulado-") }] });
+          return null;
+        },
+        removeMockExam: (mockId) => set({ mockExams: get().mockExams.filter((mock) => mock.id !== mockId) }),
+
+        addEssay: (input) => {
+          const error = validateEssay(input, today());
+          if (error) return error;
+          const essay = { ...input, theme: input.theme.trim(), corrector: input.corrector.trim(), improve: input.improve.trim() };
+          set({ essays: [...get().essays, { ...essay, id: newId("redacao-") }] });
+          return null;
+        },
+        removeEssay: (essayId) => set({ essays: get().essays.filter((essay) => essay.id !== essayId) }),
+
+        addRepertoire: (input) => {
+          const error = validateRepertoire(input);
+          if (error) return error;
+          const item = { title: input.title.trim(), detail: input.detail.trim(), themes: input.themes.trim() };
+          set({ repertoire: [...get().repertoire, { ...item, id: newId("repertorio-") }] });
+          return null;
+        },
+        removeRepertoire: (itemId) => set({ repertoire: get().repertoire.filter((item) => item.id !== itemId) }),
+
+        toggleChecklistItem: (itemId) => {
+          const checked = get().examChecklist;
+          set({ examChecklist: checked.includes(itemId) ? checked.filter((id) => id !== itemId) : [...checked, itemId] });
+        },
+        resetChecklist: (day) => {
+          const ids = checklistIds(day);
+          set({ examChecklist: get().examChecklist.filter((id) => !ids.includes(id)) });
+        },
+        setTargetDate: (date) => {
+          if (date !== null && !isDateKey(date)) return;
+          set({ planner: { ...get().planner, targetDate: date } });
+        },
 
         savePlanner: (settings) => {
           const error = validateStudyDays(settings.studyDays);
@@ -450,6 +546,12 @@ export const useStudyStore = create<StudyStore>()(
 
         carryOver: () => {
           const result = carryOverMissed(get().tasks, get().planner, today());
+          if (result.moved.length) set({ tasks: result.tasks });
+          return result.moved;
+        },
+
+        lightenToday: () => {
+          const result = lightenDay(get().tasks, get().planner, today());
           if (result.moved.length) set({ tasks: result.tasks });
           return result.moved;
         },

@@ -6,6 +6,7 @@ import {
   carryOverMissed,
   dayConflict,
   generatePlan,
+  lightenDay,
   lowerPriority,
   missedTasks,
   repeatNextDay,
@@ -164,6 +165,42 @@ describe("generatePlan", () => {
     const result = generatePlan(context({ settings: onlySunday, progress }));
     expect(result.added.map((item) => item.areaId)).toEqual(["mat", "mat"]);
     expect(result.leftovers.map((item) => item.topicId)).toEqual(["lin-3", "nat-3"]);
+  });
+});
+
+describe("busy days and the final stretch", () => {
+  it("gives a busy day a single topic", () => {
+    const busyFriday = { ...settings, lightDays: [false, false, false, false, true, false, false] };
+    const { tasks } = generatePlan(context({ settings: busyFriday }));
+    expect(topicsOn(tasks, today)).toBe(1);
+    expect(topicsOn(tasks, "2026-10-17")).toBe(MAX_TOPICS_PER_DAY);
+    expect(suggestDay([task({ id: "a" })], busyFriday, today, { areaId: "mat" })).toBe("2026-10-17");
+  });
+
+  it("prefers topics already started over new ones in the last four weeks before the exam", () => {
+    const highPriority = updateTopic(legacyTopics(), "lin-5", { name: "Escolas literárias", areaId: "lin", subjectId: null, description: "", priority: "alta" });
+    const topics = updateTopic(highPriority, "hum-2", { name: "Era Vargas", areaId: "hum", subjectId: "his", description: "", priority: "baixa" });
+    const progress: ProgressMap = { "hum-2": { status: "and", mastery: 2, reviews: [] } };
+    const far = generatePlan(context({ topics, progress, settings: { ...settings, targetDate: "2027-06-01" } })).added;
+    const near = generatePlan(context({ topics, progress, settings: { ...settings, targetDate: "2026-11-08" } })).added;
+    expect(far[0].topicId).toBe("lin-5");
+    expect(near[0].topicId).toBe("hum-2");
+  });
+});
+
+describe("lightenDay", () => {
+  it("keeps one topic today and moves the other planned one to the next study day", () => {
+    const tasks = [task({ id: "a" }), task({ id: "b", topicId: "mat-1" })];
+    const { tasks: result, moved } = lightenDay(tasks, settings, today);
+    expect(topicsOn(result, today)).toBe(1);
+    expect(moved.map((item) => [item.id, item.date, item.origin])).toEqual([["b", "2026-10-17", "transferida"]]);
+  });
+
+  it("keeps the started topic and never moves finished ones", () => {
+    const tasks = [task({ id: "a" }), task({ id: "b", topicId: "mat-1", status: "iniciada", focusSec: 300 })];
+    expect(lightenDay(tasks, settings, today).moved.map((item) => item.id)).toEqual(["a"]);
+    const done = [task({ id: "a", status: "concluida" }), task({ id: "b", topicId: "mat-1" })];
+    expect(lightenDay(done, settings, today).moved).toEqual([]);
   });
 });
 

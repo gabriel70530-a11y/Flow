@@ -315,3 +315,48 @@ describe("mastery outcome", () => {
     expect(state().tasks.find((task) => task.id === "a")?.outcome).toBeUndefined();
   });
 });
+
+describe("final stretch tools", () => {
+  const mistake = { topicId: "mat-0", areaId: "mat" as const, subjectId: null, reason: "conteudo" as const, question: "Questão 150", lesson: "", source: "" };
+
+  it("records mistakes, suggests reviewing the topic on the second one and moves them through reviews", () => {
+    expect(state().addMistake({ ...mistake, question: " " })).toEqual({ error: "Descreva a questão ou o que você errou." });
+    expect(state().addMistake(mistake)).toMatchObject({ suggestReview: false });
+    const second = state().addMistake(mistake);
+    expect(second).toMatchObject({ suggestReview: true });
+    state().setStatus("mat-0", "revisar");
+    expect(state().addMistake(mistake)).toMatchObject({ suggestReview: false });
+    const id = state().mistakes[0].id;
+    state().answerMistake(id, true);
+    expect(state().mistakes[0]).toMatchObject({ stage: 1, due: "2026-10-23" });
+    state().removeMistake(id);
+    expect(state().mistakes).toHaveLength(2);
+  });
+
+  it("lightens today by moving the second topic to the next study day", () => {
+    state().addTask({ topicId: "mat-0", date: today, priority: "media" });
+    state().addTask({ topicId: "mat-1", date: today, priority: "media" });
+    const moved = state().lightenToday();
+    expect(moved).toHaveLength(1);
+    expect(state().tasks.filter((task) => task.date === today)).toHaveLength(1);
+    expect(state().lightenToday()).toEqual([]);
+  });
+
+  it("validates mock exams, essays and repertoire", () => {
+    expect(state().addMockExam({ date: today, day: 2, minutes: null, sections: [], note: "" })).toMatch(/pelo menos uma/);
+    expect(state().addMockExam({ date: today, day: 2, minutes: 290, sections: [{ areaId: "mat", correct: 30, total: 45 }], note: "" })).toBeNull();
+    expect(state().addEssay({ date: today, theme: " Tema ", scores: [160, 160, 120, 160, 120], corrector: "", improve: "" })).toBeNull();
+    expect(state().essays[0].theme).toBe("Tema");
+    expect(state().addRepertoire({ title: "", detail: "", themes: "" })).toMatch(/repertório/);
+    expect(state().mockExams).toHaveLength(1);
+  });
+
+  it("checks exam checklist items per day and sets the exam date", () => {
+    state().toggleChecklistItem("d1-caneta");
+    state().toggleChecklistItem("d2-caneta");
+    state().resetChecklist(1);
+    expect(state().examChecklist).toEqual(["d2-caneta"]);
+    state().setTargetDate("2026-11-08");
+    expect(state().planner.targetDate).toBe("2026-11-08");
+  });
+});
