@@ -4,9 +4,11 @@ import { buttonStyles } from "@/components/ui/Button";
 import { PlanCards } from "@/components/planos/PlanCards";
 import { Wordmark } from "@/components/shell/Wordmark";
 import { AppPreview } from "@/components/site/AppPreview";
+import { SITE_TITLE } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: { absolute: "Flow · Sua preparação para o ENEM, no ritmo certo." },
+  title: { absolute: SITE_TITLE },
+  alternates: { canonical: "/" },
   description:
     "Organize as matérias do ENEM, descubra o que estudar hoje, use o timer e faça revisões espaçadas. Grátis, sem cadastro.",
 };

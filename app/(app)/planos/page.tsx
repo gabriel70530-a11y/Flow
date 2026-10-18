@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import { PlanCards } from "@/components/planos/PlanCards";
 import { PageHeader } from "@/components/ui/PageHeader";
+
+export const metadata: Metadata = { title: "Planos" };
 
 export default function PlanosPage() {
   return (

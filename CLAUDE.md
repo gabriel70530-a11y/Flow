@@ -69,6 +69,7 @@ lib/
   stats.ts              horas por dia, por área, metas, sequência, planejado x realizado
   timer.ts              elapsed, phaseSeconds, isIdle
   plan.ts               gratuito x Pro (acesso liberado durante o teste), lista de interesse, contato
+  site.ts               endereço público, título e descrição (sitemap, robots, manifest, cartão social)
   *.test.ts
 store/
   study-store.ts        ações, persist e aviso de falha ao salvar
