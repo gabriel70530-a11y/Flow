@@ -4,7 +4,7 @@ Organizador de estudos para estudantes do ensino médio e candidatos ao ENEM. A 
 
 O escopo do produto está em `prompt_mestre_enem_flow_claude_code.md` (fase 2). O protótipo em `docs/prototype.html` continua sendo a referência visual e dos fluxos que ele já cobre. Se o prompt mestre e o protótipo divergirem, vale o prompt mestre.
 
-**Local primeiro, conta opcional.** Os dados vivem no `localStorage` do navegador e o app funciona inteiro sem conta e sem internet. A conta (Supabase: login com Google ou link no e-mail, banco Postgres com RLS em São Paulo) só guarda uma cópia e sincroniza entre aparelhos; sem as variáveis do Supabase, a interface diz que a conta não está disponível. Recursos que dependem de servidor ainda não feito (cobrança do Pro, coleta de métricas, lista de interesse) ficam com a camada desacoplada pronta e documentados como pendentes no README; nunca simule compra ou assinatura. O estudo de custos e as escolhas aprovadas estão em `docs/estudo-custos-e-preco.md` e o plano da fase em `docs/roadmap-proxima-fase.md`.
+**Local primeiro, conta opcional.** Os dados vivem no `localStorage` do navegador e o app funciona inteiro sem conta e sem internet. A conta (Supabase: login com e-mail e senha, banco Postgres com RLS em São Paulo) só guarda uma cópia e sincroniza entre aparelhos; sem as variáveis do Supabase, a interface diz que a conta não está disponível. Recursos que dependem de servidor ainda não feito (cobrança do Pro, coleta de métricas, lista de interesse) ficam com a camada desacoplada pronta e documentados como pendentes no README; nunca simule compra ou assinatura. O estudo de custos e as escolhas aprovadas estão em `docs/estudo-custos-e-preco.md` e o plano da fase em `docs/roadmap-proxima-fase.md`.
 
 ## Stack
 
@@ -195,7 +195,7 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 - Sequência = dias consecutivos com estudo, contando hoje ou, se hoje ainda não teve estudo, a partir de ontem. É opcional (pode ser escondida em Ajustes) e discreta.
 
 **Conta e sincronização** (opcional)
-- Em Ajustes, card "Conta e dados" (prévia em `docs/previa-conta.html`). Entrar com Google ou link no e-mail, sem senha, com a confirmação de que leu privacidade e termos (e, se menor, que um responsável sabe).
+- Em Ajustes, card "Conta e dados" (prévia em `docs/previa-conta.html`). Entrar com e-mail e senha (mínimo de 8 caracteres). Criar conta pede a confirmação de que leu privacidade e termos (e, se menor, que um responsável sabe) e confirma o e-mail por link. "Esqueci minha senha" manda um link que volta para Ajustes pedindo a senha nova.
 - Um registro por item na tabela `records` (`collection`, `id`, `data`, `deleted`, `updated_at` do aparelho, `synced_at` do servidor). Tema, som, consentimento de métricas e timer não sincronizam.
 - Primeiro login: junta aparelho e conta; no mesmo registro, vence a conta. Depois, vence a mudança mais recente; empate, a nuvem. Apagar vira `deleted`. Dados de exemplo nunca sobem.
 - Sair mantém os dados no aparelho. Outra conta no mesmo aparelho começa com os dados dela. "Apagar todos os dados" com conta apaga também na nuvem. "Excluir conta" apaga conta e nuvem e mantém o aparelho.

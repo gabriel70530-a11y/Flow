@@ -47,7 +47,7 @@ Sem conta, tudo fica no `localStorage` do navegador, na chave `enem-flow:v2`. A 
 
 ### Conta opcional e sincronização
 
-Com o Supabase configurado, Ajustes oferece "Entrar ou criar conta" (Google ou link no e-mail, sem senha). O app continua igual sem conta.
+Com o Supabase configurado, Ajustes oferece "Entrar ou criar conta" (e-mail e senha, com confirmação do e-mail e "Esqueci minha senha"). O app continua igual sem conta.
 
 - Cada item (tópico, sessão, tarefa, erro, simulado, redação, repertório, progresso de um tópico) vira um registro na tabela `records`, com `updated_at` do aparelho. Algumas preferências também vão (meta, cronograma, onboarding, checklist da prova, sequência); tema, som, consentimento de métricas e o timer ficam em cada aparelho.
 - A lógica de juntar fica em `lib/sync.ts` (funções puras e testadas); `store/cloud.ts` faz login, envia e busca.
@@ -61,7 +61,7 @@ Para ativar (precisa de uma conta no Supabase, feita pelo responsável pelo proj
 
 1. Criar um projeto na região São Paulo (`sa-east-1`).
 2. Rodar `supabase/migrations/20261018000000_records.sql` no SQL Editor (ou `supabase db push`).
-3. Em Authentication: ativar o login por e-mail (link mágico) e o Google (precisa de um cliente OAuth no Google Cloud). Em URL Configuration, pôr o endereço do site como Site URL e `<endereço>/ajustes` nas Redirect URLs (também `http://localhost:3000/ajustes` para testar).
+3. Em Authentication: deixar o provedor Email ativo, com "Confirm email" ligado. Em URL Configuration, pôr o endereço do site como Site URL e `<endereço>/ajustes` nas Redirect URLs (também `http://localhost:3000/ajustes` para testar).
 4. Preencher `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (a chave pública) no `.env.local` e na hospedagem.
 5. Para produção, configurar um SMTP próprio (ex.: Resend): o envio padrão do Supabase tem limite baixo por hora.
 

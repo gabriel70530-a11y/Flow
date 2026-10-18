@@ -18,7 +18,7 @@ export default function PrivacidadePage() {
         <p>A conta é opcional e serve só para guardar uma cópia dos seus dados e usá-los em outros aparelhos.</p>
         <ul>
           <li>
-            Guardamos o seu e-mail (e, se entrar com o Google, o identificador da conta Google) e os dados de estudo listados acima.
+            Guardamos o seu e-mail, a senha (cifrada, nem nós conseguimos ler) e os dados de estudo listados acima.
             Não pedimos nome, telefone, endereço, escola nem idade.
           </li>
           <li>
