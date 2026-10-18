@@ -29,7 +29,9 @@ Abra http://localhost:3000. A página inicial é o site; o app começa em `/pain
 - `/cronograma`: matérias dos próximos 7 dias, até 2 por dia de estudo, sempre do mesmo assunto (mesma área ou, em Natureza e Humanas, mesma matéria). O que não foi estudado passa sozinho para o próximo dia; o que não foi dominado se repete no dia seguinte.
 - `/materias`: as cinco áreas do ENEM, com Natureza (Química, Física, Biologia) e Humanas (Geografia, História, Filosofia, Sociologia) divididas em matérias. Nenhum tópico vem pronto: o estudante cria os próprios. Busca, filtros, ordenação, editar, ocultar e excluir.
 - `/timer`: Pomodoro e cronômetro, estudo geral, reflexão pós-sessão, sessões de hoje.
-- `/revisoes`: atrasadas, hoje, próximos 7 dias e futuras; concluir com feedback, adiar e reagendar.
+- `/revisoes`: atrasadas, hoje, próximos 7 dias e futuras; concluir com feedback, adiar e reagendar. `/revisoes/erros`: caderno de erros, com cada erro voltando em 1, 7, 15 e 30 dias.
+- `/simulados`: acertos por área e ritmo dos simulados feitos fora do app (sem nota TRI). `/redacao`: notas por competência e repertório pessoal. `/prova`: checklist do dia da prova.
+- No Painel: reta final (contagem e prioridade para revisões nas 4 semanas antes da prova) e "Dia leve" para dias cansativos. No Timer: modo foco.
 - `/comecar`: configuração inicial opcional. `/ajustes`: preferências, meta, cronograma, backup. `/planos`.
 
 ## Onde ficam os dados
@@ -40,6 +42,7 @@ Não há servidor nem conta. Tudo fica no `localStorage` do navegador, na chave 
 - Sem nada salvo, o app carrega dados de exemplo, identificados por um aviso com "Apagar e começar do zero".
 - Se o JSON salvo estiver corrompido, o texto bruto vai para `enem-flow:v2:corrompido` e o app começa do zero.
 - Se o navegador recusar a gravação, um aviso aparece com "Tentar de novo".
+- Em produção, o app funciona offline depois da primeira visita (service worker em `public/sw.js`).
 - Não há sincronização entre aparelhos. Em Ajustes dá para baixar um backup (JSON) e importar em outro navegador.
 
 ## Configuração opcional

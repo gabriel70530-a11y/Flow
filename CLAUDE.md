@@ -52,12 +52,13 @@ app/
   layout.tsx            fontes, script de tema
   (site)/               landing (/), /privacidade, /termos: sem a navegação do app
   (app)/layout.tsx      AppShell
-  (app)/painel, cronograma, materias, timer, revisoes, ajustes, planos, comecar (onboarding)
+  (app)/painel, cronograma, materias, timer, revisoes (+ revisoes/erros), ajustes, planos, comecar (onboarding)
+  (app)/simulados, redacao, prova   ferramentas de preparação (fora das abas do celular)
   globals.css           tokens de cor e tipografia
 components/
   ui/                   componentes genéricos (Button, Card, Drawer, Toast, Segmented...)
   shell/                Sidebar, TabBar, Wordmark, ThemeSelect, avisos globais
-  painel/ cronograma/ materias/ timer/ revisoes/ ajustes/ planos/ onboarding/ site/
+  painel/ cronograma/ materias/ timer/ revisoes/ simulados/ redacao/ prova/ ajustes/ planos/ onboarding/ site/
 lib/
   syllabus.ts           as cinco áreas do ENEM e as matérias de Natureza e Humanas (sem tópicos prontos)
   legacy-topics.ts      lista antiga de tópicos, só para migração, dados de exemplo e testes
@@ -68,6 +69,10 @@ lib/
   planner.ts            geração e reorganização do cronograma
   stats.ts              horas por dia, por área, metas, sequência, planejado x realizado
   timer.ts              elapsed, phaseSeconds, isIdle
+  exam.ts               data da prova, reta final e checklist do dia da prova
+  mistakes.ts           caderno de erros com revisão espaçada própria
+  mock-exams.ts         simulados registrados: acertos por área e ritmo
+  essays.ts             redações registradas (notas por competência) e repertório
   plan.ts               gratuito x Pro (acesso liberado durante o teste), lista de interesse, contato
   site.ts               endereço público, título e descrição (sitemap, robots, manifest, cartão social)
   *.test.ts
@@ -113,7 +118,7 @@ interface PlanTask {                         // uma matéria do dia, sem duraç�
 }
 ```
 
-O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `sessions`, `tasks`, `timer`, a meta (`goal: { type: 'horas' | 'sessoes' | 'topicos'; value }`), as preferências de cronograma (dias de estudo de segunda a domingo, áreas prioritárias e difíceis, data-alvo, estratégia), o onboarding e as preferências de interface (tema, som, sequência visível).
+O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `sessions`, `tasks`, `timer`, a meta (`goal: { type: 'horas' | 'sessoes' | 'topicos'; value }`), as preferências de cronograma (dias de estudo de segunda a domingo, áreas prioritárias e difíceis, data-alvo, estratégia), o onboarding e as preferências de interface (tema, som, sequência visível). Também guarda o caderno de erros (`mistakes`), os simulados (`mockExams`), as redações (`essays`), o repertório (`repertoire`) e os itens marcados no checklist da prova (`examChecklist`). Sessões podem ter `distracted` (resposta opcional "se distraiu?").
 
 - IDs estáveis. Tópicos novos usam `custom-…`; os que vieram da lista antiga mantêm `${areaId}-${índice}` (`mat-3`). Nunca use o nome como chave.
 - Ao carregar dados antigos, os tópicos padrão que nunca foram usados (sem progresso, sessão nem tarefa) são descartados; os usados ficam.
@@ -163,6 +168,17 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 - Repetições e transferências respeitam o limite de 2 por dia: se o dia já está cheio, uma tarefa gerada e ainda não começada sai para dar lugar; tarefas manuais, iniciadas ou concluídas nunca saem. Sem dia livre em duas semanas, a tarefa fica adiada.
 - A pessoa ainda pode mover ou adicionar uma matéria em outro dia (com menos de 2 e da mesma área), baixar a prioridade ou deixar para outra semana.
 - Quem não quiser cronograma usa o app manualmente.
+- **Dias corridos** (`lightDays`, opcional): dias de estudo em que o plano coloca só 1 matéria (escola integral, trabalho). Vale para gerar, repetir e transferir; à mão a pessoa ainda pode pôr 2.
+- **Dia leve**: no Painel, com 2 matérias abertas hoje, "Dia leve" deixa só uma (a iniciada, se houver) e passa a outra planejada para o próximo dia de estudo, pela regra das transferências. O toast diz para onde foi, sem culpa.
+- **Reta final**: nas 4 semanas antes da data da prova, tópicos "Não iniciado" perdem peso no plano; revisões, "Precisa revisar" e "Em andamento" vêm antes. Sem data informada, o Painel sugere a do Enem 2026 (8/11), sem impor.
+
+**Preparação** (tudo opcional, nada bloqueia o resto do app)
+- **Caderno de erros** (`/revisoes/erros`): cada erro guarda o assunto (tópico, matéria, área ou nenhum), o motivo (conteúdo, comando, pressa, chute), a questão, o que aprendeu e a origem. Volta em +1, +7, +15 e +30 dias; "Lembrei" avança, "Não lembrei" recomeça amanhã; depois da 4ª lembrança sai da fila. Dois erros em aberto no mesmo tópico sugerem "Precisa revisar" (a pessoa confirma). Com 3 ou mais erros, mostra o motivo mais frequente e uma dica. O contador de Revisões soma os erros do dia.
+- **Simulados** (`/simulados`): a pessoa registra acertos por área (45 questões cada), o tempo e uma observação. O Flow mostra acertos, a comparação com o simulado anterior e o ritmo em minutos por questão contra o tempo oficial (no 1º dia desconta 1h de redação). **Nunca calcula nota TRI**; a tela explica por quê.
+- **Redação** (`/redacao`): o Flow não corrige. A pessoa registra tema, data e as notas por competência (0 a 200, de 40 em 40) que recebeu fora; o app mostra a última nota, as anteriores e a competência mais fraca nas últimas 3 corrigidas. Banco de repertório pessoal com busca sem acento.
+- **Dia da prova** (`/prova`): checklist por dia (semana, véspera, durante a prova), marcado e salvo no aparelho, com o ritmo de tempo. Remete ao edital e ao cartão de confirmação para as regras oficiais.
+- **Modo foco** no Timer: tela cheia só com o relógio. Depois da sessão, a pergunta opcional "se distraiu?" vira uma linha no resumo da semana.
+- **Offline**: em produção, um service worker (`public/sw.js`) guarda as páginas e os arquivos do app; os dados já são locais.
 
 **Painel**
 - "Estudar hoje" fica no topo: as matérias do dia, quantas foram dominadas, o tempo estudado hoje (sem meta), botão para começar, "Dominei?" e a próxima revisão. Sem plano, oferece organizar a semana ou estudar sem plano.
@@ -242,7 +258,7 @@ Recriado em texto, nunca como imagem: o símbolo (quadrado azul `action` com o F
 
 - **Desktop (> 760px):** barra lateral fixa de 240px, sem fundo próprio, com o logo, os itens de navegação (ícone + texto) e, no rodapé, Ajustes e o seletor de aparência. Item ativo: fundo `surface`, contorno e carimbo. Conteúdo com até 1180px, 40px no topo e 48px à direita.
 - **Celular (≤ 760px):** barra superior com o logo, Ajustes e o botão de tema (botões redondos com contorno) e um traço de 2px `edge` embaixo, mais uma barra inferior fixa com as abas (ícone + rótulo). Respeite as `safe-area-inset`.
-- Navegação: Painel, Cronograma, Matérias, Timer, Revisões. Revisões mostra um contador vermelho com as pendentes de hoje + atrasadas. Timer mostra o tempo enquanto há uma sessão em andamento.
+- Navegação: Painel, Cronograma, Matérias, Timer, Revisões. Revisões mostra um contador vermelho com as pendentes de hoje + atrasadas (tópicos e erros). Simulados, Redação e Dia da prova ficam num grupo discreto "Preparação" na barra lateral e, no celular, no card de Preparação do Painel, logo depois de "Estudar hoje". Timer mostra o tempo enquanto há uma sessão em andamento.
 - Cada página abre com h1 + uma linha de subtítulo em `muted`.
 - Formulários e listas longas usam o Drawer (folha inferior no celular).
 
