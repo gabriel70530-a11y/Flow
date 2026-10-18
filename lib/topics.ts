@@ -114,6 +114,12 @@ function normalizeText(text: string): string {
   return text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLocaleLowerCase("pt-BR").trim();
 }
 
+// Tópico visível com o mesmo nome, sem diferenciar acento nem maiúscula (ex.: o tópico que a IA apontou numa questão).
+export function findTopicByName(topics: readonly TopicRecord[], name: string): TopicRecord | null {
+  const target = normalizeText(name);
+  return (target && topics.find((topic) => !topic.hidden && normalizeText(topic.name) === target)) || null;
+}
+
 // A busca ignora acentos e maiúsculas e também olha a descrição.
 export function filterTopics(topics: readonly TopicRecord[], progress: ProgressMap, filter: TopicFilter): TopicRecord[] {
   const query = normalizeText(filter.query);

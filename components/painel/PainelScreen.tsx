@@ -4,6 +4,8 @@ import { useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { addDays, mondayOf, toDateKey } from "@/lib/dates";
+import { FREE_HISTORY_WEEKS } from "@/lib/plan";
+import { useProAccess } from "@/store/pro";
 import { useHydrated } from "@/store/study-store";
 import { AreaCard } from "./AreaCard";
 import { PrepCard } from "./PrepCard";
@@ -26,6 +28,7 @@ function capitalize(text: string): string {
 export function PainelScreen() {
   const hydrated = useHydrated();
   const [weekOffset, setWeekOffset] = useState(0);
+  const pro = useProAccess();
 
   if (!hydrated) {
     return (
@@ -43,6 +46,7 @@ export function PainelScreen() {
   const now = new Date();
   const today = toDateKey(now);
   const monday = addDays(mondayOf(today), weekOffset * 7);
+  const locked = !pro && -weekOffset >= FREE_HISTORY_WEEKS;
 
   return (
     <div className="grid gap-6">
@@ -57,12 +61,13 @@ export function PainelScreen() {
             monday={monday}
             onPreviousWeek={() => setWeekOffset(weekOffset - 1)}
             onNextWeek={weekOffset < 0 ? () => setWeekOffset(weekOffset + 1) : undefined}
+            locked={locked}
           />
-          <SummaryCard today={today} monday={monday} />
+          {!locked && <SummaryCard today={today} monday={monday} />}
         </div>
         <div className="grid gap-6">
           <PrepCard today={today} className="hidden lg:block" />
-          <AreaCard monday={monday} />
+          {!locked && <AreaCard monday={monday} />}
           <UpcomingReviews today={today} />
         </div>
       </div>

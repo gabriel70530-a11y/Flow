@@ -13,8 +13,10 @@ import {
   type MistakeReason,
 } from "@/lib/mistakes";
 import { GENERAL_STUDY, parseStudyChoice } from "@/lib/sessions";
-import { findTopic, visibleTopics } from "@/lib/topics";
+import { findTopic, findTopicByName, visibleTopics } from "@/lib/topics";
+import type { MistakeAnalysis } from "@/store/cloud";
 import { useStudyStore } from "@/store/study-store";
+import { AiMistakeHelper } from "./AiMistakeHelper";
 
 const reasonOptions = (Object.keys(MISTAKE_REASONS) as MistakeReason[]).map((value) => ({
   value,
@@ -37,6 +39,16 @@ export function MistakeForm({ initialChoice = GENERAL_STUDY, onDone }: MistakeFo
   const [source, setSource] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [suggestTopicId, setSuggestTopicId] = useState<string | null>(null);
+
+  const fillFromAi = (analysis: MistakeAnalysis) => {
+    const answer = analysis.answer ? `Resposta: ${analysis.answer}. ` : "";
+    setQuestion(analysis.question.slice(0, MISTAKE_QUESTION_MAX));
+    setLesson(`${answer}${analysis.lesson}`.slice(0, MISTAKE_LESSON_MAX));
+    setReason(analysis.reason);
+    setError(null);
+    const topic = findTopicByName(topics, analysis.topic);
+    if (choice === GENERAL_STUDY && topic) setChoice(topic.id);
+  };
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -76,6 +88,7 @@ export function MistakeForm({ initialChoice = GENERAL_STUDY, onDone }: MistakeFo
 
   return (
     <form onSubmit={submit} className="grid gap-5">
+      <AiMistakeHelper onResult={fillFromAi} />
       <Field label="De qual assunto?">
         <select value={choice} onChange={(event) => setChoice(event.target.value)} className={inputStyles}>
           <option value={GENERAL_STUDY}>Sem assunto definido</option>

@@ -3,6 +3,7 @@ import type { PlanTask } from "@/lib/planner";
 import { GENERAL_STUDY } from "@/lib/sessions";
 import { legacyTopics } from "@/lib/legacy-topics";
 import { findTopic } from "@/lib/topics";
+import { usePro } from "./pro";
 import { emptyData } from "./state";
 import { useStudyStore } from "./study-store";
 
@@ -15,6 +16,8 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(start);
   useStudyStore.setState({ ...emptyData(), topics: legacyTopics() });
+  // A maior parte dos testes cobre o Pro; o plano gratuito tem o próprio bloco no fim.
+  usePro.setState({ record: { plan: "mensal", status: "ativa", proUntil: "2027-01-01T00:00:00Z" } });
 });
 
 afterEach(() => {
@@ -370,5 +373,92 @@ describe("scheduling reviews for topics already studied", () => {
       "2026-10-31",
       "2026-11-15",
     ]);
+  });
+});
+
+describe("official mock exam in the app", () => {
+  it("grades by the official key, records the mock exam and the time without pauses", () => {
+    expect(state().startExam("2024-2", "ingles")).toBeNull();
+    expect(state().startExam("2024-1", "ingles")).toBe("Termine ou descarte o simulado em andamento.");
+    state().answerExam(0, "B");
+    state().answerExam(1, "A");
+    advance(1800);
+    state().pauseExam();
+    advance(2400);
+    state().resumeExam();
+    advance(4200);
+
+    const result = state().finishExam();
+    expect(result).toMatchObject({ examId: "2024-2" });
+    expect(state().examDraft).toBeNull();
+    expect(state().mockExams).toEqual([
+      expect.objectContaining({
+        date: today,
+        day: 2,
+        minutes: 60,
+        sections: [
+          { areaId: "nat", correct: 1, total: 44 },
+          { areaId: "mat", correct: 0, total: 45 },
+        ],
+      }),
+    ]);
+  });
+
+  it("sends the wrong answers to the mistake log, due tomorrow", () => {
+    state().startExam("2024-2", "ingles");
+    state().answerExam(0, "A");
+    const result = state().finishExam();
+    if ("error" in result) throw new Error(result.error);
+    expect(state().addExamMistakes(result.examId, result.graded.wrong)).toBe(89);
+    expect(state().mistakes[0]).toMatchObject({
+      areaId: "nat",
+      topicId: null,
+      source: "Enem 2024, questão 91",
+      question: "Questão 91: você marcou A, a resposta é B. Refaça e descubra onde errou.",
+      due: "2026-10-17",
+    });
+  });
+
+  it("discards a draft without recording", () => {
+    state().startExam("2023-1", "espanhol");
+    state().discardExam();
+    expect(state().examDraft).toBeNull();
+    expect(state().mockExams).toEqual([]);
+  });
+});
+
+describe("free plan", () => {
+  beforeEach(() => {
+    vi.stubEnv("NEXT_PUBLIC_PRO_TRIAL", "");
+    usePro.setState({ record: null });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("concludes a topic without scheduling reviews", () => {
+    const updated = state().setStatus("mat-1", "concluido");
+    expect(updated).toMatchObject({ status: "concluido", completedAt: today, reviews: [] });
+  });
+
+  it("schedules a review on the date the student picks and moves it when picked again", () => {
+    expect(state().scheduleReview("mat-1", "2026-10-15")).toBe("Escolha hoje ou uma data futura.");
+    expect(state().scheduleReview("nada", "2026-10-20")).toBe("Escolha o tópico.");
+    expect(state().scheduleReview("mat-1", "2026-10-20")).toBeNull();
+    expect(state().scheduleReview("mat-1", "2026-10-22")).toBeNull();
+    expect(state().progress["mat-1"].reviews).toEqual([
+      { stage: 1, due: "2026-10-22", manual: true, reschedules: [{ from: "2026-10-20", to: "2026-10-22", at: today }] },
+    ]);
+  });
+
+  it("does not start the official mock exam", () => {
+    expect(state().startExam("2024-1", "ingles")).toBe("O simulado no app faz parte do Pro.");
+  });
+
+  it("finishes onboarding without generating the plan", () => {
+    const settings = { ...state().planner, studyDays: [true, true, true, true, true, false, false] };
+    expect(state().finishOnboarding(settings, "sugerido")).toBeNull();
+    expect(state().tasks).toEqual([]);
   });
 });

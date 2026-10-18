@@ -8,6 +8,8 @@ import {
   pendingReviews,
   postponeNextReview,
   rescheduleNextReview,
+  reviewLabel,
+  scheduleManualReview,
   scheduleReviews,
   type TopicProgress,
 } from "./reviews";
@@ -193,5 +195,30 @@ describe("feedback, postpone and reschedule", () => {
   it("crosses year boundaries", () => {
     const december = changeStatus(EMPTY_PROGRESS, "concluido", "2026-12-20");
     expect(december.reviews.map((review) => review.due)).toEqual(["2026-12-21", "2026-12-27", "2027-01-04", "2027-01-19"]);
+  });
+});
+
+describe("manual reviews (free plan)", () => {
+  const today = "2026-10-16";
+  const empty: TopicProgress = { status: "and", mastery: 0, reviews: [] };
+
+  it("concludes without scheduling when automatic reviews are off", () => {
+    expect(changeStatus(empty, "concluido", today, false)).toEqual({ ...empty, status: "concluido", completedAt: today, reviews: [] });
+  });
+
+  it("keeps a single pending review per topic and never schedules in the past", () => {
+    const first = scheduleManualReview(empty, "2026-10-20", today);
+    expect(first.reviews).toEqual([{ stage: 1, due: "2026-10-20", manual: true }]);
+    expect(scheduleManualReview(first, "2026-10-10", today)).toBe(first);
+    const moved = scheduleManualReview(first, "2026-10-25", today);
+    expect(moved.reviews).toHaveLength(1);
+    expect(moved.reviews[0].due).toBe("2026-10-25");
+    const done = completeNextReview(moved, "2026-10-25");
+    expect(scheduleManualReview(done, "2026-11-01", "2026-10-25").reviews[1]).toEqual({ stage: 2, due: "2026-11-01", manual: true });
+  });
+
+  it("labels manual and automatic reviews differently", () => {
+    expect(reviewLabel({ stage: 2, due: today, manual: true })).toBe("Revisão 2 · agendada por você");
+    expect(reviewLabel({ stage: 2, due: today })).toBe("Revisão 2 de 4 · 7 dias");
   });
 });

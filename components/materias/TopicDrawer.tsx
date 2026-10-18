@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Drawer, DrawerSection } from "@/components/ui/Drawer";
+import { ProNotice } from "@/components/ui/ProNotice";
 import { Segmented, type SegmentedOption } from "@/components/ui/Segmented";
 import { showToast } from "@/components/ui/Toast";
 import { MistakeForm } from "@/components/revisoes/MistakeForm";
@@ -12,15 +13,16 @@ import { openMistakesOnTopic } from "@/lib/mistakes";
 import {
   FEEDBACK_LABELS,
   MASTERY_LABELS,
-  REVIEW_DAYS,
   STATUS_LABELS,
   nextReview,
   progressOf,
+  reviewLabel,
   type Mastery,
   type TopicStatus,
 } from "@/lib/reviews";
 import { focusName } from "@/lib/syllabus";
 import type { Priority, TopicRecord } from "@/lib/topics";
+import { useProAccess } from "@/store/pro";
 import { useStudyStore } from "@/store/study-store";
 import { TopicForm, priorityOptions } from "./TopicForm";
 
@@ -47,6 +49,7 @@ export function TopicDrawer({ topic, today, onClose }: TopicDrawerProps) {
   const [loggingMistake, setLoggingMistake] = useState(false);
   const { setStatus, setMastery, editTopic, setTopicHidden, removeTopic } = useStudyStore.getState();
   const studyTopic = useStudyTopic();
+  const pro = useProAccess();
   const [editing, setEditing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   // Status, prioridade e domínio só mudam de verdade ao salvar.
@@ -140,7 +143,9 @@ export function TopicDrawer({ topic, today, onClose }: TopicDrawerProps) {
         />
         {status !== "concluido" && (
           <p className="text-[13px] text-muted">
-            Ao concluir, as revisões de 1, 7, 15 e 30 dias são agendadas automaticamente.
+            {pro
+              ? "Ao concluir, as revisões de 1, 7, 15 e 30 dias são agendadas automaticamente."
+              : "Depois de concluir, agende a revisão em Revisões, na data que preferir."}
           </p>
         )}
       </DrawerSection>
@@ -168,7 +173,7 @@ export function TopicDrawer({ topic, today, onClose }: TopicDrawerProps) {
               <div key={review.stage} className="grid gap-0.5">
                 <div className="flex justify-between gap-3">
                   <span>
-                    Revisão {review.stage} · {REVIEW_DAYS[review.stage - 1]} {review.stage === 1 ? "dia" : "dias"}
+                    {reviewLabel(review)}
                   </span>
                   {review.done ? (
                     <span className="text-muted">Feita em {shortDate(review.done)}</span>
@@ -196,7 +201,11 @@ export function TopicDrawer({ topic, today, onClose }: TopicDrawerProps) {
       )}
 
       <DrawerSection title={`Caderno de erros${mistakeCount ? ` · ${mistakeCount} em aberto` : ""}`}>
-        {loggingMistake ? (
+        {!pro ? (
+          <ProNotice title="O caderno de erros faz parte do Pro">
+            Guarde as questões que errou neste tópico e reveja cada uma no tempo certo.
+          </ProNotice>
+        ) : loggingMistake ? (
           <MistakeForm
             initialChoice={topic.id}
             onDone={(message) => {

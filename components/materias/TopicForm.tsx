@@ -3,7 +3,9 @@
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { Field, inputStyles } from "@/components/ui/Field";
+import { ProNotice } from "@/components/ui/ProNotice";
 import { Segmented } from "@/components/ui/Segmented";
+import { useProAccess } from "@/store/pro";
 import { hasTopicNamed, topicSuggestions } from "@/lib/suggestions";
 import { AREAS, findArea, findSubject, subjectsOf, type AreaId, type SubjectId } from "@/lib/syllabus";
 import {
@@ -31,6 +33,14 @@ interface TopicFormProps {
 
 function Suggestions({ input, onPick }: { input: TopicInput; onPick: (name: string) => void }) {
   const topics = useStudyStore((state) => state.topics);
+  const pro = useProAccess();
+  if (!pro) {
+    return (
+      <ProNotice title="Veja o que mais cai em cada matéria com o Pro" className="-mt-1">
+        Até 10 sugestões por matéria, pelo que mais apareceu no Enem de 2014 a 2024. Tocar só preenche o nome.
+      </ProNotice>
+    );
+  }
   const list = topicSuggestions(input.areaId, input.subjectId);
   if (!list) return <p className="-mt-1 text-[13px] text-muted">Escolha a matéria para ver o que mais cai.</p>;
   const scope = input.subjectId ? findSubject(input.subjectId)?.name : findArea(input.areaId).name;
@@ -68,6 +78,7 @@ function Suggestions({ input, onPick }: { input: TopicInput; onPick: (name: stri
 }
 
 export function TopicForm({ initial, submitLabel, onSubmit, onCancel, suggest = false }: TopicFormProps) {
+  const pro = useProAccess();
   const [input, setInput] = useState(initial);
   const [error, setError] = useState<string | null>(null);
   const update = (changes: Partial<TopicInput>) => {
@@ -149,7 +160,7 @@ export function TopicForm({ initial, submitLabel, onSubmit, onCancel, suggest = 
           </Button>
         )}
       </div>
-      {suggest && (
+      {suggest && pro && (
         <p className="text-xs text-muted">
           Sugestões a partir de levantamentos do que caiu no Enem de 2014 a 2024. Elas não dizem o que vai cair.
         </p>

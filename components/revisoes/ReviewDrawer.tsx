@@ -7,7 +7,7 @@ import { Field, inputStyles } from "@/components/ui/Field";
 import { showToast } from "@/components/ui/Toast";
 import { useStudyTopic } from "@/components/timer/use-study-topic";
 import { addDays, dueLabel, shortDate } from "@/lib/dates";
-import { nextReview, progressOf } from "@/lib/reviews";
+import { nextReview, progressOf, reviewLabel } from "@/lib/reviews";
 import { focusName } from "@/lib/syllabus";
 import type { TopicRecord } from "@/lib/topics";
 import { useStudyStore } from "@/store/study-store";
@@ -45,7 +45,7 @@ export function ReviewDrawer({ topic, today, onClose, onComplete }: ReviewDrawer
   };
 
   return (
-    <Drawer open onClose={onClose} eyebrow={`${focusName(topic.areaId, topic.subjectId)} · Revisão ${review.stage} de 4`} title={topic.name}>
+    <Drawer open onClose={onClose} eyebrow={`${focusName(topic.areaId, topic.subjectId)} · ${reviewLabel(review)}`} title={topic.name}>
       <DrawerSection title="Data">
         <p className={review.due < today ? "text-danger" : ""}>{dueLabel(review.due, today)}</p>
         {review.reschedules && review.reschedules.length > 0 && (

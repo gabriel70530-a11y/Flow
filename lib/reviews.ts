@@ -3,7 +3,6 @@ import type { TopicRecord } from "./topics";
 
 export type TopicStatus = "nao" | "and" | "concluido" | "revisar";
 export type Mastery = 0 | 1 | 2 | 3 | 4 | 5;
-export type ReviewStage = 1 | 2 | 3 | 4;
 export type ReviewFeedback = "bem" | "parcial" | "dificil";
 
 export interface Reschedule {
@@ -13,11 +12,14 @@ export interface Reschedule {
 }
 
 export interface Review {
-  stage: ReviewStage;
+  // 1 a 4 nas revisões automáticas do Pro; as agendadas à mão continuam a contagem do tópico.
+  stage: number;
   due: string;
   done?: string;
   feedback?: ReviewFeedback;
   reschedules?: Reschedule[];
+  // Agendada pela própria pessoa (plano gratuito), fora da sequência de 1, 7, 15 e 30 dias.
+  manual?: boolean;
 }
 
 export interface TopicProgress {
@@ -66,17 +68,19 @@ export function progressOf(progress: ProgressMap, topicId: string): TopicProgres
 
 export function scheduleReviews(from: string, firstStage: number): Review[] {
   return REVIEW_DAYS.slice(firstStage - 1).map((days, index) => ({
-    stage: (firstStage + index) as ReviewStage,
+    stage: firstStage + index,
     due: addDays(from, days),
   }));
 }
 
-export function changeStatus(current: TopicProgress, status: TopicStatus, today: string): TopicProgress {
+// autoReviews é o Pro: no gratuito, concluir não agenda nada e a pessoa escolhe as datas.
+export function changeStatus(current: TopicProgress, status: TopicStatus, today: string, autoReviews = true): TopicProgress {
   if (current.status === status) return current;
   const done = current.reviews.filter((review) => review.done);
   if (status !== "concluido") {
     return { ...current, status, completedAt: undefined, reviews: done };
   }
+  if (!autoReviews) return { ...current, status, completedAt: today, reviews: done };
   // Ao reconcluir, as revisões já feitas ficam e só as etapas restantes são reagendadas a partir de hoje.
   return {
     ...current,
@@ -84,6 +88,19 @@ export function changeStatus(current: TopicProgress, status: TopicStatus, today:
     completedAt: today,
     reviews: [...done, ...scheduleReviews(today, done.length + 1)],
   };
+}
+
+export function reviewLabel(review: Review): string {
+  if (review.manual) return `Revisão ${review.stage} · agendada por você`;
+  const days = REVIEW_DAYS[review.stage - 1];
+  return days ? `Revisão ${review.stage} de 4 · ${days} ${days === 1 ? "dia" : "dias"}` : `Revisão ${review.stage}`;
+}
+
+// Um tópico tem no máximo uma revisão pendente: agendar de novo só muda a data dela.
+export function scheduleManualReview(progress: TopicProgress, date: string, today: string): TopicProgress {
+  if (date < today) return progress;
+  if (nextReview(progress)) return rescheduleNextReview(progress, date, today);
+  return { ...progress, reviews: [...progress.reviews, { stage: progress.reviews.length + 1, due: date, manual: true }] };
 }
 
 export function nextReview(progress: TopicProgress): Review | undefined {

@@ -1,11 +1,11 @@
 import { DEFAULT_PLANNER, type PlanTask, type PlannerSettings } from "@/lib/planner";
 import type { StudySession } from "@/lib/sessions";
 import type { GoalType } from "@/lib/stats";
+import { LETTERS, QUESTIONS_PER_DAY, findOfficialExam, type ExamDraft } from "@/lib/official-exams";
 import { DEFAULT_TIMER, type TimerState } from "@/lib/timer";
 import { legacySubject, legacyTopics } from "@/lib/legacy-topics";
 import { subjectsOf } from "@/lib/syllabus";
 import { findTopic, type TopicRecord } from "@/lib/topics";
-import { createDemoData } from "./demo-data";
 import { emptyData, type StudyData } from "./state";
 
 const GOAL_TYPES: GoalType[] = ["horas", "sessoes", "topicos"];
@@ -34,6 +34,19 @@ function parseJson(raw: string): unknown {
 
 function records(value: unknown): Record<string, unknown>[] {
   return Array.isArray(value) ? value.filter(isRecord) : [];
+}
+
+function normalizeExamDraft(value: unknown): ExamDraft | null {
+  if (!isRecord(value) || typeof value.examId !== "string" || !findOfficialExam(value.examId)) return null;
+  const answers = Array.isArray(value.answers) ? value.answers : [];
+  if (answers.length !== QUESTIONS_PER_DAY) return null;
+  return {
+    examId: value.examId,
+    language: value.language === "espanhol" ? "espanhol" : "ingles",
+    answers: answers.map((answer) => (LETTERS.includes(answer) ? answer : null)),
+    banked: Number.isFinite(value.banked) ? Number(value.banked) : 0,
+    startedAt: Number.isFinite(value.startedAt) ? Number(value.startedAt) : null,
+  };
 }
 
 function without(record: Record<string, unknown>, keys: string[]): Record<string, unknown> {
@@ -143,6 +156,7 @@ function fillDefaults(saved: Record<string, unknown>): StudyData {
     showStreak: saved.showStreak !== false,
     analyticsConsent: saved.analyticsConsent === true,
     timer: { ...DEFAULT_TIMER, ...(isRecord(saved.timer) ? (saved.timer as Partial<TimerState>) : {}) },
+    examDraft: normalizeExamDraft(saved.examDraft),
   };
 }
 
@@ -187,7 +201,7 @@ export function migrateV1(saved: Record<string, unknown>): StudyData {
   });
 }
 
-export function loadData({ current, legacy }: StoredRaw, today: string): LoadResult {
+export function loadData({ current, legacy }: StoredRaw): LoadResult {
   if (current !== null) {
     const saved = parseJson(current);
     if (isRecord(saved) && saved.version === 2) return { data: normalize(saved), corrupt: false };
@@ -198,7 +212,7 @@ export function loadData({ current, legacy }: StoredRaw, today: string): LoadRes
     if (isRecord(saved) && saved.version === 1) return { data: migrateV1(saved), corrupt: false };
     return { data: emptyData(), corrupt: false };
   }
-  return { data: { ...emptyData(), demo: true, ...createDemoData(today) }, corrupt: false };
+  return { data: emptyData(), corrupt: false };
 }
 
 // Lê um backup exportado pelo app (v2) ou os dados do protótipo (v1). Devolve null se o arquivo não servir.

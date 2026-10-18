@@ -8,16 +8,18 @@ import { Drawer } from "@/components/ui/Drawer";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { inputStyles } from "@/components/ui/Field";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { ProNotice } from "@/components/ui/ProNotice";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { showToast } from "@/components/ui/Toast";
 import { shortDate, toDateKey } from "@/lib/dates";
 import { COMPETENCIES, essayTotal, searchRepertoire, weakestCompetency, type Essay, type RepertoireItem } from "@/lib/essays";
+import { useProAccess } from "@/store/pro";
 import { useHydrated, useStudyStore } from "@/store/study-store";
+import { AiEssayCard } from "./AiEssayCard";
 import { EssayForm } from "./EssayForm";
 import { RepertoireForm } from "./RepertoireForm";
 
-const SUBTITLE =
-  "O Flow não corrige redação. Registre a nota que você recebeu (no app MEC Enem, com um professor) e veja o que melhorar.";
+const SUBTITLE = "Registre as notas e acompanhe a evolução.";
 
 function RemoveButton({ onRemove }: { onRemove: () => void }) {
   const [confirming, setConfirming] = useState(false);
@@ -75,6 +77,7 @@ export function RedacaoScreen() {
   const repertoire = useStudyStore((state) => state.repertoire);
   const [drawer, setDrawer] = useState<"redacao" | "repertorio" | null>(null);
   const [query, setQuery] = useState("");
+  const pro = useProAccess();
 
   const header = (
     <div className="flex flex-wrap items-end justify-between gap-4">
@@ -113,6 +116,8 @@ export function RedacaoScreen() {
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <div className="grid gap-6">
+          <AiEssayCard today={today} />
+
           {corrected.length > 0 && (
             <Card>
               <CardHeader title="Evolução" />
@@ -125,7 +130,12 @@ export function RedacaoScreen() {
                   Antes: {corrected.slice(1, 5).map((essay) => essayTotal(essay.scores ?? [])).join(" · ")}
                 </p>
               )}
-              {weakest && (
+              {weakest && !pro && (
+                <ProNotice title="Descubra o que treinar com o Pro" className="mt-4">
+                  A competência com a menor média nas suas últimas redações corrigidas.
+                </ProNotice>
+              )}
+              {weakest && pro && (
                 <p className="mt-4 rounded-[12px] bg-hover px-3.5 py-3 text-sm">
                   Ponto a treinar: <strong>{COMPETENCIES[weakest.index].short} {COMPETENCIES[weakest.index].name}</strong>, com média{" "}
                   <span className="tabular-nums">{Math.round(weakest.average)}</span> nas últimas redações.

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Field, inputStyles } from "@/components/ui/Field";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { ProNotice } from "@/components/ui/ProNotice";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Segmented } from "@/components/ui/Segmented";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -16,6 +17,7 @@ import { ENEM_DATES } from "@/lib/exam";
 import type { PlannerSettings } from "@/lib/planner";
 import { findArea, type AreaId } from "@/lib/syllabus";
 import type { OnboardingState } from "@/store/state";
+import { useProAccess } from "@/store/pro";
 import { useHydrated, useStudyStore } from "@/store/study-store";
 
 const STEPS = ["Objetivo", "Dias", "Áreas", "Prova", "Organização", "Resumo"];
@@ -52,7 +54,10 @@ function OnboardingSteps() {
   const { finishOnboarding, skipOnboarding } = useStudyStore.getState();
   const [step, setStep] = useState(0);
   const [settings, setSettings] = useState<PlannerSettings>(stored);
-  const [planMode, setPlanMode] = useState(storedMode);
+  const [chosenMode, setPlanMode] = useState(storedMode);
+  const pro = useProAccess();
+  // O plano gerado sozinho é do Pro; no gratuito a semana é montada à mão.
+  const planMode = pro ? chosenMode : "manual";
   const [error, setError] = useState<string | null>(null);
   const studyDayNames = WEEKDAY_NAMES.filter((_, index) => settings.studyDays[index]);
   const lightDayNames = WEEKDAY_NAMES.filter((_, index) => settings.studyDays[index] && settings.lightDays[index]);
@@ -180,9 +185,15 @@ function OnboardingSteps() {
 
         {step === 4 && (
           <div className="grid gap-6">
+            {!pro && (
+              <ProNotice title="O plano sugerido faz parte do Pro">
+                No Pro, o Flow escolhe as matérias de cada dia pelas suas prioridades. No gratuito, você adiciona as matérias no
+                Cronograma, e o que ficar sem estudar passa sozinho para o próximo dia.
+              </ProNotice>
+            )}
             <div className="grid gap-1.5">
               <span className="text-[13px] font-semibold text-muted">Como você prefere organizar a semana?</span>
-              <Segmented options={planModeOptions} value={planMode} onChange={setPlanMode} />
+              {pro && <Segmented options={planModeOptions} value={planMode} onChange={setPlanMode} />}
               <p className="text-[13px] text-muted">
                 {planMode === "sugerido"
                   ? "O Flow organiza até 2 matérias por dia nos seus dias de estudo. Você pode mover ou remover qualquer uma."

@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarPlus } from "lucide-react";
+import { CalendarCheck, CalendarPlus } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { Button, linkStyles } from "@/components/ui/Button";
@@ -10,14 +10,17 @@ import { DueLabel } from "@/components/ui/DueLabel";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ListRow } from "@/components/ui/ListRow";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { ProNotice } from "@/components/ui/ProNotice";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { showToast } from "@/components/ui/Toast";
 import { toDateKey } from "@/lib/dates";
 import { dueMistakes } from "@/lib/mistakes";
-import { groupReviews, nextReview, pendingReviews, progressOf, type PendingReview } from "@/lib/reviews";
+import { groupReviews, nextReview, pendingReviews, progressOf, reviewLabel, type PendingReview } from "@/lib/reviews";
 import { focusName } from "@/lib/syllabus";
 import { findTopic } from "@/lib/topics";
+import { useProAccess } from "@/store/pro";
 import { useHydrated, useStudyStore } from "@/store/study-store";
+import { ManualReviewForm } from "./ManualReviewForm";
 import { ReviewDrawer } from "./ReviewDrawer";
 import { ReviewFeedbackPrompt } from "./ReviewFeedbackPrompt";
 import { RevisoesTabs } from "./RevisoesTabs";
@@ -34,11 +37,15 @@ export function RevisoesScreen() {
   const [openTopicId, setOpenTopicId] = useState<string | null>(null);
   const [completed, setCompleted] = useState<{ topicId: string; stage: number } | null>(null);
   const [showAllLater, setShowAllLater] = useState(false);
-  const [scheduling, setScheduling] = useState(false);
+  const [scheduling, setScheduling] = useState<"manual" | "estudados" | null>(null);
+  const pro = useProAccess();
   const closeDrawer = useCallback(() => setOpenTopicId(null), []);
 
   const header = (
-    <PageHeader title="Revisões" subtitle="Agendadas para 1, 7, 15 e 30 dias depois de concluir um tópico." />
+    <PageHeader
+      title="Revisões"
+      subtitle={pro ? "Agendadas para 1, 7, 15 e 30 dias depois de concluir um tópico." : "Revise os tópicos nas datas que você escolher."}
+    />
   );
 
   if (!hydrated) {
@@ -74,12 +81,18 @@ export function RevisoesScreen() {
   return (
     <div className="grid gap-6">
       {header}
-      <RevisoesTabs current="/revisoes" mistakesDue={dueMistakes(mistakes, today).length} />
+      <RevisoesTabs current="/revisoes" mistakesDue={pro ? dueMistakes(mistakes, today).length : 0} />
 
-      <div>
-        <Button variant="primary" size="lg" onClick={() => setScheduling(true)}>
+      <div className="flex flex-wrap gap-2">
+        {pro && (
+          <Button variant="primary" size="lg" onClick={() => setScheduling("estudados")}>
+            <CalendarCheck size={18} aria-hidden />
+            Agendar revisões do que já estudei
+          </Button>
+        )}
+        <Button variant={pro ? "secondary" : "primary"} size="lg" onClick={() => setScheduling("manual")}>
           <CalendarPlus size={18} aria-hidden />
-          Agendar revisões do que já estudei
+          Agendar revisão
         </Button>
       </div>
 
@@ -94,11 +107,17 @@ export function RevisoesScreen() {
               "Nenhuma revisão para hoje. As próximas estão abaixo."
             ) : (
               <>
-                Nenhuma revisão agendada. Já estudou algo? Use o botão acima. Ao concluir um tópico em{" "}
-                <Link href="/materias" className={linkStyles}>
-                  Matérias
-                </Link>
-                , as revisões também aparecem aqui.
+                Nenhuma revisão agendada. Já estudou algo? Use o botão acima.
+                {pro && (
+                  <>
+                    {" "}
+                    Ao concluir um tópico em{" "}
+                    <Link href="/materias" className={linkStyles}>
+                      Matérias
+                    </Link>
+                    , as revisões também aparecem aqui.
+                  </>
+                )}
               </>
             )}
           </EmptyState>
@@ -124,7 +143,7 @@ export function RevisoesScreen() {
                     title={topic?.name}
                     subtitle={
                       <span className="tabular-nums">
-                        {topic && focusName(topic.areaId, topic.subjectId)} · Revisão {review.stage} de 4 ·{" "}
+                        {topic && focusName(topic.areaId, topic.subjectId)} · {reviewLabel(review)} ·{" "}
                         <DueLabel due={review.due} today={today} />
                         {review.reschedules?.length ? " · Reagendada" : ""}
                       </span>
@@ -155,14 +174,33 @@ export function RevisoesScreen() {
           </Card>
         ))}
 
-      <Drawer open={scheduling} onClose={() => setScheduling(false)} eyebrow="Revisões" title="Agendar revisões">
-        {scheduling && (
+      <Drawer open={scheduling === "estudados"} onClose={() => setScheduling(null)} eyebrow="Revisões" title="Agendar revisões">
+        {scheduling === "estudados" && (
           <ScheduleReviewsForm
             onDone={(count) => {
-              setScheduling(false);
+              setScheduling(null);
               showToast(count === 1 ? "Revisões agendadas para 1 tópico." : `Revisões agendadas para ${count} tópicos.`);
             }}
           />
+        )}
+      </Drawer>
+
+      <Drawer open={scheduling === "manual"} onClose={() => setScheduling(null)} eyebrow="Revisões" title="Agendar revisão">
+        {scheduling === "manual" && (
+          <div className="grid gap-5">
+            <ManualReviewForm
+              today={today}
+              onDone={(message) => {
+                setScheduling(null);
+                showToast(message);
+              }}
+            />
+            {!pro && (
+              <ProNotice title="Deixe o Flow agendar por você com o Pro">
+                Ao concluir um tópico, as 4 revisões (amanhã, 7, 15 e 30 dias) entram sozinhas, no tempo certo para não esquecer.
+              </ProNotice>
+            )}
+          </div>
         )}
       </Drawer>
 

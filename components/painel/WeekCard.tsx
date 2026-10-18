@@ -6,6 +6,7 @@ import { linkStyles } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { IconButton } from "@/components/ui/IconButton";
 import { NumberInput } from "@/components/ui/NumberInput";
+import { ProNotice } from "@/components/ui/ProNotice";
 import { shortDate } from "@/lib/dates";
 import {
   GOAL_LIMITS,
@@ -29,9 +30,11 @@ interface WeekCardProps {
   monday: string;
   onPreviousWeek: () => void;
   onNextWeek?: () => void;
+  // Semana além do histórico do plano gratuito: os dados continuam guardados, só não aparecem.
+  locked?: boolean;
 }
 
-export function WeekCard({ today, monday, onPreviousWeek, onNextWeek }: WeekCardProps) {
+export function WeekCard({ today, monday, onPreviousWeek, onNextWeek, locked = false }: WeekCardProps) {
   const sessions = useStudyStore((state) => state.sessions);
   const progress = useStudyStore((state) => state.progress);
   const goal = useStudyStore((state) => state.goal);
@@ -57,7 +60,7 @@ export function WeekCard({ today, monday, onPreviousWeek, onNextWeek }: WeekCard
           <span className="text-[13px] text-muted tabular-nums">
             {shortDate(days[0])} – {shortDate(days[6])}
           </span>
-          <IconButton aria-label="Semana anterior" onClick={onPreviousWeek}>
+          <IconButton aria-label="Semana anterior" disabled={locked} onClick={onPreviousWeek}>
             <ChevronLeft size={18} strokeWidth={2.2} aria-hidden />
           </IconButton>
           <IconButton aria-label="Próxima semana" disabled={!onNextWeek} onClick={onNextWeek}>
@@ -66,6 +69,12 @@ export function WeekCard({ today, monday, onPreviousWeek, onNextWeek }: WeekCard
         </div>
       </CardHeader>
 
+      {locked ? (
+        <ProNotice title="Semanas mais antigas ficam no Pro">
+          No gratuito, o Painel mostra as últimas 4 semanas. Seus registros continuam guardados e aparecem ao assinar.
+        </ProNotice>
+      ) : (
+      <>
       <div className="flex flex-wrap items-baseline gap-2">
         <strong className="font-heading text-[56px] leading-none font-extrabold tracking-[-0.01em] font-stretch-120% italic tabular-nums">
           {inHours ? formatHours(total) : done}
@@ -152,6 +161,8 @@ export function WeekCard({ today, monday, onPreviousWeek, onNextWeek }: WeekCard
           </div>
         )}
       </div>
+      </>
+      )}
     </Card>
   );
 }

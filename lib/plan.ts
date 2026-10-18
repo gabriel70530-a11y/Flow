@@ -1,4 +1,5 @@
 export type PlanTier = "gratuito" | "pro";
+export type BillingPlan = "mensal" | "anual";
 
 export interface Entitlement {
   tier: PlanTier;
@@ -6,33 +7,63 @@ export interface Entitlement {
   source: "teste" | "provedor";
 }
 
-export const PRO_PRICE = "R$ 19,90/mês";
+// O que o servidor grava ao confirmar um pagamento (tabela entitlements). O app só lê.
+export interface ProRecord {
+  plan: BillingPlan;
+  status: "ativa" | "cancelada";
+  proUntil: string;
+}
+
+export const PRICES: Record<BillingPlan, { label: string; amount: number }> = {
+  mensal: { label: "R$ 14,90/mês", amount: 14.9 },
+  anual: { label: "R$ 119,90/ano", amount: 119.9 },
+};
 
 export const FREE_FEATURES = [
-  "As cinco áreas do ENEM, com os tópicos que você criar",
-  "Status, prioridade e nível de domínio por tópico",
-  "Timer Pomodoro e cronômetro com registro de sessões",
-  "Revisões espaçadas de 1, 7, 15 e 30 dias",
-  "Painel com horas da semana, meta e progresso",
+  "As cinco áreas do ENEM, com quantos tópicos você quiser",
+  "Timer Pomodoro, cronômetro e modo foco",
+  "Revisões nas datas que você escolher",
+  "Registro de simulados, redações e repertório",
+  "Cronograma montado à mão",
+  "Painel com as últimas 4 semanas, meta e conquistas",
+  "Conta com cópia na nuvem",
 ];
 
 export const PRO_FEATURES = [
-  "Semana organizada automaticamente, com até 2 matérias por dia",
-  "Matérias não estudadas e não dominadas voltam sozinhas no dia seguinte",
-  "Resumo detalhado: planejado x realizado, constância e comparação semanal",
+  "Tudo do gratuito",
+  "Correção de redação com IA, até 8 por mês",
+  "Caderno de erros com análise por IA",
+  "Simulado no app, corrigido pelo gabarito oficial",
+  "Revisões agendadas sozinhas e sugestões do que mais cai",
+  "Semana montada e atualizada sozinha",
+  "Resumo completo, evolução e histórico inteiro",
 ];
 
-/*
- * Sem backend nem provedor de pagamento, ninguém tem Pro confirmado. Durante o teste com estudantes,
- * os recursos Pro ficam liberados para todos e a interface diz isso. Quando houver servidor, este
- * acesso deve vir dele (assinatura validada pelo provedor), nunca de um valor salvo no navegador.
- */
-export function currentEntitlement(): Entitlement {
-  return { tier: "gratuito", source: "teste" };
+// Quantas semanas para trás o Painel mostra no gratuito, contando a atual.
+export const FREE_HISTORY_WEEKS = 4;
+
+// Com NEXT_PUBLIC_PRO_TRIAL=true, todos têm o Pro (testes com estudantes). Sem ela, só quem o servidor confirmou.
+export function proTrialOpen(): boolean {
+  return process.env.NEXT_PUBLIC_PRO_TRIAL === "true";
 }
 
-export function hasProAccess(entitlement: Entitlement = currentEntitlement()): boolean {
+// O Pro vale até o fim do dia de proUntil, inclusive depois de cancelar: a pessoa já pagou por esse período.
+export function isProActive(record: ProRecord | null, now: Date): boolean {
+  return record !== null && Date.parse(record.proUntil) > now.getTime();
+}
+
+export function currentEntitlement(record: ProRecord | null, now: Date): Entitlement {
+  if (isProActive(record, now)) return { tier: "pro", source: "provedor" };
+  return { tier: "gratuito", source: proTrialOpen() ? "teste" : "provedor" };
+}
+
+export function hasProAccess(entitlement: Entitlement): boolean {
   return entitlement.tier === "pro" || entitlement.source === "teste";
+}
+
+// A assinatura só aparece com o pagamento configurado no servidor (funções do Supabase e Mercado Pago).
+export function paymentsOpen(): boolean {
+  return process.env.NEXT_PUBLIC_PAYMENTS_OPEN === "true";
 }
 
 // Lista de interesse externa (ex.: formulário). Sem URL configurada, a interface não mostra o botão.

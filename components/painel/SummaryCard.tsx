@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { linkStyles } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { ProBadge } from "@/components/ui/ProBadge";
+import { ProNotice } from "@/components/ui/ProNotice";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { addDays } from "@/lib/dates";
 import {
@@ -17,6 +18,7 @@ import {
   topicCounts,
 } from "@/lib/stats";
 import { findArea } from "@/lib/syllabus";
+import { useProAccess } from "@/store/pro";
 import { useStudyStore } from "@/store/study-store";
 
 const CONSISTENCY_DAYS = 14;
@@ -35,6 +37,7 @@ export function SummaryCard({ today, monday }: { today: string; monday: string }
   const tasks = useStudyStore((state) => state.tasks);
   const progress = useStudyStore((state) => state.progress);
   const topics = useStudyStore((state) => state.topics);
+  const pro = useProAccess();
 
   const sunday = addDays(monday, 6);
   const { taskCount, tasksDone, taskFocusSeconds, doneSeconds } = plannedVersusDone(tasks, sessions, monday, sunday);
@@ -51,10 +54,29 @@ export function SummaryCard({ today, monday }: { today: string; monday: string }
 
   return (
     <Card>
-      <CardHeader title="Resumo da semana">
-        <ProBadge />
-      </CardHeader>
+      <CardHeader title="Resumo da semana">{pro && <ProBadge />}</CardHeader>
       <div className="grid">
+        <Row label="Sessões registradas">
+          {weekSessions.length === 0
+            ? "Nenhuma ainda."
+            : `${weekSessions.length} ${weekSessions.length === 1 ? "sessão" : "sessões"}${interrupted ? `, ${interrupted} finalizada${interrupted === 1 ? "" : "s"} antes do fim do bloco` : ""}.`}
+          {focusAnswers.length > 0 && (
+            <span className="mt-1 block text-[13px] text-muted">
+              {focused} de {focusAnswers.length} sem distração, pelas suas respostas.
+            </span>
+          )}
+        </Row>
+        <Row label="Tópicos">
+          {counts.concluded} concluídos, {counts.inProgress} em andamento e {counts.needsReview} para revisar, de {counts.total}.
+        </Row>
+      </div>
+      {!pro ? (
+        <ProNotice title="Veja o resto do resumo com o Pro" className="mt-4">
+          Planejado x realizado, constância dos últimos {CONSISTENCY_DAYS} dias, comparação com a semana anterior e a área que ficou
+          esquecida.
+        </ProNotice>
+      ) : (
+      <div className="mt-3 grid border-t border-line pt-3">
         <Row label="Matérias da semana">
           {taskCount > 0 ? (
             <>
@@ -72,19 +94,6 @@ export function SummaryCard({ today, monday }: { today: string; monday: string }
             </>
           )}
         </Row>
-        <Row label="Sessões registradas">
-          {weekSessions.length === 0
-            ? "Nenhuma ainda."
-            : `${weekSessions.length} ${weekSessions.length === 1 ? "sessão" : "sessões"}${interrupted ? `, ${interrupted} finalizada${interrupted === 1 ? "" : "s"} antes do fim do bloco` : ""}.`}
-          {focusAnswers.length > 0 && (
-            <span className="mt-1 block text-[13px] text-muted">
-              {focused} de {focusAnswers.length} sem distração, pelas suas respostas.
-            </span>
-          )}
-        </Row>
-        <Row label="Tópicos">
-          {counts.concluded} concluídos, {counts.inProgress} em andamento e {counts.needsReview} para revisar, de {counts.total}.
-        </Row>
         <Row label={`Constância (dias com estudo nos últimos ${CONSISTENCY_DAYS})`}>
           {studiedDays} de {CONSISTENCY_DAYS} dias. Descanso também conta: a ideia é ritmo, não perfeição.
         </Row>
@@ -101,6 +110,7 @@ export function SummaryCard({ today, monday }: { today: string; monday: string }
           </Row>
         )}
       </div>
+      )}
     </Card>
   );
 }

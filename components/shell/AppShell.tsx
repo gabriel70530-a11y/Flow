@@ -11,7 +11,7 @@ import { useTimerTicker } from "@/components/timer/use-timer-ticker";
 import { IconButton } from "@/components/ui/IconButton";
 import { SkipLink } from "@/components/ui/SkipLink";
 import { Toast, showToast } from "@/components/ui/Toast";
-import { startCloud } from "@/store/cloud";
+import { useProAccess } from "@/store/pro";
 import { useHydrated, useStudyStore, type Theme } from "@/store/study-store";
 import { DemoNotice } from "./DemoNotice";
 import { SaveFailureNotice } from "./SaveFailureNotice";
@@ -30,6 +30,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const demo = useStudyStore((state) => state.demo);
   const setTheme = useStudyStore((state) => state.setTheme);
   const timerText = useTimerTicker(hydrated);
+  const pro = useProAccess();
 
   // Até hidratar, o servidor e o primeiro render do cliente precisam mostrar a mesma coisa.
   const theme: Theme = hydrated ? storedTheme : "system";
@@ -37,8 +38,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (!hydrated) return 0;
     const today = toDateKey(new Date());
     const groups = groupReviews(pendingReviews(progress, topics), today);
-    return groups.late.length + groups.today.length + dueMistakes(mistakes, today).length;
-  }, [hydrated, progress, topics, mistakes]);
+    return groups.late.length + groups.today.length + (pro ? dueMistakes(mistakes, today).length : 0);
+  }, [hydrated, progress, topics, mistakes, pro]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -47,11 +48,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     const moved = carryOver();
     if (moved.length === 1) showToast("Uma matéria que ficou sem estudo passou para o próximo dia.");
     else if (moved.length > 1) showToast(`${moved.length} matérias que ficaram sem estudo passaram para os próximos dias.`);
-  }, [hydrated]);
-
-  // Só depois de ler o aparelho: a sincronização compara com o que está salvo nele.
-  useEffect(() => {
-    if (hydrated) return startCloud();
   }, [hydrated]);
 
   useEffect(() => {

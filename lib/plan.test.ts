@@ -1,19 +1,31 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { contactEmail, currentEntitlement, hasProAccess, interestListUrl } from "./plan";
+import { contactEmail, currentEntitlement, hasProAccess, interestListUrl, isProActive, type ProRecord } from "./plan";
 
 afterEach(() => {
   vi.unstubAllEnvs();
 });
 
+const now = new Date("2026-10-18T12:00:00Z");
+const record = (proUntil: string, status: ProRecord["status"] = "ativa"): ProRecord => ({ plan: "mensal", status, proUntil });
+
 describe("plan access", () => {
-  it("never reports a confirmed Pro subscription without a payment provider", () => {
-    expect(currentEntitlement()).toEqual({ tier: "gratuito", source: "teste" });
+  it("keeps everyone on the free plan without a confirmed subscription", () => {
+    vi.stubEnv("NEXT_PUBLIC_PRO_TRIAL", "");
+    expect(currentEntitlement(null, now)).toEqual({ tier: "gratuito", source: "provedor" });
+    expect(hasProAccess(currentEntitlement(null, now))).toBe(false);
   });
 
-  it("opens Pro features during the trial and to confirmed subscribers only", () => {
-    expect(hasProAccess({ tier: "gratuito", source: "teste" })).toBe(true);
-    expect(hasProAccess({ tier: "pro", source: "provedor" })).toBe(true);
-    expect(hasProAccess({ tier: "gratuito", source: "provedor" })).toBe(false);
+  it("opens Pro to everyone while the trial is on", () => {
+    vi.stubEnv("NEXT_PUBLIC_PRO_TRIAL", "true");
+    expect(hasProAccess(currentEntitlement(null, now))).toBe(true);
+  });
+
+  it("gives Pro until the paid period ends, even after cancelling", () => {
+    vi.stubEnv("NEXT_PUBLIC_PRO_TRIAL", "");
+    expect(isProActive(record("2026-11-01T00:00:00Z"), now)).toBe(true);
+    expect(isProActive(record("2026-11-01T00:00:00Z", "cancelada"), now)).toBe(true);
+    expect(isProActive(record("2026-10-17T00:00:00Z"), now)).toBe(false);
+    expect(currentEntitlement(record("2026-11-01T00:00:00Z"), now)).toEqual({ tier: "pro", source: "provedor" });
   });
 
   it("only exposes valid interest list and contact settings", () => {

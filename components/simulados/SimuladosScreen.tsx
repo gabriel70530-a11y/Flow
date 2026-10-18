@@ -8,6 +8,7 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { Drawer } from "@/components/ui/Drawer";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { ProNotice } from "@/components/ui/ProNotice";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { showToast } from "@/components/ui/Toast";
@@ -20,10 +21,12 @@ import {
   type MockExam,
 } from "@/lib/mock-exams";
 import { findArea } from "@/lib/syllabus";
+import { useProAccess } from "@/store/pro";
 import { useHydrated, useStudyStore } from "@/store/study-store";
 import { MockExamForm } from "./MockExamForm";
+import { OfficialExamCard } from "./OfficialExamCard";
 
-const SUBTITLE = "Registre os simulados que fizer (app do MEC, cursinho, provas antigas) e acompanhe acertos e ritmo.";
+const SUBTITLE = "Treine com a prova oficial e no tempo do Enem. Acompanhe acertos e ritmo.";
 const minutesFormat = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
 
 function percent(value: number): string {
@@ -69,6 +72,7 @@ export function SimuladosScreen() {
   const hydrated = useHydrated();
   const mocks = useStudyStore((state) => state.mockExams);
   const [adding, setAdding] = useState(false);
+  const pro = useProAccess();
 
   const header = (
     <div className="flex flex-wrap items-end justify-between gap-4">
@@ -99,11 +103,13 @@ export function SimuladosScreen() {
     <div className="grid gap-6">
       {header}
 
+      <OfficialExamCard />
+
       {mocks.length === 0 ? (
         <Card flush>
           <EmptyState title="Nenhum simulado registrado">
-            Faça uma prova inteira no tempo oficial (5h30 no 1º dia, 5h no 2º) e registre aqui os acertos de cada área. Treinar o
-            ritmo ajuda tanto quanto o conteúdo.
+            Faça uma prova inteira no tempo oficial (5h30 no 1º dia, 5h no 2º). Simulados feitos fora do app (MEC Enem,
+            cursinho) entram em Registrar simulado. Treinar o ritmo ajuda tanto quanto o conteúdo.
           </EmptyState>
         </Card>
       ) : (
@@ -120,26 +126,34 @@ export function SimuladosScreen() {
           </Card>
           <Card>
             <CardHeader title="Acertos por área" />
-            <div className="grid gap-4">
-              {areas.map((areaId) => {
-                const trend = areaTrend(mocks, areaId);
-                if (!trend) return null;
-                const change = trend.previous === null ? null : Math.round((trend.last - trend.previous) * 100);
-                return (
-                  <div key={areaId} className="grid gap-1.5">
-                    <div className="flex justify-between gap-3 text-sm">
-                      <span>{findArea(areaId).name}</span>
-                      <span className="text-muted tabular-nums">
-                        {percent(trend.last)}
-                        {change !== null && change !== 0 && ` (${change > 0 ? "+" : ""}${change} pontos)`}
-                      </span>
-                    </div>
-                    <ProgressBar value={trend.last} thin label={`Acertos em ${findArea(areaId).name}`} />
-                  </div>
-                );
-              })}
-            </div>
-            <p className="mt-4 text-[13px] text-muted">Comparação com o simulado anterior que teve a mesma área.</p>
+            {!pro ? (
+              <ProNotice title="Acompanhe a evolução com o Pro">
+                Os acertos de cada área comparados com o simulado anterior.
+              </ProNotice>
+            ) : (
+              <>
+                <div className="grid gap-4">
+                  {areas.map((areaId) => {
+                    const trend = areaTrend(mocks, areaId);
+                    if (!trend) return null;
+                    const change = trend.previous === null ? null : Math.round((trend.last - trend.previous) * 100);
+                    return (
+                      <div key={areaId} className="grid gap-1.5">
+                        <div className="flex justify-between gap-3 text-sm">
+                          <span>{findArea(areaId).name}</span>
+                          <span className="text-muted tabular-nums">
+                            {percent(trend.last)}
+                            {change !== null && change !== 0 && ` (${change > 0 ? "+" : ""}${change} pontos)`}
+                          </span>
+                        </div>
+                        <ProgressBar value={trend.last} thin label={`Acertos em ${findArea(areaId).name}`} />
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="mt-4 text-[13px] text-muted">Comparação com o simulado anterior que teve a mesma área.</p>
+              </>
+            )}
           </Card>
         </div>
       )}

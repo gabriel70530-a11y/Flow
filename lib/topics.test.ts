@@ -6,6 +6,7 @@ import {
   deleteTopic,
   filterTopics,
   findTopic,
+  findTopicByName,
   setTopicHidden,
   sortTopics,
   updateTopic,
@@ -103,5 +104,18 @@ describe("filterTopics and sortTopics", () => {
     expect(sortTopics(math, progress, "nome")[0].name).toBe("Análise combinatória");
     expect(sortTopics(math, progress, "revisao").slice(0, 2).map((topic) => topic.id)).toEqual(["mat-3", "mat-0"]);
     expect(sortTopics(math, progress, "criacao")).toEqual(math);
+  });
+});
+
+describe("findTopicByName", () => {
+  const topics = createTopic([], { ...input, name: "Estequiometria", areaId: "nat", subjectId: "qui" }, "custom-1");
+
+  it("matches without accents or case", () => {
+    expect(findTopicByName(topics, " ESTEQUIOMETRÍA ")?.id).toBe("custom-1");
+  });
+
+  it("ignores hidden topics and empty names", () => {
+    expect(findTopicByName(setTopicHidden(topics, "custom-1", true), "Estequiometria")).toBeNull();
+    expect(findTopicByName(topics, "  ")).toBeNull();
   });
 });

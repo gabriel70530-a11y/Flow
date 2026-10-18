@@ -20,19 +20,12 @@ const prototypeData = {
 };
 
 describe("loadData", () => {
-  it("loads demo data on the first visit", () => {
-    const { data, corrupt } = loadData({ current: null, legacy: null }, today);
-    expect(corrupt).toBe(false);
-    expect(data.demo).toBe(true);
-    expect(data.topics).toEqual([]);
-    expect(data.progress).toEqual({});
-    expect(data.sessions.every((session) => session.topicId === null)).toBe(true);
-    expect(data.sessions.some((session) => session.subjectId === "qui")).toBe(true);
-    expect(data.sessions.every((session) => session.state === "concluida" && session.areaId)).toBe(true);
+  it("starts empty on the first visit, without demo data", () => {
+    expect(loadData({ current: null, legacy: null })).toEqual({ data: emptyData(), corrupt: false });
   });
 
   it("migrates prototype data from v1 without losing sessions, progress or settings", () => {
-    const { data } = loadData({ current: null, legacy: JSON.stringify(prototypeData) }, today);
+    const { data } = loadData({ current: null, legacy: JSON.stringify(prototypeData) });
     expect(data.version).toBe(2);
     expect(data).not.toHaveProperty("tab");
     expect(data.goal).toEqual({ type: "horas", value: 30 });
@@ -56,7 +49,7 @@ describe("loadData", () => {
       topics: [topic("mat-0", "padrao"), topic("mat-1", "padrao"), topic("custom-1", "personalizado")],
       progress: { "mat-1": { status: "and", mastery: 1, reviews: [] } },
     });
-    const { data } = loadData({ current, legacy: null }, today);
+    const { data } = loadData({ current, legacy: null });
     expect(data.topics.map((kept) => kept.id)).toEqual(["mat-1", "custom-1"]);
     expect(data.topics.every((kept) => kept.subjectId === null)).toBe(true);
     expect(data.topics.every((kept) => !("origin" in kept))).toBe(true);
@@ -64,18 +57,18 @@ describe("loadData", () => {
 
   it("keeps only the topic of the timer saved in the prototype's first format", () => {
     const legacy = JSON.stringify({ ...prototypeData, timer: { topicId: "mat-2", seconds: 30, running: true } });
-    expect(loadData({ current: null, legacy }, today).data.timer).toEqual({ ...emptyData().timer, topicId: "mat-2" });
+    expect(loadData({ current: null, legacy }).data.timer).toEqual({ ...emptyData().timer, topicId: "mat-2" });
   });
 
   it("prefers v2 data when both versions exist", () => {
     const current = JSON.stringify({ ...emptyData(), goal: { type: "sessoes", value: 12 } });
-    expect(loadData({ current, legacy: JSON.stringify(prototypeData) }, today).data.goal).toEqual({ type: "sessoes", value: 12 });
+    expect(loadData({ current, legacy: JSON.stringify(prototypeData) }).data.goal).toEqual({ type: "sessoes", value: 12 });
   });
 
   it("fills fields missing from older v2 data", () => {
     const { topics, mistakes, mockExams, essays, repertoire, examChecklist, ...partial } = emptyData();
     const current = JSON.stringify({ ...partial, planner: { strategy: "prioridades" } });
-    const { data } = loadData({ current, legacy: null }, today);
+    const { data } = loadData({ current, legacy: null });
     expect(data.topics).toEqual(topics);
     expect(data.planner.strategy).toBe("prioridades");
     expect(data.planner.studyDays).toHaveLength(7);
@@ -97,7 +90,7 @@ describe("loadData", () => {
       priority: "media", status: "planejada", origin: "gerada", focusSec: 0,
     };
     const current = JSON.stringify({ ...emptyData(), topics: [topic], tasks: [oldTask] });
-    const { data } = loadData({ current, legacy: null }, today);
+    const { data } = loadData({ current, legacy: null });
     expect(data.topics[0].subjectId).toBe("qui");
     expect(data.tasks[0].subjectId).toBe("qui");
   });
@@ -112,7 +105,7 @@ describe("loadData", () => {
       planner: { availability: [60, 0, 90, 0, 0, 30, 0], sessionMinutes: 50, strategy: "equilibrada" },
       tasks: [oldTask],
     });
-    const { data } = loadData({ current, legacy: null }, today);
+    const { data } = loadData({ current, legacy: null });
     expect(data.planner.studyDays).toEqual([true, false, true, false, false, true, false]);
     expect(data.planner).not.toHaveProperty("availability");
     expect(data.planner).not.toHaveProperty("sessionMinutes");
@@ -121,12 +114,12 @@ describe("loadData", () => {
 
   it("starts from scratch and flags corrupted v2 data", () => {
     for (const current of ["{oops", "null", JSON.stringify({ version: 9 })]) {
-      expect(loadData({ current, legacy: null }, today)).toEqual({ data: emptyData(), corrupt: true });
+      expect(loadData({ current, legacy: null })).toEqual({ data: emptyData(), corrupt: true });
     }
   });
 
   it("starts from scratch when the old v1 data is unreadable", () => {
-    expect(loadData({ current: null, legacy: "{oops" }, today)).toEqual({ data: emptyData(), corrupt: false });
+    expect(loadData({ current: null, legacy: "{oops" })).toEqual({ data: emptyData(), corrupt: false });
   });
 });
 

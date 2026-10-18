@@ -14,6 +14,20 @@ import {
 } from "@/lib/mistakes";
 import { validateMockExam, type MockExamInput } from "@/lib/mock-exams";
 import {
+  answerDraft,
+  draftSeconds,
+  findOfficialExam,
+  gradeExam,
+  officialExamTitle,
+  pauseDraft,
+  resumeDraft,
+  startDraft,
+  type ForeignLanguage,
+  type GradedExam,
+  type Letter,
+  type WrongAnswer,
+} from "@/lib/official-exams";
+import {
   applyFocusToTask,
   carryOverMissed,
   dayConflict,
@@ -36,6 +50,7 @@ import {
   postponeNextReview,
   progressOf,
   rescheduleNextReview,
+  scheduleManualReview,
   type Mastery,
   type ReviewFeedback,
   type TopicProgress,
@@ -74,6 +89,7 @@ import {
 } from "@/lib/topics";
 import { track, type AnalyticsEvent } from "./analytics";
 import { loadData, parseBackup } from "./migrate";
+import { proAccessNow } from "./pro";
 import { emptyData, type OnboardingState, type StudyData, type Theme } from "./state";
 import { CORRUPT_STORAGE_KEY, LEGACY_STORAGE_KEY, STORAGE_KEY } from "./storage-key";
 
@@ -95,6 +111,7 @@ interface StudyActions {
   setReviewFeedback: (topicId: string, stage: number, feedback: ReviewFeedback) => void;
   postponeReview: (topicId: string) => void;
   rescheduleReview: (topicId: string, date: string) => boolean;
+  scheduleReview: (topicId: string, date: string) => string | null;
 
   setGoal: (goal: WeeklyGoal) => void;
   setTheme: (theme: Theme) => void;
@@ -126,6 +143,14 @@ interface StudyActions {
 
   addMockExam: (input: MockExamInput) => string | null;
   removeMockExam: (mockId: string) => void;
+  startExam: (examId: string, language: ForeignLanguage) => string | null;
+  answerExam: (index: number, letter: Letter | null) => void;
+  pauseExam: () => void;
+  resumeExam: () => void;
+  discardExam: () => void;
+  finishExam: () => { error: string } | { graded: GradedExam; examId: string };
+  addExamMistakes: (examId: string, wrong: readonly WrongAnswer[]) => number;
+
   addEssay: (input: EssayInput) => string | null;
   removeEssay: (essayId: string) => void;
   addRepertoire: (input: RepertoireInput) => string | null;
@@ -179,7 +204,7 @@ const rawStorage: PersistStorage<StudyData> = {
   getItem: (name) => {
     if (typeof window === "undefined") return null;
     const current = readItem(name);
-    const { data, corrupt } = loadData({ current, legacy: readItem(LEGACY_STORAGE_KEY) }, toDateKey(new Date()));
+    const { data, corrupt } = loadData({ current, legacy: readItem(LEGACY_STORAGE_KEY) });
     if (corrupt && current !== null) writeItem(CORRUPT_STORAGE_KEY, current);
     return { state: data, version: 2 };
   },
@@ -246,6 +271,7 @@ function toStudyData(state: StudyData): StudyData {
     showStreak: state.showStreak,
     analyticsConsent: state.analyticsConsent,
     timer: state.timer,
+    examDraft: state.examDraft,
   };
 }
 
@@ -300,7 +326,8 @@ export const useStudyStore = create<StudyStore>()(
           });
         },
 
-        setStatus: (topicId, status) => updateProgress(topicId, (current) => changeStatus(current, status, today())),
+        setStatus: (topicId, status) =>
+          updateProgress(topicId, (current) => changeStatus(current, status, today(), proAccessNow())),
 
         // Para o que já foi estudado antes: marca como Concluído e agenda as revisões de 1, 7, 15 e 30 dias a partir de hoje.
         markStudied: (topicIds) => {
@@ -331,6 +358,13 @@ export const useStudyStore = create<StudyStore>()(
           if (!isDateKey(date) || date < today()) return false;
           updateProgress(topicId, (current) => rescheduleNextReview(current, date, today()));
           return true;
+        },
+
+        scheduleReview: (topicId, date) => {
+          if (!findTopic(get().topics, topicId)) return "Escolha o tópico.";
+          if (!isDateKey(date) || date < today()) return "Escolha hoje ou uma data futura.";
+          updateProgress(topicId, (current) => scheduleManualReview(current, date, today()));
+          return null;
         },
 
         setGoal: ({ type, value }) =>
@@ -436,6 +470,69 @@ export const useStudyStore = create<StudyStore>()(
         },
         removeMockExam: (mockId) => set({ mockExams: get().mockExams.filter((mock) => mock.id !== mockId) }),
 
+        startExam: (examId, language) => {
+          if (!proAccessNow()) return "O simulado no app faz parte do Pro.";
+          if (!findOfficialExam(examId)) return "Escolha uma prova.";
+          if (get().examDraft) return "Termine ou descarte o simulado em andamento.";
+          set({ examDraft: startDraft(examId, language, Date.now()) });
+          return null;
+        },
+        answerExam: (index, letter) => {
+          const draft = get().examDraft;
+          if (draft) set({ examDraft: answerDraft(draft, index, letter) });
+        },
+        pauseExam: () => {
+          const draft = get().examDraft;
+          if (draft) set({ examDraft: pauseDraft(draft, Date.now()) });
+        },
+        resumeExam: () => {
+          const draft = get().examDraft;
+          if (draft) set({ examDraft: resumeDraft(draft, Date.now()) });
+        },
+        discardExam: () => set({ examDraft: null }),
+
+        // Corrige pelo gabarito oficial e registra como simulado. Sem nota TRI: só acertos e ritmo.
+        finishExam: () => {
+          const draft = get().examDraft;
+          const exam = draft && findOfficialExam(draft.examId);
+          if (!draft || !exam) return { error: "Nenhum simulado em andamento." };
+          const graded = gradeExam(exam, draft.answers, draft.language);
+          const minutes = Math.round(draftSeconds(draft, Date.now()) / 60);
+          const mock = {
+            id: newId("simulado-"),
+            date: today(),
+            day: exam.day,
+            minutes: minutes >= 1 ? Math.min(minutes, 600) : null,
+            sections: graded.sections,
+            note: `${officialExamTitle(exam)}, feito no Flow.`,
+          };
+          set({ mockExams: [...get().mockExams, mock], examDraft: null });
+          return { graded, examId: exam.id };
+        },
+
+        // O motivo de cada erro só a pessoa sabe; entra como conteúdo e a questão pede para refazer e descobrir.
+        addExamMistakes: (examId, wrong) => {
+          const exam = findOfficialExam(examId);
+          if (!exam || wrong.length === 0) return 0;
+          const created = wrong.map((item, index) =>
+            createMistake(
+              {
+                topicId: null,
+                areaId: item.areaId,
+                subjectId: null,
+                reason: "conteudo",
+                question: `Questão ${item.number}: ${item.marked ? `você marcou ${item.marked}` : "ficou em branco"}, a resposta é ${item.correct}. Refaça e descubra onde errou.`,
+                lesson: "",
+                source: `Enem ${exam.year}, questão ${item.number}`,
+              },
+              newId(`erro-${index}-`),
+              today(),
+            ),
+          );
+          set({ mistakes: [...get().mistakes, ...created] });
+          return created.length;
+        },
+
         addEssay: (input) => {
           const error = validateEssay(input, today());
           if (error) return error;
@@ -475,7 +572,7 @@ export const useStudyStore = create<StudyStore>()(
           if (error) return error;
           set({ onboarding: { status: "concluido", planMode } });
           get().trackEvent("onboarding_concluido");
-          if (planMode === "sugerido") get().regeneratePlan();
+          if (planMode === "sugerido" && proAccessNow()) get().regeneratePlan();
           return null;
         },
 

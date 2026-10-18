@@ -9,6 +9,7 @@ import { Drawer } from "@/components/ui/Drawer";
 import { ListRow } from "@/components/ui/ListRow";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ProBadge } from "@/components/ui/ProBadge";
+import { ProNotice } from "@/components/ui/ProNotice";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { showToast } from "@/components/ui/Toast";
 import { useStudyTopic } from "@/components/timer/use-study-topic";
@@ -22,8 +23,8 @@ import {
   type PlanLeftover,
   type PlanTask,
 } from "@/lib/planner";
-import { hasProAccess } from "@/lib/plan";
 import { findTopic } from "@/lib/topics";
+import { useProAccess } from "@/store/pro";
 import { useHydrated, useStudyStore } from "@/store/study-store";
 import { PlannerSettingsForm } from "./planner-fields";
 import { TaskDrawer } from "./TaskDrawer";
@@ -51,6 +52,8 @@ export function CronogramaScreen() {
   const [editingSettings, setEditingSettings] = useState(false);
   const [preview, setPreview] = useState<{ added: number; removed: number } | null>(null);
   const [leftovers, setLeftovers] = useState<PlanLeftover[]>([]);
+  const [showProNotice, setShowProNotice] = useState(false);
+  const proAccess = useProAccess();
   const closeTask = useCallback(() => setOpenTaskId(null), []);
 
   if (!hydrated) {
@@ -67,7 +70,6 @@ export function CronogramaScreen() {
   const days = planDays(today);
   const postponed = tasks.filter((task) => task.status === "adiada");
   const hasPlan = tasks.some((task) => task.date !== null && task.date >= today);
-  const proAccess = hasProAccess();
   const hasStudyDays = planner.studyDays.some(Boolean);
 
   const apply = () => {
@@ -78,6 +80,10 @@ export function CronogramaScreen() {
   };
 
   const requestPlan = () => {
+    if (!proAccess) {
+      setShowProNotice(true);
+      return;
+    }
     if (!topics.some((topic) => !topic.hidden)) {
       showToast("Crie seus tópicos em Matérias para gerar o plano.");
       return;
@@ -120,7 +126,7 @@ export function CronogramaScreen() {
       <PageHeader title="Cronograma" subtitle={SUBTITLE} />
 
       <div className="flex flex-wrap gap-2">
-        <Button variant="primary" onClick={requestPlan} disabled={!hasStudyDays || !proAccess}>
+        <Button variant="primary" onClick={requestPlan} disabled={!hasStudyDays}>
           <RefreshCw size={16} aria-hidden />
           {hasPlan ? "Atualizar plano" : "Gerar plano"}
         </Button>
@@ -137,13 +143,11 @@ export function CronogramaScreen() {
         </span>
       </div>
 
-      {!proAccess && (
-        <p className="text-[13px] text-muted">
-          O plano sugerido faz parte do Pro. Você ainda pode adicionar e organizar tarefas à mão.{" "}
-          <Link href="/planos" className={linkStyles}>
-            Ver planos
-          </Link>
-        </p>
+      {!proAccess && showProNotice && (
+        <ProNotice title="O Flow monta a semana por você no Pro" className="max-w-2xl">
+          Ele escolhe as matérias de cada dia pelas suas prioridades, revisões e áreas difíceis. No gratuito, você adiciona as
+          matérias à mão, e o que ficar sem estudar continua passando sozinho para o próximo dia.
+        </ProNotice>
       )}
 
       {!hasStudyDays && (

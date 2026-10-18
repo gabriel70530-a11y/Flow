@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Planos" };
 export default function PlanosPage() {
   return (
     <div className="grid gap-5">
-      <PageHeader title="Planos" subtitle="O gratuito resolve o essencial. O Pro está em teste e ainda não é vendido." />
+      <PageHeader title="Planos" subtitle="O gratuito resolve o essencial. O Pro organiza por você, analisa e corrige com IA." />
       <PlanCards inApp />
     </div>
   );

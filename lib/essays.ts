@@ -1,4 +1,4 @@
-// O Flow não corrige redação: a pessoa registra a nota que recebeu (do MEC Enem, de um professor) e acompanha a evolução.
+// A pessoa registra a nota que recebeu (do MEC Enem, de um professor ou a estimativa da IA no Pro) e acompanha a evolução.
 export const COMPETENCIES = [
   { short: "C1", name: "Norma culta" },
   { short: "C2", name: "Tema e repertório" },

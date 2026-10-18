@@ -13,6 +13,8 @@ import {
   type SyncState,
   type SyncedData,
 } from "@/lib/sync";
+import type { BillingPlan, ProRecord } from "@/lib/plan";
+import { usePro } from "./pro";
 import { emptyData, type StudyData } from "./state";
 import { useStudyStore } from "./study-store";
 
@@ -20,7 +22,12 @@ export type SyncStatus = "ocioso" | "sincronizando" | "offline" | "erro";
 
 interface CloudState {
   available: boolean;
+  // Só depois de ler a sessão salva o app sabe se mostra a tela de entrar.
+  authReady: boolean;
   email: string | null;
+  provider: "email" | "google" | null;
+  // Contas criadas pelo Google não passam pelo cadastro: o ano de nascimento é pedido depois de entrar.
+  birthYear: number | null;
   // Aberto pelo link de "Esqueci minha senha": a interface pede a senha nova.
   recovering: boolean;
   status: SyncStatus;
@@ -29,7 +36,10 @@ interface CloudState {
 
 export const useCloud = create<CloudState>(() => ({
   available: cloudConfig() !== null,
+  authReady: false,
   email: null,
+  provider: null,
+  birthYear: null,
   recovering: false,
   status: "ocioso",
   lastSyncedAt: null,
@@ -41,6 +51,7 @@ interface SyncMeta extends SyncState {
 
 const OWNER_KEY = "enem-flow:conta";
 const metaKey = (userId: string) => `enem-flow:v2:sync:${userId}`;
+const proKey = (userId: string) => `enem-flow:pro:${userId}`;
 const PAGE_SIZE = 1000;
 const PUSH_CHUNK = 500;
 // Gravações que terminam quase juntas podem chegar fora de ordem; reler um minuto evita perder alguma.
@@ -95,8 +106,8 @@ function clearedData(data: StudyData): StudyData {
   return { ...data, ...syncedPart(emptyData()), demo: false };
 }
 
-function redirectUrl(): string {
-  return `${window.location.origin}/ajustes`;
+function redirectUrl(path = "/painel"): string {
+  return `${window.location.origin}${path}`;
 }
 
 let currentUser: string | null = null;
@@ -175,6 +186,7 @@ export function syncNow(): Promise<void> {
   }
   useCloud.setState({ status: "sincronizando" });
   running = runSync(db, userId)
+    .then(() => refreshPro(db, userId))
     .then(() => useCloud.setState({ status: "ocioso", lastSyncedAt: Date.now() }))
     .catch(() => useCloud.setState({ status: navigator.onLine ? "erro" : "offline" }))
     .finally(() => {
@@ -187,15 +199,37 @@ export function syncNow(): Promise<void> {
   return running;
 }
 
+// Só o servidor grava a assinatura (webhook do pagamento). A cópia no aparelho mantém o Pro sem internet até proUntil.
+async function refreshPro(db: SupabaseClient, userId: string) {
+  const { data, error } = await db.from("entitlements").select("plan, status, pro_until").maybeSingle();
+  if (error || currentUser !== userId) return;
+  const record: ProRecord | null = data ? { plan: data.plan, status: data.status, proUntil: data.pro_until } : null;
+  usePro.setState({ record });
+  writeJson(proKey(userId), record);
+}
+
+function birthYearOf(metadata: Record<string, unknown> | undefined): number | null {
+  const year = Number(metadata?.birth_year);
+  return Number.isInteger(year) ? year : null;
+}
+
 function applySession(session: Session | null) {
   const user = session?.user ?? null;
   const previous = currentUser;
   currentUser = user?.id ?? null;
   useCloud.setState({
+    authReady: true,
     email: user?.email ?? null,
+    provider: user ? (user.app_metadata.provider === "google" ? "google" : "email") : null,
+    birthYear: birthYearOf(user?.user_metadata),
     ...(user ? {} : { status: "ocioso", lastSyncedAt: null }),
   });
-  if (!user || user.id === previous) return;
+  if (!user) {
+    usePro.setState({ record: null });
+    return;
+  }
+  if (user.id === previous) return;
+  usePro.setState({ record: readJson<ProRecord>(proKey(user.id)) });
   // Outra conta entrou neste aparelho: os dados da conta anterior não se misturam com os dela.
   const owner = readJson<string>(OWNER_KEY);
   if (owner && owner !== user.id && !readJson(metaKey(user.id))) {
@@ -278,13 +312,34 @@ export async function signIn(email: string, password: string): Promise<string | 
 }
 
 // Com a confirmação de e-mail ligada, o Supabase não diz se o e-mail já tinha conta: a tela pede para conferir o e-mail nos dois casos.
-export async function signUp(email: string, password: string): Promise<string | null> {
+export async function signUp(email: string, password: string, birthYear: number): Promise<string | null> {
   const db = client();
   if (!db) return "A conta ainda não está disponível.";
   const invalid = checkCredentials(email, password);
   if (invalid) return invalid;
-  const { error } = await db.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: redirectUrl() } });
+  const { error } = await db.auth.signUp({
+    email: email.trim(),
+    password,
+    options: { emailRedirectTo: redirectUrl(), data: { birth_year: birthYear } },
+  });
   return authMessage(error, "Não foi possível criar a conta agora. Tente de novo.");
+}
+
+// Volta para o app pelo Google; a sessão é lida da URL ao carregar a página.
+export async function signInWithGoogle(): Promise<string | null> {
+  const db = client();
+  if (!db) return "A conta ainda não está disponível.";
+  const { error } = await db.auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectUrl() } });
+  return error ? "Não foi possível abrir o login do Google. Tente de novo." : null;
+}
+
+export async function saveBirthYear(birthYear: number): Promise<string | null> {
+  const db = client();
+  if (!db) return "A conta ainda não está disponível.";
+  const { error } = await db.auth.updateUser({ data: { birth_year: birthYear } });
+  if (error) return "Não foi possível salvar agora. Tente de novo.";
+  useCloud.setState({ birthYear });
+  return null;
 }
 
 export async function resendConfirmation(email: string): Promise<string | null> {
@@ -298,7 +353,7 @@ export async function sendPasswordReset(email: string): Promise<string | null> {
   const db = client();
   if (!db) return "A conta ainda não está disponível.";
   if (!EMAIL_PATTERN.test(email.trim())) return "Confira o e-mail.";
-  const { error } = await db.auth.resetPasswordForEmail(email.trim(), { redirectTo: redirectUrl() });
+  const { error } = await db.auth.resetPasswordForEmail(email.trim(), { redirectTo: redirectUrl("/ajustes") });
   return authMessage(error, "Não foi possível enviar o link. Tente de novo.");
 }
 
@@ -334,4 +389,63 @@ export async function deleteAccount(): Promise<string | null> {
   } catch {}
   await db.auth.signOut({ scope: "local" });
   return null;
+}
+
+// Chama uma função do servidor (pagamento ou IA). Os erros dela já vêm escritos para a pessoa.
+async function callFunction<T>(name: string, body: Record<string, unknown>): Promise<{ data: T } | { error: string }> {
+  const db = client();
+  if (!db) return { error: "A conta ainda não está disponível." };
+  if (!currentUser) return { error: "Entre na sua conta." };
+  if (!navigator.onLine) return { error: "Sem internet agora. Tente quando a conexão voltar." };
+  const { data, error } = await db.functions.invoke<T>(name, { body });
+  if (!error && data) return { data };
+  const response = (error as { context?: unknown } | null)?.context;
+  if (response instanceof Response) {
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+    if (payload?.error) return { error: payload.error };
+  }
+  return { error: "Não foi possível falar com o servidor agora. Tente de novo." };
+}
+
+export async function startCheckout(plan: BillingPlan): Promise<string | null> {
+  const result = await callFunction<{ url: string }>("checkout", { plan });
+  if ("error" in result) return result.error;
+  window.location.assign(result.data.url);
+  return null;
+}
+
+export async function cancelSubscription(): Promise<string | null> {
+  const result = await callFunction<{ ok: true }>("cancel-subscription", {});
+  if ("error" in result) return result.error;
+  await syncNow();
+  return null;
+}
+
+export interface ImagePayload {
+  mediaType: "image/jpeg";
+  data: string;
+}
+
+export interface EssayCorrection {
+  scores: number[];
+  comments: string[];
+  summary: string;
+  remaining: number;
+}
+
+export function correctEssay(input: { theme: string; text: string; images: ImagePayload[] }) {
+  return callFunction<EssayCorrection>("ai-essay", input);
+}
+
+export interface MistakeAnalysis {
+  answer: string | null;
+  question: string;
+  lesson: string;
+  reason: "conteudo" | "interpretacao" | "atencao" | "chute";
+  topic: string;
+  remaining: number;
+}
+
+export function analyzeMistake(input: { text: string; images: ImagePayload[]; marked: string | null }) {
+  return callFunction<MistakeAnalysis>("ai-mistake", input);
 }

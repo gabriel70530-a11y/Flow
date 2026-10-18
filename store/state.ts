@@ -1,6 +1,7 @@
 import type { Essay, RepertoireItem } from "@/lib/essays";
 import type { Mistake } from "@/lib/mistakes";
 import type { MockExam } from "@/lib/mock-exams";
+import type { ExamDraft } from "@/lib/official-exams";
 import { DEFAULT_PLANNER, type PlanTask, type PlannerSettings } from "@/lib/planner";
 import type { ProgressMap } from "@/lib/reviews";
 import type { StudySession } from "@/lib/sessions";
@@ -36,6 +37,8 @@ export interface StudyData {
   showStreak: boolean;
   analyticsConsent: boolean;
   timer: TimerState;
+  // Simulado oficial em andamento neste aparelho (não sincroniza, como o timer).
+  examDraft: ExamDraft | null;
 }
 
 export function emptyData(): StudyData {
@@ -59,5 +62,6 @@ export function emptyData(): StudyData {
     showStreak: true,
     analyticsConsent: false,
     timer: DEFAULT_TIMER,
+    examDraft: null,
   };
 }
