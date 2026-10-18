@@ -20,7 +20,7 @@ Abra http://localhost:3000. A página inicial é o site; o app começa em `/pain
 | `npm run dev` | servidor local |
 | `npm run build` e `npm start` | build de produção e servidor |
 | `npm run lint` | ESLint |
-| `npm test` | Vitest: datas, tópicos, revisões, sessões, cronograma, estatísticas, planos, migração e store |
+| `npm test` | Vitest: datas, tópicos, revisões, sessões, cronograma, estatísticas, planos, sincronização, migração e store |
 
 ## Telas
 
@@ -32,18 +32,38 @@ Abra http://localhost:3000. A página inicial é o site; o app começa em `/pain
 - `/revisoes`: atrasadas, hoje, próximos 7 dias e futuras; concluir com feedback, adiar e reagendar. "Agendar revisões do que já estudei" marca tópicos já estudados e agenda as revisões. `/revisoes/erros`: caderno de erros, com cada erro voltando em 1, 7, 15 e 30 dias.
 - `/simulados`: acertos por área e ritmo dos simulados feitos fora do app (sem nota TRI). `/redacao`: notas por competência e repertório pessoal. `/prova`: checklist do dia da prova.
 - No Painel: reta final (contagem e prioridade para revisões nas 4 semanas antes da prova) e "Dia leve" para dias cansativos. No Timer: modo foco.
-- `/comecar`: configuração inicial opcional. `/ajustes`: preferências, meta, cronograma, backup. `/planos`.
+- `/comecar`: configuração inicial opcional. `/ajustes`: preferências, meta, cronograma, conta opcional e backup. `/planos`.
 
 ## Onde ficam os dados
 
-Não há servidor nem conta. Tudo fica no `localStorage` do navegador, na chave `enem-flow:v2`.
+Sem conta, tudo fica no `localStorage` do navegador, na chave `enem-flow:v2`. A conta é opcional (ver abaixo).
 
 - Na primeira abertura, se existir a chave `enem-flow:v1` (formato do protótipo), os dados são migrados para a v2 e a v1 fica intacta como cópia de segurança.
 - Sem nada salvo, o app carrega dados de exemplo, identificados por um aviso com "Apagar e começar do zero".
 - Se o JSON salvo estiver corrompido, o texto bruto vai para `enem-flow:v2:corrompido` e o app começa do zero.
 - Se o navegador recusar a gravação, um aviso aparece com "Tentar de novo".
 - Em produção, o app funciona offline depois da primeira visita (service worker em `public/sw.js`).
-- Não há sincronização entre aparelhos. Em Ajustes dá para baixar um backup (JSON) e importar em outro navegador.
+- Em Ajustes dá para baixar um backup (JSON) e importar em outro navegador.
+
+### Conta opcional e sincronização
+
+Com o Supabase configurado, Ajustes oferece "Entrar ou criar conta" (Google ou link no e-mail, sem senha). O app continua igual sem conta.
+
+- Cada item (tópico, sessão, tarefa, erro, simulado, redação, repertório, progresso de um tópico) vira um registro na tabela `records`, com `updated_at` do aparelho. Algumas preferências também vão (meta, cronograma, onboarding, checklist da prova, sequência); tema, som, consentimento de métricas e o timer ficam em cada aparelho.
+- A lógica de juntar fica em `lib/sync.ts` (funções puras e testadas); `store/cloud.ts` faz login, envia e busca.
+- No primeiro login, o que está no aparelho se junta ao que está na conta. Se os dois têm o mesmo registro, vence a conta. Dados de exemplo nunca sobem.
+- Depois, vence a mudança mais recente de cada registro. Apagar vira uma marca (`deleted`) para os outros aparelhos saberem.
+- Sincroniza alguns segundos depois de cada mudança, ao voltar para a aba, ao voltar a internet e a cada 2 minutos. Sem internet, guarda as mudanças pendentes em `enem-flow:v2:sync:<usuário>` e envia depois.
+- Outra conta entrando no mesmo aparelho começa com os dados dela, sem misturar com os da conta anterior.
+- "Excluir conta" chama `delete_account()`, que apaga o usuário e os registros. Os dados do aparelho ficam.
+
+Para ativar (precisa de uma conta no Supabase, feita pelo responsável pelo projeto):
+
+1. Criar um projeto na região São Paulo (`sa-east-1`).
+2. Rodar `supabase/migrations/20261018000000_records.sql` no SQL Editor (ou `supabase db push`).
+3. Em Authentication: ativar o login por e-mail (link mágico) e o Google (precisa de um cliente OAuth no Google Cloud). Em URL Configuration, pôr o endereço do site como Site URL e `<endereço>/ajustes` nas Redirect URLs (também `http://localhost:3000/ajustes` para testar).
+4. Preencher `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (a chave pública) no `.env.local` e na hospedagem.
+5. Para produção, configurar um SMTP próprio (ex.: Resend): o envio padrão do Supabase tem limite baixo por hora.
 
 ## Configuração opcional
 
@@ -54,6 +74,7 @@ Copie `.env.example` para `.env.local` e preencha o que quiser. Sem as variávei
 | `NEXT_PUBLIC_PRO_INTEREST_URL` | link https para a lista de interesse do Pro (ex.: formulário). Sem ela, a tela diz que a lista ainda não está aberta. |
 | `NEXT_PUBLIC_CONTACT_EMAIL` | e-mail de contato no rodapé do site. |
 | `NEXT_PUBLIC_ANALYTICS_URL` | endpoint https que recebe eventos anônimos. Só envia se o estudante ativar em Ajustes. |
+| `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | ativam a conta opcional com sincronização. Sem elas, Ajustes diz que a conta ainda não está disponível. |
 | `NEXT_PUBLIC_SITE_URL` | endereço público do site (ex.: `https://flow.exemplo.com`), usado no sitemap, no robots e nos cartões de compartilhamento. Só é preciso com domínio próprio: na Vercel, sem ela, vale o endereço de produção do projeto (hoje `https://flow-black.vercel.app`); fora da Vercel, `http://localhost:3000`. |
 
 ## O que ainda depende de decisão ou serviço externo

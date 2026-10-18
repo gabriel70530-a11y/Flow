@@ -4,7 +4,7 @@ Organizador de estudos para estudantes do ensino médio e candidatos ao ENEM. A 
 
 O escopo do produto está em `prompt_mestre_enem_flow_claude_code.md` (fase 2). O protótipo em `docs/prototype.html` continua sendo a referência visual e dos fluxos que ele já cobre. Se o prompt mestre e o protótipo divergirem, vale o prompt mestre.
 
-**Sem backend.** Um único usuário, dados no `localStorage` do navegador. Nada de prometer sincronização entre dispositivos. Recursos que dependem de servidor (cobrança do Pro, coleta de métricas, lista de interesse) ficam com a camada desacoplada pronta e documentados como pendentes no README; nunca simule compra ou assinatura.
+**Local primeiro, conta opcional.** Os dados vivem no `localStorage` do navegador e o app funciona inteiro sem conta e sem internet. A conta (Supabase: login com Google ou link no e-mail, banco Postgres com RLS em São Paulo) só guarda uma cópia e sincroniza entre aparelhos; sem as variáveis do Supabase, a interface diz que a conta não está disponível. Recursos que dependem de servidor ainda não feito (cobrança do Pro, coleta de métricas, lista de interesse) ficam com a camada desacoplada pronta e documentados como pendentes no README; nunca simule compra ou assinatura. O estudo de custos e as escolhas aprovadas estão em `docs/estudo-custos-e-preco.md` e o plano da fase em `docs/roadmap-proxima-fase.md`.
 
 ## Stack
 
@@ -13,6 +13,7 @@ O escopo do produto está em `prompt_mestre_enem_flow_claude_code.md` (fase 2). 
 - Zustand com o middleware `persist` para o estado
 - Vitest para testes das funções puras e da store
 - `lucide-react` para ícones
+- `@supabase/supabase-js` para a conta e a sincronização (só em `store/cloud.ts`)
 - Nada além disso sem necessidade clara. Gráficos são divs com altura calculada, não biblioteca.
 
 ## Comandos
@@ -75,6 +76,7 @@ lib/
   essays.ts             redações registradas (notas por competência) e repertório
   suggestions.ts        sugestões de nome de tópico pelo que mais cai, por área e matéria
   plan.ts               gratuito x Pro (acesso liberado durante o teste), lista de interesse, contato
+  sync.ts               registros por item, mudanças pendentes e junção com a nuvem (mudança mais recente vence)
   site.ts               endereço público, título e descrição (sitemap, robots, manifest, cartão social)
   *.test.ts
 store/
@@ -82,7 +84,9 @@ store/
   state.ts              tipo StudyData e estado vazio
   migrate.ts            leitura do localStorage, migração v1 → v2 e backup
   analytics.ts          eventos de uso: só com endpoint configurado e consentimento
+  cloud.ts              login, sincronização com o Supabase, sair e excluir conta
   demo-data.ts
+supabase/migrations/    tabela records com RLS, push_records e delete_account
 ```
 
 ## Modelo de dados (v2)
@@ -190,6 +194,12 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 - Números vêm só de sessões registradas. Sem denominador válido, não mostre porcentagem. Estado vazio explica como começar.
 - Sequência = dias consecutivos com estudo, contando hoje ou, se hoje ainda não teve estudo, a partir de ontem. É opcional (pode ser escondida em Ajustes) e discreta.
 
+**Conta e sincronização** (opcional)
+- Em Ajustes, card "Conta e dados" (prévia em `docs/previa-conta.html`). Entrar com Google ou link no e-mail, sem senha, com a confirmação de que leu privacidade e termos (e, se menor, que um responsável sabe).
+- Um registro por item na tabela `records` (`collection`, `id`, `data`, `deleted`, `updated_at` do aparelho, `synced_at` do servidor). Tema, som, consentimento de métricas e timer não sincronizam.
+- Primeiro login: junta aparelho e conta; no mesmo registro, vence a conta. Depois, vence a mudança mais recente; empate, a nuvem. Apagar vira `deleted`. Dados de exemplo nunca sobem.
+- Sair mantém os dados no aparelho. Outra conta no mesmo aparelho começa com os dados dela. "Apagar todos os dados" com conta apaga também na nuvem. "Excluir conta" apaga conta e nuvem e mantém o aparelho.
+
 **Dados de exemplo**
 - Na primeira visita (sem nada salvo), carregue dados de exemplo (só sessões por área e matéria, sem tópicos) e mostre um aviso com "Apagar e começar do zero". A confirmação acontece na própria interface (dois cliques), sem `window.confirm`.
 
@@ -284,5 +294,5 @@ Recriado em texto, nunca como imagem: o símbolo (quadrado azul `action` com o F
 
 - Todas as telas funcionam nos dois temas, em 400px e em 1440px, sem rolagem horizontal.
 - `npm run build`, `npm run lint` e `npm test` passam.
-- Testes cobrem: revisões (agendar, reagendar, adiar, feedback), tópicos (criar, editar, ocultar, excluir), migração (descarta padrões não usados), sessões (sem duplicar, sem pausa), cronograma (no máximo 2 matérias por dia e da mesma área, só em dias de estudo, regenera sem perder concluídas, repete o que não foi dominado, transfere o que não foi estudado sem passar de 2 por dia), estatísticas e migração v1 → v2.
+- Testes cobrem: sincronização (junção, conflitos, primeiro login), revisões (agendar, reagendar, adiar, feedback), tópicos (criar, editar, ocultar, excluir), migração (descarta padrões não usados), sessões (sem duplicar, sem pausa), cronograma (no máximo 2 matérias por dia e da mesma área, só em dias de estudo, regenera sem perder concluídas, repete o que não foi dominado, transfere o que não foi estudado sem passar de 2 por dia), estatísticas e migração v1 → v2.
 - O `README.md` explica como rodar, onde os dados ficam e o que depende de configuração externa.
