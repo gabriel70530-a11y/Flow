@@ -40,6 +40,39 @@ export function StudyDaysFields({ value, onChange }: { value: boolean[]; onChang
   );
 }
 
+// Dias corridos (escola integral, trabalho) recebem uma matéria só. Só os dias de estudo aparecem.
+export function LightDaysField({
+  studyDays,
+  value,
+  onChange,
+}: {
+  studyDays: boolean[];
+  value: boolean[];
+  onChange: (value: boolean[]) => void;
+}) {
+  return (
+    <fieldset className="grid gap-1.5">
+      <legend className="mb-1.5 text-[13px] font-semibold text-muted">Dias corridos (opcional)</legend>
+      <div className="flex flex-wrap gap-1.5">
+        {WEEKDAYS.map((weekday, index) =>
+          studyDays[index] ? (
+            <button
+              key={weekday}
+              type="button"
+              aria-pressed={value[index]}
+              onClick={() => onChange(value.map((light, day) => (day === index ? !light : light)))}
+              className="min-h-9 min-w-12 rounded-full bg-hover px-3 text-sm font-semibold text-muted aria-pressed:bg-action aria-pressed:text-on-action"
+            >
+              {weekday}
+            </button>
+          ) : null,
+        )}
+      </div>
+      <p className="text-[13px] text-muted">Nesses dias o plano coloca só uma matéria. Bom para dias de escola integral ou trabalho.</p>
+    </fieldset>
+  );
+}
+
 interface AreaChipsProps {
   label: string;
   hint?: string;
@@ -96,6 +129,11 @@ export function PlannerSettingsForm({ initial, today, submitLabel, onSubmit }: P
         <span className="text-[13px] font-semibold text-muted">Em quais dias você quer estudar?</span>
         <StudyDaysFields value={settings.studyDays} onChange={(studyDays) => update({ studyDays })} />
       </div>
+      <LightDaysField
+        studyDays={settings.studyDays}
+        value={settings.lightDays}
+        onChange={(lightDays) => update({ lightDays })}
+      />
       <div className="grid gap-1.5">
         <span className="text-[13px] font-semibold text-muted">Como distribuir</span>
         <Segmented options={strategyOptions} value={settings.strategy} onChange={(strategy) => update({ strategy })} />
