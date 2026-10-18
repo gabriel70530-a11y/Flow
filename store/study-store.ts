@@ -16,12 +16,16 @@ import { validateMockExam, type MockExamInput } from "@/lib/mock-exams";
 import {
   answerDraft,
   draftSeconds,
+  examMistakeText,
   findOfficialExam,
   gradeExam,
+  moveDraft,
   officialExamTitle,
   pauseDraft,
   resumeDraft,
   startDraft,
+  toggleFlag,
+  type DraftOptions,
   type ForeignLanguage,
   type GradedExam,
   type Letter,
@@ -143,13 +147,18 @@ interface StudyActions {
 
   addMockExam: (input: MockExamInput) => string | null;
   removeMockExam: (mockId: string) => void;
-  startExam: (examId: string, language: ForeignLanguage) => string | null;
+  startExam: (examId: string, options: DraftOptions) => string | null;
   answerExam: (index: number, letter: Letter | null) => void;
+  goToQuestion: (index: number) => void;
+  toggleExamFlag: (index: number) => void;
   pauseExam: () => void;
   resumeExam: () => void;
   discardExam: () => void;
-  finishExam: () => { error: string } | { graded: GradedExam; examId: string };
-  addExamMistakes: (examId: string, wrong: readonly WrongAnswer[]) => number;
+  finishExam: () =>
+    | { error: string }
+    | { graded: GradedExam; examId: string; answers: (Letter | null)[]; language: ForeignLanguage };
+  // stems: o comando de cada questão errada (pelo número), quando o simulado foi feito com as questões no app.
+  addExamMistakes: (examId: string, wrong: readonly WrongAnswer[], stems?: Record<number, string>) => number;
 
   addEssay: (input: EssayInput) => string | null;
   removeEssay: (essayId: string) => void;
@@ -470,16 +479,26 @@ export const useStudyStore = create<StudyStore>()(
         },
         removeMockExam: (mockId) => set({ mockExams: get().mockExams.filter((mock) => mock.id !== mockId) }),
 
-        startExam: (examId, language) => {
+        startExam: (examId, options) => {
           if (!proAccessNow()) return "O simulado no app faz parte do Pro.";
-          if (!findOfficialExam(examId)) return "Escolha uma prova.";
+          const exam = findOfficialExam(examId);
+          if (!exam) return "Escolha uma prova.";
+          if (options.format === "app" && !exam.questionsUrl) return "Esta prova ainda não está no app. Use o PDF.";
           if (get().examDraft) return "Termine ou descarte o simulado em andamento.";
-          set({ examDraft: startDraft(examId, language, Date.now()) });
+          set({ examDraft: startDraft(exam, options, Date.now()) });
           return null;
         },
         answerExam: (index, letter) => {
           const draft = get().examDraft;
           if (draft) set({ examDraft: answerDraft(draft, index, letter) });
+        },
+        goToQuestion: (index) => {
+          const draft = get().examDraft;
+          if (draft) set({ examDraft: moveDraft(draft, index) });
+        },
+        toggleExamFlag: (index) => {
+          const draft = get().examDraft;
+          if (draft) set({ examDraft: toggleFlag(draft, index) });
         },
         pauseExam: () => {
           const draft = get().examDraft;
@@ -496,7 +515,7 @@ export const useStudyStore = create<StudyStore>()(
           const draft = get().examDraft;
           const exam = draft && findOfficialExam(draft.examId);
           if (!draft || !exam) return { error: "Nenhum simulado em andamento." };
-          const graded = gradeExam(exam, draft.answers, draft.language);
+          const graded = gradeExam(exam, draft.answers, draft.language, draft.scope);
           const minutes = Math.round(draftSeconds(draft, Date.now()) / 60);
           const mock = {
             id: newId("simulado-"),
@@ -507,11 +526,11 @@ export const useStudyStore = create<StudyStore>()(
             note: `${officialExamTitle(exam)}, feito no Flow.`,
           };
           set({ mockExams: [...get().mockExams, mock], examDraft: null });
-          return { graded, examId: exam.id };
+          return { graded, examId: exam.id, answers: draft.answers, language: draft.language };
         },
 
-        // O motivo de cada erro só a pessoa sabe; entra como conteúdo e a questão pede para refazer e descobrir.
-        addExamMistakes: (examId, wrong) => {
+        // O motivo de cada erro só a pessoa sabe: entra como conteúdo, e ela ajusta ao revisar.
+        addExamMistakes: (examId, wrong, stems = {}) => {
           const exam = findOfficialExam(examId);
           if (!exam || wrong.length === 0) return 0;
           const created = wrong.map((item, index) =>
@@ -521,8 +540,7 @@ export const useStudyStore = create<StudyStore>()(
                 areaId: item.areaId,
                 subjectId: null,
                 reason: "conteudo",
-                question: `Questão ${item.number}: ${item.marked ? `você marcou ${item.marked}` : "ficou em branco"}, a resposta é ${item.correct}. Refaça e descubra onde errou.`,
-                lesson: "",
+                ...examMistakeText(item, stems[item.number] ?? null),
                 source: `Enem ${exam.year}, questão ${item.number}`,
               },
               newId(`erro-${index}-`),

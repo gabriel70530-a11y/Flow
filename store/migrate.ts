@@ -1,10 +1,11 @@
 import { DEFAULT_PLANNER, type PlanTask, type PlannerSettings } from "@/lib/planner";
 import type { StudySession } from "@/lib/sessions";
 import type { GoalType } from "@/lib/stats";
-import { LETTERS, QUESTIONS_PER_DAY, findOfficialExam, type ExamDraft } from "@/lib/official-exams";
+import { MOCK_DAY_AREAS } from "@/lib/mock-exams";
+import { LETTERS, QUESTIONS_PER_DAY, findOfficialExam, type ExamDraft, type ExamScope } from "@/lib/official-exams";
 import { DEFAULT_TIMER, type TimerState } from "@/lib/timer";
 import { legacySubject, legacyTopics } from "@/lib/legacy-topics";
-import { subjectsOf } from "@/lib/syllabus";
+import { subjectsOf, type AreaId } from "@/lib/syllabus";
 import { findTopic, type TopicRecord } from "@/lib/topics";
 import { emptyData, type StudyData } from "./state";
 
@@ -40,10 +41,20 @@ function normalizeExamDraft(value: unknown): ExamDraft | null {
   if (!isRecord(value) || typeof value.examId !== "string" || !findOfficialExam(value.examId)) return null;
   const answers = Array.isArray(value.answers) ? value.answers : [];
   if (answers.length !== QUESTIONS_PER_DAY) return null;
+  const exam = findOfficialExam(value.examId);
+  const scope = value.scope === "dia" || (exam && MOCK_DAY_AREAS[exam.day].includes(value.scope as AreaId)) ? (value.scope as ExamScope) : "dia";
+  const current = Number(value.current);
   return {
     examId: value.examId,
     language: value.language === "espanhol" ? "espanhol" : "ingles",
+    // Rascunhos de antes das questões no app eram todos no cartão-resposta.
+    format: value.format === "app" && exam?.questionsUrl ? "app" : "pdf",
+    scope,
     answers: answers.map((answer) => (LETTERS.includes(answer) ? answer : null)),
+    current: Number.isInteger(current) && current >= 0 && current < QUESTIONS_PER_DAY ? current : 0,
+    flagged: Array.isArray(value.flagged)
+      ? value.flagged.filter((index): index is number => Number.isInteger(index) && index >= 0 && index < QUESTIONS_PER_DAY)
+      : [],
     banked: Number.isFinite(value.banked) ? Number(value.banked) : 0,
     startedAt: Number.isFinite(value.startedAt) ? Number(value.startedAt) : null,
   };

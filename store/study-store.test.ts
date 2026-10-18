@@ -378,8 +378,8 @@ describe("scheduling reviews for topics already studied", () => {
 
 describe("official mock exam in the app", () => {
   it("grades by the official key, records the mock exam and the time without pauses", () => {
-    expect(state().startExam("2024-2", "ingles")).toBeNull();
-    expect(state().startExam("2024-1", "ingles")).toBe("Termine ou descarte o simulado em andamento.");
+    expect(state().startExam("2024-2", { language: "ingles", format: "pdf", scope: "dia" })).toBeNull();
+    expect(state().startExam("2024-1", { language: "ingles", format: "pdf", scope: "dia" })).toBe("Termine ou descarte o simulado em andamento.");
     state().answerExam(0, "B");
     state().answerExam(1, "A");
     advance(1800);
@@ -405,7 +405,7 @@ describe("official mock exam in the app", () => {
   });
 
   it("sends the wrong answers to the mistake log, due tomorrow", () => {
-    state().startExam("2024-2", "ingles");
+    state().startExam("2024-2", { language: "ingles", format: "pdf", scope: "dia" });
     state().answerExam(0, "A");
     const result = state().finishExam();
     if ("error" in result) throw new Error(result.error);
@@ -419,8 +419,30 @@ describe("official mock exam in the app", () => {
     });
   });
 
+  it("does the 2023 exam inside the app, one area only, and saves the stem with each mistake", () => {
+    expect(state().startExam("2024-1", { language: "ingles", format: "app", scope: "dia" })).toBe(
+      "Esta prova ainda não está no app. Use o PDF.",
+    );
+    expect(state().startExam("2023-2", { language: "ingles", format: "app", scope: "mat" })).toBeNull();
+    expect(state().examDraft).toMatchObject({ format: "app", scope: "mat", current: 45 });
+    state().goToQuestion(46);
+    state().toggleExamFlag(46);
+    state().answerExam(46, "B");
+    expect(state().examDraft).toMatchObject({ current: 46, flagged: [46] });
+
+    const result = state().finishExam();
+    if ("error" in result) throw new Error(result.error);
+    expect(result.graded.sections).toEqual([{ areaId: "mat", correct: 0, total: 44 }]);
+    expect(state().addExamMistakes(result.examId, result.graded.wrong.slice(1, 2), { 137: "A média dos salários é" })).toBe(1);
+    expect(state().mistakes[0]).toMatchObject({
+      question: "Questão 137: A média dos salários é",
+      lesson: "Você marcou B; a resposta certa é C.",
+      source: "Enem 2023, questão 137",
+    });
+  });
+
   it("discards a draft without recording", () => {
-    state().startExam("2023-1", "espanhol");
+    state().startExam("2023-1", { language: "espanhol", format: "pdf", scope: "dia" });
     state().discardExam();
     expect(state().examDraft).toBeNull();
     expect(state().mockExams).toEqual([]);
@@ -453,7 +475,7 @@ describe("free plan", () => {
   });
 
   it("does not start the official mock exam", () => {
-    expect(state().startExam("2024-1", "ingles")).toBe("O simulado no app faz parte do Pro.");
+    expect(state().startExam("2024-1", { language: "ingles", format: "pdf", scope: "dia" })).toBe("O simulado no app faz parte do Pro.");
   });
 
   it("finishes onboarding without generating the plan", () => {
