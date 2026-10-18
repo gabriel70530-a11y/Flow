@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Saira } from "next/font/google";
+import { ServiceWorker } from "@/components/shell/ServiceWorker";
 import { SITE_DESCRIPTION, SITE_TITLE, siteUrl } from "@/lib/site";
 import { LEGACY_STORAGE_KEY, STORAGE_KEY } from "@/store/storage-key";
 import "./globals.css";
@@ -25,8 +26,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f4f3ee" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b111c" },
+    { media: "(prefers-color-scheme: light)", color: "#f3f8fb" },
+    { media: "(prefers-color-scheme: dark)", color: "#061829" },
   ],
 };
 
@@ -39,7 +40,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <ServiceWorker />
+      </body>
     </html>
   );
 }

@@ -17,7 +17,7 @@ async function logoFont(): Promise<ArrayBuffer | null> {
   }
 }
 
-// Cartão de compartilhamento nas cores da marca: azul-marinho sobre off-white.
+// Cartão de compartilhamento nas cores da marca, como o topo da página inicial: FLOW branco sobre o azul profundo.
 export default async function OpengraphImage() {
   const font = await logoFont();
   return new ImageResponse(
@@ -31,12 +31,12 @@ export default async function OpengraphImage() {
           alignItems: "center",
           justifyContent: "center",
           gap: 28,
-          background: "#f4f3ee",
-          color: "#14213d",
+          background: "#0f4470",
+          color: "#ffffff",
         }}
       >
         <div style={{ fontFamily: font ? "Saira" : undefined, fontSize: 210, fontWeight: 800, fontStyle: "italic" }}>FLOW</div>
-        <div style={{ fontSize: 44, color: "#5b6475" }}>Sua preparação para o ENEM, no ritmo certo.</div>
+        <div style={{ fontSize: 44, color: "#b0e1f1" }}>Sua preparação para o ENEM, no ritmo certo.</div>
       </div>
     ),
     { ...size, fonts: font ? [{ name: "Saira", data: font, weight: 800, style: "italic" }] : undefined },

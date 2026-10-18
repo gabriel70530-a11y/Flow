@@ -11,8 +11,8 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/painel",
     scope: "/",
     display: "standalone",
-    background_color: "#f4f3ee",
-    theme_color: "#14213d",
+    background_color: "#f3f8fb",
+    theme_color: "#135487",
     icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }],
   };
 }
