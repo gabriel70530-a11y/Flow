@@ -140,6 +140,7 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 
 **Revisão espaçada**
 - Ao marcar um tópico como Concluído, agende 4 revisões a partir de hoje: +1, +7, +15 e +30 dias.
+- Em Revisões, "Agendar revisões do que já estudei" abre um drawer com os tópicos visíveis ainda não concluídos (por área e matéria, com busca) e a opção de criar um tópico ali mesmo. Os marcados viram Concluído e ganham as 4 revisões a partir de hoje (`markStudied`).
 - Ao tirar de Concluído (para qualquer outro status), remova as revisões não feitas e mantenha as já feitas.
 - Ao reconcluir, mantenha as feitas e agende só as etapas restantes a partir de hoje, com os intervalos da própria etapa.
 - A tela mostra Atrasadas, Hoje, Próximos 7 dias e Futuras. Atrasadas continuam visíveis até serem concluídas ou reagendadas.
