@@ -1,4 +1,14 @@
-import { Book, CalendarCheck, CalendarDays, LayoutDashboard, Timer, type LucideIcon } from "lucide-react";
+import {
+  Book,
+  CalendarCheck,
+  CalendarDays,
+  ClipboardCheck,
+  LayoutDashboard,
+  PenLine,
+  Timer,
+  TimerReset,
+  type LucideIcon,
+} from "lucide-react";
 
 interface NavItem {
   href: "/painel" | "/cronograma" | "/materias" | "/timer" | "/revisoes";
@@ -12,4 +22,11 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/materias", label: "Matérias", icon: Book },
   { href: "/timer", label: "Timer", icon: Timer },
   { href: "/revisoes", label: "Revisões", icon: CalendarCheck },
+];
+
+// Ferramentas de preparação: ficam fora das abas do celular (que chegam pelo Painel) e num grupo discreto da barra lateral.
+export const PREP_ITEMS: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/simulados", label: "Simulados", icon: TimerReset },
+  { href: "/redacao", label: "Redação", icon: PenLine },
+  { href: "/prova", label: "Dia da prova", icon: ClipboardCheck },
 ];

@@ -11,12 +11,14 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { showToast } from "@/components/ui/Toast";
 import { toDateKey } from "@/lib/dates";
+import { dueMistakes } from "@/lib/mistakes";
 import { groupReviews, nextReview, pendingReviews, progressOf, type PendingReview } from "@/lib/reviews";
 import { focusName } from "@/lib/syllabus";
 import { findTopic } from "@/lib/topics";
 import { useHydrated, useStudyStore } from "@/store/study-store";
 import { ReviewDrawer } from "./ReviewDrawer";
 import { ReviewFeedbackPrompt } from "./ReviewFeedbackPrompt";
+import { RevisoesTabs } from "./RevisoesTabs";
 
 const LATER_PREVIEW = 8;
 
@@ -24,6 +26,7 @@ export function RevisoesScreen() {
   const hydrated = useHydrated();
   const progress = useStudyStore((state) => state.progress);
   const topics = useStudyStore((state) => state.topics);
+  const mistakes = useStudyStore((state) => state.mistakes);
   const completeReview = useStudyStore((state) => state.completeReview);
   const [openTopicId, setOpenTopicId] = useState<string | null>(null);
   const [completed, setCompleted] = useState<{ topicId: string; stage: number } | null>(null);
@@ -67,6 +70,7 @@ export function RevisoesScreen() {
   return (
     <div className="grid gap-6">
       {header}
+      <RevisoesTabs current="/revisoes" mistakesDue={dueMistakes(mistakes, today).length} />
 
       {completed && completedTopic && (
         <ReviewFeedbackPrompt topic={completedTopic} stage={completed.stage} onClose={() => setCompleted(null)} />

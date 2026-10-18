@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { addDays, mondayOf, toDateKey } from "@/lib/dates";
 import { useHydrated } from "@/store/study-store";
 import { AreaCard } from "./AreaCard";
+import { PrepCard } from "./PrepCard";
 import { StudyTodayCard } from "./StudyTodayCard";
 import { SummaryCard } from "./SummaryCard";
 import { UpcomingReviews } from "./UpcomingReviews";
@@ -47,6 +48,8 @@ export function PainelScreen() {
     <div className="grid gap-6">
       <PageHeader title={greeting(now.getHours())} subtitle={capitalize(longDate.format(now))} />
       <StudyTodayCard today={today} />
+      {/* No celular, a preparação vem logo depois do dia; no computador, abre a coluna da direita. */}
+      <PrepCard today={today} className="lg:hidden" />
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="grid gap-6">
           <WeekCard
@@ -58,6 +61,7 @@ export function PainelScreen() {
           <SummaryCard today={today} monday={monday} />
         </div>
         <div className="grid gap-6">
+          <PrepCard today={today} className="hidden lg:block" />
           <AreaCard monday={monday} />
           <UpcomingReviews today={today} />
         </div>

@@ -6,8 +6,10 @@ import { TaskDrawer } from "@/components/cronograma/TaskDrawer";
 import { isMastered, taskDetails, taskStatusLabel, taskTitle } from "@/components/cronograma/task-format";
 import { DueLabel } from "@/components/ui/DueLabel";
 import { useStudyTopic } from "@/components/timer/use-study-topic";
-import { addDays } from "@/lib/dates";
+import { showToast } from "@/components/ui/Toast";
+import { addDays, dayLabel } from "@/lib/dates";
 import { isStudyDay } from "@/lib/planner";
+import { dueMistakes } from "@/lib/mistakes";
 import { pendingReviews } from "@/lib/reviews";
 import { formatDuration, secondsOn } from "@/lib/stats";
 import { findTopic } from "@/lib/topics";
@@ -34,8 +36,10 @@ export function StudyTodayCard({ today }: { today: string }) {
   const sessions = useStudyStore((state) => state.sessions);
   const topics = useStudyStore((state) => state.topics);
   const progress = useStudyStore((state) => state.progress);
+  const mistakes = useStudyStore((state) => state.mistakes);
   const planner = useStudyStore((state) => state.planner);
   const onboarding = useStudyStore((state) => state.onboarding);
+  const lightenToday = useStudyStore((state) => state.lightenToday);
   const studyTopic = useStudyTopic();
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
   const closeTask = useCallback(() => setOpenTaskId(null), []);
@@ -46,6 +50,21 @@ export function StudyTodayCard({ today }: { today: string }) {
   const next = todayTasks.find((task) => task.status === "iniciada") ?? todayTasks.find((task) => task.status === "planejada");
   const upcomingReview = pendingReviews(progress, topics).find(({ review }) => review.due <= addDays(today, 1));
   const reviewTopic = upcomingReview && findTopic(topics, upcomingReview.topicId);
+  const openTasks = todayTasks.filter((task) => task.status === "planejada" || task.status === "iniciada");
+  const canLighten = openTasks.length > 1 && openTasks.some((task, index) => index > 0 && task.status === "planejada");
+  const allDone = todayTasks.length > 0 && openTasks.length === 0;
+
+  // Dia cansativo: fica uma matéria hoje e a outra passa para o próximo dia de estudo, sem culpa.
+  const lighten = () => {
+    const moved = lightenToday();
+    const [first] = moved;
+    if (!first) return;
+    showToast(
+      first.date
+        ? `Dia leve. ${taskTitle(first, topics)} foi para ${dayLabel(first.date, today).toLowerCase()}.`
+        : `Dia leve. ${taskTitle(first, topics)} ficou para outra semana.`,
+    );
+  };
 
   const header = (
     <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -56,6 +75,16 @@ export function StudyTodayCard({ today }: { today: string }) {
         </span>
       )}
     </div>
+  );
+
+  const mistakesDue = dueMistakes(mistakes, today).length;
+  const mistakesLine = mistakesDue > 0 && (
+    <p className="text-[13px] opacity-75">
+      {mistakesDue === 1 ? "1 erro do caderno para rever hoje. " : `${mistakesDue} erros do caderno para rever hoje. `}
+      <Link href="/revisoes/erros" className="font-semibold underline underline-offset-3">
+        Rever erros
+      </Link>
+    </p>
   );
 
   const reviewLine = reviewTopic && upcomingReview && (
@@ -87,6 +116,7 @@ export function StudyTodayCard({ today }: { today: string }) {
           </Link>
         </div>
         {reviewLine}
+        {mistakesLine}
       </Band>
     );
   }
@@ -128,8 +158,11 @@ export function StudyTodayCard({ today }: { today: string }) {
         })}
       </ul>
       <p className="opacity-75 tabular-nums">
-        {studiedSeconds > 0 && `${formatDuration(studiedSeconds)} estudados hoje · `}
-        Estude o tempo que quiser, até sentir que dominou. O que não der passa para o próximo dia.
+        {allDone
+          ? `${studiedSeconds > 0 ? `${formatDuration(studiedSeconds)} estudados hoje. ` : ""}O dia está fechado. Descansar também faz parte.`
+          : studiedSeconds > 0
+            ? `${formatDuration(studiedSeconds)} estudados hoje. Isso conta. O que não der passa para o próximo dia.`
+            : "Estude o tempo que quiser, até sentir que dominou. O que não der passa para o próximo dia."}
       </p>
       <div className="flex flex-wrap items-center gap-2.5">
         {next ? (
@@ -141,11 +174,17 @@ export function StudyTodayCard({ today }: { today: string }) {
             Estudar mais
           </Link>
         )}
+        {canLighten && (
+          <button type="button" onClick={lighten} className={ghostButton} title="Fica só uma matéria hoje; a outra passa para o próximo dia de estudo.">
+            Dia leve
+          </button>
+        )}
         <Link href="/cronograma" className={ghostButton}>
           Ver a semana
         </Link>
       </div>
       {reviewLine}
+      {mistakesLine}
 
       <TaskDrawer task={tasks.find((task) => task.id === openTaskId)} today={today} onClose={closeTask} />
     </Band>

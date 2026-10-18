@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, type ReactNode } from "react";
 import { toDateKey } from "@/lib/dates";
+import { dueMistakes } from "@/lib/mistakes";
 import { groupReviews, pendingReviews } from "@/lib/reviews";
 import { useTimerTicker } from "@/components/timer/use-timer-ticker";
 import { IconButton } from "@/components/ui/IconButton";
@@ -24,6 +25,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const storedTheme = useStudyStore((state) => state.theme);
   const progress = useStudyStore((state) => state.progress);
   const topics = useStudyStore((state) => state.topics);
+  const mistakes = useStudyStore((state) => state.mistakes);
   const demo = useStudyStore((state) => state.demo);
   const setTheme = useStudyStore((state) => state.setTheme);
   const timerText = useTimerTicker(hydrated);
@@ -32,9 +34,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const theme: Theme = hydrated ? storedTheme : "system";
   const dueReviews = useMemo(() => {
     if (!hydrated) return 0;
-    const groups = groupReviews(pendingReviews(progress, topics), toDateKey(new Date()));
-    return groups.late.length + groups.today.length;
-  }, [hydrated, progress, topics]);
+    const today = toDateKey(new Date());
+    const groups = groupReviews(pendingReviews(progress, topics), today);
+    return groups.late.length + groups.today.length + dueMistakes(mistakes, today).length;
+  }, [hydrated, progress, topics, mistakes]);
 
   useEffect(() => {
     if (!hydrated) return;

@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/Button";
 import { Drawer, DrawerSection } from "@/components/ui/Drawer";
 import { Segmented, type SegmentedOption } from "@/components/ui/Segmented";
 import { showToast } from "@/components/ui/Toast";
+import { MistakeForm } from "@/components/revisoes/MistakeForm";
 import { useStudyTopic } from "@/components/timer/use-study-topic";
 import { shortDate } from "@/lib/dates";
+import { openMistakesOnTopic } from "@/lib/mistakes";
 import {
   FEEDBACK_LABELS,
   MASTERY_LABELS,
@@ -41,6 +43,8 @@ interface TopicDrawerProps {
 
 export function TopicDrawer({ topic, today, onClose }: TopicDrawerProps) {
   const progress = useStudyStore((state) => (topic ? progressOf(state.progress, topic.id) : undefined));
+  const mistakeCount = useStudyStore((state) => (topic ? openMistakesOnTopic(state.mistakes, topic.id) : 0));
+  const [loggingMistake, setLoggingMistake] = useState(false);
   const { setStatus, setMastery, editTopic, setTopicHidden, removeTopic } = useStudyStore.getState();
   const studyTopic = useStudyTopic();
   const [editing, setEditing] = useState(false);
@@ -58,6 +62,7 @@ export function TopicDrawer({ topic, today, onClose }: TopicDrawerProps) {
   const close = () => {
     setEditing(false);
     setConfirmingDelete(false);
+    setLoggingMistake(false);
     setDraft({});
     onClose();
   };
@@ -189,6 +194,22 @@ export function TopicDrawer({ topic, today, onClose }: TopicDrawerProps) {
           </div>
         </DrawerSection>
       )}
+
+      <DrawerSection title={`Caderno de erros${mistakeCount ? ` · ${mistakeCount} em aberto` : ""}`}>
+        {loggingMistake ? (
+          <MistakeForm
+            initialChoice={topic.id}
+            onDone={(message) => {
+              setLoggingMistake(false);
+              showToast(message);
+            }}
+          />
+        ) : (
+          <div>
+            <Button onClick={() => setLoggingMistake(true)}>Registrar erro neste tópico</Button>
+          </div>
+        )}
+      </DrawerSection>
 
       <DrawerSection title="Organizar">
         <div className="flex flex-wrap gap-2">
