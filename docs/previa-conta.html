@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prévia da conta · Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira:ital,wdth,wght@0,100..125,300..800;1,100..125,300..800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f3f8fb; --surface: #ffffff; --soft: #e9f4f9; --line: #dcebf2; --text: #0b2a42; --muted: #4f6f83;
+    --accent: #135487; --accent-soft: #e2f3fa; --action: #135487; --edge: #135487; --success: #2e7d4f; --danger: #c42b3f;
+  }
+  :root[data-theme="dark"] {
+    --bg: #061829; --surface: #0b2238; --soft: #102d48; --line: #15344f; --text: #e6f3f9; --muted: #85b0c6;
+    --accent: #47bcdf; --accent-soft: #10324f; --action: #135487; --edge: #eef7fb; --success: #6fcf97; --danger: #ff7a8a;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  [hidden] { display: none !important; }
+  body { font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+  button, input { font: inherit; color: inherit; }
+  button { background: none; border: 0; cursor: pointer; }
+
+  .preview-bar { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; padding: 12px 16px; background: #0b2a42; color: #fff; font-size: 13px; }
+  .preview-bar .label { opacity: .6; margin-right: 4px; }
+  .preview-bar .group { display: flex; flex-wrap: wrap; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(255,255,255,.1); }
+  .preview-bar button { padding: 6px 14px; border-radius: 999px; color: #fff; font-weight: 600; }
+  .preview-bar button[aria-pressed="true"] { background: #fff; color: #135487; }
+  .preview-note { max-width: 760px; margin: 20px auto 0; padding: 0 16px; color: var(--muted); font-size: 14px; text-align: center; }
+
+  .stage { display: flex; justify-content: center; padding: 24px 16px 64px; }
+  .frame { position: relative; width: 100%; max-width: 1180px; min-height: 760px; background: var(--bg); border-radius: 20px; overflow: hidden; box-shadow: 0 0 0 1px var(--line), 0 30px 60px rgba(15,27,45,.08); }
+  .frame.phone { max-width: 400px; }
+
+  .page { padding: 40px 48px; display: grid; gap: 24px; align-content: start; }
+  .phone .page { padding: 24px 16px; }
+  .page h1 { font-family: "Saira", sans-serif; font-weight: 700; font-stretch: 112%; font-size: 32px; }
+  .phone .page h1 { font-size: 26px; }
+  .page .sub { color: var(--muted); margin-top: 6px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+  .phone .cols { grid-template-columns: 1fr; }
+  .col { display: grid; gap: 24px; }
+
+  .card { background: var(--surface); border: 2px solid var(--edge); box-shadow: 4px 4px 0 var(--edge); border-radius: 18px; padding: 28px; display: grid; gap: 16px; }
+  .phone .card { padding: 20px; }
+  .card h2 { font-family: "Saira", sans-serif; font-weight: 600; font-stretch: 108%; font-size: 18px; }
+  .ghost { height: 220px; opacity: .45; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .divider { border-top: 1px solid var(--line); padding-top: 16px; display: grid; gap: 6px; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 999px; font-weight: 600; font-size: 14px; background: var(--soft); white-space: nowrap; }
+  .btn-primary { height: 44px; padding: 0 22px; font-size: 15px; background: var(--action); color: #fff; border: 2px solid var(--edge); box-shadow: 3px 3px 0 var(--edge); }
+  .btn-wide { width: 100%; }
+  .btn svg { width: 18px; height: 18px; }
+  .link { color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+
+  .account { display: flex; align-items: center; gap: 12px; }
+  .avatar { width: 40px; height: 40px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-family: "Saira", sans-serif; font-weight: 700; flex-shrink: 0; }
+  .account strong { display: block; overflow-wrap: anywhere; }
+  .status { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+  .dot { width: 8px; height: 8px; border-radius: 999px; background: var(--success); flex-shrink: 0; }
+  .dot.wait { background: var(--muted); }
+  .dot.error { background: var(--danger); }
+  .notice { border-radius: 12px; background: var(--accent-soft); padding: 14px; display: grid; gap: 10px; }
+
+  .scrim { position: absolute; inset: 0; background: rgba(0,0,0,.35); }
+  .drawer { position: absolute; top: 0; right: 0; bottom: 0; width: 420px; background: var(--surface); padding: 16px 24px 24px; overflow-y: auto; box-shadow: -8px 0 24px rgba(0,0,0,.12); display: grid; gap: 16px; align-content: start; }
+  .phone .drawer { top: auto; left: 0; width: auto; max-height: 92%; border-radius: 16px 16px 0 0; padding: 16px 20px 24px; }
+  .drawer-head { display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px; }
+  .drawer-head small { color: var(--muted); font-size: 13px; }
+  .drawer-head h2 { font-family: "Saira", sans-serif; font-weight: 600; font-stretch: 108%; font-size: 20px; margin-top: 4px; }
+  .close { width: 36px; height: 36px; border-radius: 999px; display: grid; place-items: center; color: var(--muted); }
+  .field { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .input { height: 40px; width: 100%; border-radius: 10px; border: 2px solid var(--line); background: var(--surface); padding: 0 12px; font-size: 15px; font-weight: 400; color: var(--text); }
+  .or { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; }
+  .or::before, .or::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+  .check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
+  .check input { width: 18px; height: 18px; margin-top: 2px; accent-color: #135487; flex-shrink: 0; }
+  .list { padding-left: 18px; display: grid; gap: 4px; }
+</style>
+</head>
+<body>
+
+<div class="preview-bar">
+  <span class="label">Estado</span>
+  <div class="group" data-control="state">
+    <button aria-pressed="true" data-value="off">Sem conta</button>
+    <button aria-pressed="false" data-value="login">Entrar</button>
+    <button aria-pressed="false" data-value="sent">Link enviado</button>
+    <button aria-pressed="false" data-value="on">Conectado</button>
+    <button aria-pressed="false" data-value="offline">Sem internet</button>
+    <button aria-pressed="false" data-value="na">Indisponível</button>
+  </div>
+  <span class="label">Tema</span>
+  <div class="group" data-control="theme">
+    <button aria-pressed="true" data-value="light">Claro</button>
+    <button aria-pressed="false" data-value="dark">Escuro</button>
+  </div>
+  <span class="label">Tamanho</span>
+  <div class="group" data-control="size">
+    <button aria-pressed="true" data-value="desktop">Computador</button>
+    <button aria-pressed="false" data-value="phone">Celular</button>
+  </div>
+</div>
+<p class="preview-note">Prévia da conta opcional. Ela entra em Ajustes, no lugar do card "Seus dados". Sem conta, tudo continua igual. Com conta, os dados vão para a nuvem e aparecem nos outros aparelhos em que a pessoa entrar. No primeiro login, o que já está no aparelho se junta ao que já está na conta, sem apagar nada.</p>
+
+<div class="stage">
+  <div class="frame" id="frame">
+    <div class="page">
+      <div><h1>Ajustes</h1><p class="sub">Preferências, metas e os seus dados.</p></div>
+      <div class="cols">
+        <div class="col">
+          <div class="card ghost"><h2>Preferências</h2></div>
+
+          <!-- Card novo: Conta e dados -->
+          <section class="card" aria-labelledby="account-title">
+            <h2 id="account-title">Conta e dados</h2>
+
+            <div data-show="off login sent">
+              <div style="display:grid;gap:12px">
+                <p class="muted">Seus dados estão só neste navegador. Com uma conta, o Flow guarda uma cópia na nuvem e você continua de onde parou em outro aparelho.</p>
+                <p class="muted small">A conta é opcional e gratuita. Sem ela, tudo continua funcionando.</p>
+                <div class="row"><button class="btn btn-primary" data-go="login">Entrar ou criar conta</button></div>
+              </div>
+            </div>
+
+            <div data-show="on offline">
+              <div style="display:grid;gap:14px">
+                <div class="account">
+                  <span class="avatar" aria-hidden="true">G</span>
+                  <div><strong>gabriel@exemplo.com</strong><span class="muted small">Entrou com Google</span></div>
+                </div>
+                <p class="status" data-show="on"><span class="dot"></span>Sincronizado hoje às 14:32</p>
+                <p class="status" data-show="offline"><span class="dot wait"></span>Sem internet. O que você fizer fica salvo aqui e vai para a nuvem quando a conexão voltar.</p>
+                <div class="row">
+                  <button class="btn" data-show="on">Sincronizar agora</button>
+                  <button class="btn">Sair</button>
+                </div>
+                <p class="muted small">Ao sair, seus dados continuam neste aparelho.</p>
+              </div>
+            </div>
+
+            <div data-show="na">
+              <p class="muted">A conta ainda não está disponível neste endereço. Seus dados ficam só neste navegador; para levar a outro aparelho, use o backup.</p>
+            </div>
+
+            <div class="divider">
+              <div class="row"><button class="btn">Baixar backup</button><button class="btn">Importar backup</button></div>
+              <p class="muted small">Um arquivo com todos os seus dados, para guardar ou levar a outro navegador.</p>
+            </div>
+            <div class="divider">
+              <div class="row"><button class="btn">Apagar todos os dados</button></div>
+              <p class="muted small" data-show="off login sent na">Apaga tópicos, sessões, revisões e cronograma deste navegador. Aparência e preferências ficam.</p>
+              <p class="muted small" data-show="on offline">Com a conta, apaga também a cópia na nuvem e nos outros aparelhos. Baixe um backup antes, se quiser guardar.</p>
+              <div data-show="on offline" style="display:grid;gap:6px;margin-top:10px">
+                <div class="row"><button class="btn" id="delete-account">Excluir conta</button></div>
+                <p class="muted small">Apaga a conta e a cópia na nuvem. Os dados deste aparelho ficam. Clique duas vezes para confirmar.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+        <div class="col">
+          <div class="card ghost"><h2>Cronograma</h2></div>
+          <div class="card ghost" style="height:140px"><h2>Sobre</h2></div>
+        </div>
+      </div>
+    </div>
+
+    <div data-show="login sent">
+      <div class="scrim"></div>
+      <aside class="drawer" role="dialog" aria-modal="true" aria-label="Entrar no Flow">
+        <div class="drawer-head">
+          <div><small>Conta</small><h2>Entrar no Flow</h2></div>
+          <button class="close" aria-label="Fechar">✕</button>
+        </div>
+
+        <div data-show="login" style="display:grid;gap:16px">
+          <p class="muted">Sem senha: entre com o Google ou receba um link no e-mail. Se ainda não tem conta, ela é criada agora.</p>
+          <label class="check"><input type="checkbox" id="agree"><span>Li a <a class="link" href="#">política de privacidade</a> e os <a class="link" href="#">termos</a>. Se tenho menos de 18 anos, um responsável sabe que vou criar a conta.</span></label>
+          <button class="btn btn-primary btn-wide">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3zM12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22zm-5.6-8c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 0 0 0 9.2zM12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.4L6.4 10C7.2 7.7 9.4 6 12 6z"/></svg>
+            Entrar com Google
+          </button>
+          <p class="or">ou</p>
+          <label class="field">E-mail<input class="input" type="email" placeholder="voce@exemplo.com" value="gabriel@exemplo.com"></label>
+          <button class="btn btn-wide" style="height:44px">Receber link no e-mail</button>
+          <p class="muted small">Guardamos só o seu e-mail e os dados de estudo, para sincronizar. Nada é vendido nem usado para anúncios.</p>
+        </div>
+
+        <div data-show="sent" style="display:grid;gap:16px">
+          <div class="notice">
+            <strong>Confira seu e-mail</strong>
+            <p>Enviamos um link para <strong>gabriel@exemplo.com</strong>. Abra neste aparelho para entrar. O link vale por 1 hora.</p>
+          </div>
+          <p class="muted small">Não chegou? Veja a caixa de spam ou <button class="link" style="padding:0">envie de novo</button>.</p>
+          <button class="btn btn-wide" style="height:44px">Usar outro e-mail</button>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<script>
+  const state = { state: "off", theme: "light", size: "desktop" };
+  function apply() {
+    document.documentElement.dataset.theme = state.theme;
+    document.getElementById("frame").classList.toggle("phone", state.size === "phone");
+    document.querySelectorAll("[data-show]").forEach((element) => {
+      element.hidden = !element.dataset.show.split(" ").includes(state.state);
+    });
+    document.querySelectorAll(".preview-bar .group").forEach((group) => {
+      group.querySelectorAll("button").forEach((button) => {
+        button.setAttribute("aria-pressed", String(state[group.dataset.control] === button.dataset.value));
+      });
+    });
+    const remove = document.getElementById("delete-account");
+    remove.textContent = "Excluir conta";
+  }
+  document.querySelectorAll(".preview-bar .group").forEach((group) => {
+    group.addEventListener("click", (event) => {
+      const button = event.target.closest("button");
+      if (!button) return;
+      state[group.dataset.control] = button.dataset.value;
+      apply();
+    });
+  });
+  document.querySelectorAll("[data-go]").forEach((button) => button.addEventListener("click", () => { state.state = button.dataset.go; apply(); }));
+  document.getElementById("delete-account").addEventListener("click", (event) => {
+    event.target.textContent = event.target.textContent === "Excluir conta" ? "Clique de novo para excluir" : "Excluir conta";
+  });
+  apply();
+</script>
+</body>
+</html>
