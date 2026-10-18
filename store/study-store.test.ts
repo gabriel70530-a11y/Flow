@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlanTask } from "@/lib/planner";
 import { GENERAL_STUDY } from "@/lib/sessions";
+import { legacyTopics } from "@/lib/legacy-topics";
 import { findTopic } from "@/lib/topics";
 import { emptyData } from "./state";
 import { useStudyStore } from "./study-store";
@@ -13,7 +14,7 @@ const state = () => useStudyStore.getState();
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(start);
-  useStudyStore.setState(emptyData());
+  useStudyStore.setState({ ...emptyData(), topics: legacyTopics() });
 });
 
 afterEach(() => {
@@ -172,9 +173,9 @@ describe("topics", () => {
     expect(state().sessions[0]).toMatchObject({ topicId: result.id, areaId: "mat" });
   });
 
-  it("never deletes default topics", () => {
+  it("deletes any topic", () => {
     state().removeTopic("mat-0");
-    expect(state().topics).toHaveLength(44);
+    expect(findTopic(state().topics, "mat-0")).toBeUndefined();
   });
 });
 
@@ -207,7 +208,7 @@ describe("reviews and settings", () => {
     useStudyStore.setState({ demo: true, theme: "dark", sound: false, showStreak: false });
     state().resetData();
     expect(state()).toMatchObject({ demo: false, sessions: [], progress: {}, theme: "dark", sound: false, showStreak: false });
-    expect(state().topics).toHaveLength(44);
+    expect(state().topics).toEqual([]);
   });
 });
 
@@ -253,11 +254,15 @@ describe("plan", () => {
     expect(state().addTask({ topicId: "mat-0", date: today, priority: "media" })).toBeNull();
     expect(state().addTask({ topicId: "mat-1", date: today, priority: "media" })).toBeNull();
     expect(state().addTask({ topicId: "mat-2", date: today, priority: "media" })).toMatch(/2 matérias/);
+    expect(state().addTask({ topicId: "lin-0", date: "2026-10-17", priority: "media" })).toBeNull();
+    expect(state().addTask({ topicId: "mat-2", date: "2026-10-17", priority: "media" })).toMatch(/dia é de Linguagens/);
+    expect(state().addTask({ topicId: "area:lin", date: "2026-10-17", priority: "media" })).toBeNull();
     const task = state().tasks[0];
     expect(task).toMatchObject({ origin: "manual", areaId: "mat", status: "planejada" });
     state().studyTopic("mat-0", task.id);
     state().removeTask(task.id);
-    expect(state().tasks).toHaveLength(1);
+    expect(state().tasks).toHaveLength(3);
+    expect(state().tasks.at(-1)).toMatchObject({ topicId: null, areaId: "lin" });
     expect(state().timer.taskId).toBe("");
   });
 
@@ -266,9 +271,9 @@ describe("plan", () => {
     state().addTask({ topicId: "mat-1", date: "2026-10-17", priority: "media" });
     state().addTask({ topicId: "mat-2", date: "2026-10-17", priority: "media" });
     const { id } = state().tasks[0];
-    expect(state().moveTask(id, "2026-10-01")).toBe(false);
-    expect(state().moveTask(id, "2026-10-17")).toBe(false);
-    expect(state().moveTask(id, null)).toBe(true);
+    expect(state().moveTask(id, "2026-10-01")).toMatch(/data futura/);
+    expect(state().moveTask(id, "2026-10-17")).toMatch(/2 matérias/);
+    expect(state().moveTask(id, null)).toBeNull();
     expect(state().tasks[0]).toMatchObject({ date: null, status: "adiada" });
     state().lowerTaskPriority(id);
     expect(state().tasks[0].priority).toBe("media");
@@ -285,7 +290,7 @@ describe("backup", () => {
     const backup = state().exportBackup();
     expect(JSON.parse(backup)).not.toHaveProperty("addTopic");
 
-    useStudyStore.setState(emptyData());
+    useStudyStore.setState({ ...emptyData(), topics: legacyTopics() });
     expect(state().importBackup("nope")).toMatch(/não parece/);
     expect(state().importBackup(backup)).toBeNull();
     expect(state().sessions).toHaveLength(1);

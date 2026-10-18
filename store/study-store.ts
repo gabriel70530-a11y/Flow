@@ -4,19 +4,18 @@ import { persist, type PersistStorage } from "zustand/middleware";
 import { isDateKey, toDateKey } from "@/lib/dates";
 import {
   applyFocusToTask,
+  carryOverMissed,
+  dayConflict,
   generatePlan,
   lowerPriority,
-  rescheduleTask,
-  topicsOn,
-  MAX_TOPICS_PER_DAY,
-  carryOverMissed,
   repeatNextDay,
+  rescheduleTask,
   validateStudyDays,
   validateTask,
   type PlanResult,
-  type RepeatResult,
   type PlanTask,
   type PlannerSettings,
+  type RepeatResult,
   type TaskInput,
 } from "@/lib/planner";
 import {
@@ -30,7 +29,15 @@ import {
   type TopicProgress,
   type TopicStatus,
 } from "@/lib/reviews";
-import { NOTE_MAX, createSession, type Reflection, type SessionState, type StudySession } from "@/lib/sessions";
+import {
+  GENERAL_STUDY,
+  NOTE_MAX,
+  createSession,
+  parseStudyChoice,
+  type Reflection,
+  type SessionState,
+  type StudySession,
+} from "@/lib/sessions";
 import { GOAL_LIMITS, type WeeklyGoal } from "@/lib/stats";
 import {
   elapsed,
@@ -47,8 +54,6 @@ import {
 import {
   createTopic,
   deleteTopic,
-  findTopic,
-  restoreDefaults,
   setTopicHidden,
   updateTopic,
   validateTopic,
@@ -68,7 +73,6 @@ interface StudyActions {
   editTopic: (id: string, input: TopicInput) => string | null;
   setTopicHidden: (id: string, hidden: boolean) => void;
   removeTopic: (id: string) => void;
-  restoreDefaultTopics: () => void;
 
   setStatus: (topicId: string, status: TopicStatus) => TopicProgress;
   toggleMastery: (topicId: string, level: Mastery) => void;
@@ -106,7 +110,7 @@ interface StudyActions {
   skipOnboarding: () => void;
   regeneratePlan: () => PlanResult;
   addTask: (input: TaskInput) => string | null;
-  moveTask: (taskId: string, date: string | null) => boolean;
+  moveTask: (taskId: string, date: string | null) => string | null;
   setTaskDone: (taskId: string, done: boolean) => void;
   answerMastery: (taskId: string, mastered: boolean) => RepeatResult | null;
   carryOver: () => PlanTask[];
@@ -257,8 +261,6 @@ export const useStudyStore = create<StudyStore>()(
           });
         },
 
-        restoreDefaultTopics: () => set({ topics: restoreDefaults(get().topics) }),
-
         setStatus: (topicId, status) => updateProgress(topicId, (current) => changeStatus(current, status, today())),
 
         toggleMastery: (topicId, level) =>
@@ -387,12 +389,13 @@ export const useStudyStore = create<StudyStore>()(
         addTask: (input) => {
           const error = validateTask(input, today());
           if (error) return error;
-          if (topicsOn(get().tasks, input.date) >= MAX_TOPICS_PER_DAY) return "Esse dia já tem 2 matérias. Escolha outro dia.";
-          const topic = findTopic(get().topics, input.topicId);
+          const { topicId, areaId } = parseStudyChoice(input.topicId ?? GENERAL_STUDY, get().topics);
+          const conflict = dayConflict(get().tasks, input.date, areaId);
+          if (conflict) return conflict;
           const task: PlanTask = {
             id: newId("task-"),
-            topicId: topic?.id ?? null,
-            areaId: topic?.areaId ?? null,
+            topicId,
+            areaId,
             kind: "estudo",
             date: input.date,
             priority: input.priority,
@@ -405,10 +408,15 @@ export const useStudyStore = create<StudyStore>()(
         },
 
         moveTask: (taskId, date) => {
-          const others = get().tasks.filter((task) => task.id !== taskId);
-          if (date !== null && (!isDateKey(date) || date < today() || topicsOn(others, date) >= MAX_TOPICS_PER_DAY)) return false;
+          const task = get().tasks.find((item) => item.id === taskId);
+          if (!task) return "Tarefa não encontrada.";
+          if (date !== null) {
+            if (!isDateKey(date) || date < today()) return "Escolha hoje ou uma data futura.";
+            const conflict = dayConflict(get().tasks, date, task.areaId, taskId);
+            if (conflict) return conflict;
+          }
           set({ tasks: rescheduleTask(get().tasks, taskId, date) });
-          return true;
+          return null;
         },
 
         setTaskDone: (taskId, done) =>

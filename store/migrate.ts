@@ -2,7 +2,8 @@ import { DEFAULT_PLANNER, type PlanTask, type PlannerSettings } from "@/lib/plan
 import type { StudySession } from "@/lib/sessions";
 import type { GoalType } from "@/lib/stats";
 import { DEFAULT_TIMER, type TimerState } from "@/lib/timer";
-import { defaultTopics, findTopic } from "@/lib/topics";
+import { legacyTopics } from "@/lib/legacy-topics";
+import { findTopic, type TopicRecord } from "@/lib/topics";
 import { createDemoData } from "./demo-data";
 import { emptyData, type StudyData } from "./state";
 
@@ -57,15 +58,44 @@ function normalizeTasks(saved: unknown): PlanTask[] {
   return saved.filter(isRecord).map((task) => without(task, ["minutes"]) as unknown as PlanTask);
 }
 
+function usedTopicIds(data: StudyData): Set<string> {
+  const ids = new Set<string>();
+  for (const [id, topic] of Object.entries(data.progress)) {
+    if (topic.status !== "nao" || topic.mastery > 0 || topic.reviews.length > 0) ids.add(id);
+  }
+  for (const item of [...data.sessions, ...data.tasks]) if (item.topicId) ids.add(item.topicId);
+  if (data.timer.topicId) ids.add(data.timer.topicId);
+  return ids;
+}
+
+/*
+ * O app não traz mais tópicos prontos, só as cinco áreas. Os tópicos que vinham prontos (origin "padrao")
+ * e nunca foram usados saem; os que têm progresso, sessões, tarefas ou estão no timer ficam, para não
+ * perder histórico. Dados sem lista de tópicos (v1 e começo da v2) reconstroem só os usados.
+ */
+function keepUsedTopics(data: StudyData, savedTopics: unknown): StudyData {
+  const used = usedTopicIds(data);
+  const topics = Array.isArray(savedTopics)
+    ? savedTopics
+        .filter(isRecord)
+        .filter((topic) => topic.origin !== "padrao" || used.has(String(topic.id)))
+        .map((topic) => without(topic, ["origin"]) as unknown as TopicRecord)
+    : legacyTopics().filter((topic) => used.has(topic.id));
+  return { ...data, topics };
+}
+
 // Completa campos ausentes com os padrões, para dados salvos por versões anteriores da v2 continuarem abrindo.
 function normalize(saved: Record<string, unknown>): StudyData {
+  return keepUsedTopics(fillDefaults(saved), saved.topics);
+}
+
+function fillDefaults(saved: Record<string, unknown>): StudyData {
   const base = emptyData();
   const goal = isRecord(saved.goal) ? saved.goal : {};
   const goalValue = Number(goal.value);
   return {
     ...base,
     demo: Boolean(saved.demo),
-    topics: Array.isArray(saved.topics) ? (saved.topics as StudyData["topics"]) : base.topics,
     progress: isRecord(saved.progress) ? (saved.progress as StudyData["progress"]) : {},
     sessions: Array.isArray(saved.sessions) ? (saved.sessions as StudySession[]) : [],
     tasks: normalizeTasks(saved.tasks),
@@ -85,7 +115,7 @@ function normalize(saved: Record<string, unknown>): StudyData {
 
 // v1 é o formato do protótipo: tópicos fixos, sessões com `ts` no fim e meta em horas.
 export function migrateV1(saved: Record<string, unknown>): StudyData {
-  const topics = defaultTopics();
+  const topics = legacyTopics();
   const legacySessions = Array.isArray(saved.sessions) ? saved.sessions : [];
   const sessions: StudySession[] = legacySessions.filter(isRecord).flatMap((session) => {
     const sec = Number(session.sec);
@@ -116,7 +146,6 @@ export function migrateV1(saved: Record<string, unknown>): StudyData {
 
   return normalize({
     demo: saved.demo,
-    topics,
     progress: saved.progress,
     sessions,
     goal: { type: "horas", value: Number.isFinite(goal) && goal > 0 ? goal : 25 },

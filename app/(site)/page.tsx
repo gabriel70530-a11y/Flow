@@ -43,8 +43,8 @@ const FAQ = [
   ],
   ["E se eu não conseguir seguir o plano?", "Normal. O que não deu para estudar passa sozinho para o próximo dia, e você pode mover qualquer matéria quando quiser."],
   [
-    "As matérias são o conteúdo oficial do ENEM?",
-    "Não. A lista inicial é uma estrutura de organização por área. Você pode editar, ocultar e criar tópicos.",
+    "O app já vem com as matérias do ENEM?",
+    "Vem só com as cinco áreas: Matemática, Linguagens, Ciências da Natureza, Ciências Humanas e Redação. Você cria os tópicos que quer estudar e decide quanto estudar.",
   ],
 ];
 

@@ -1,11 +1,11 @@
 import { TASK_STATUS_LABELS, type PlanTask } from "@/lib/planner";
+import { studyTitle } from "@/lib/sessions";
 import { formatDuration } from "@/lib/stats";
 import { findArea } from "@/lib/syllabus";
-import { PRIORITY_LABELS, findTopic, type TopicRecord } from "@/lib/topics";
+import { PRIORITY_LABELS, type TopicRecord } from "@/lib/topics";
 
 export function taskTitle(task: PlanTask, topics: readonly TopicRecord[]): string {
-  if (!task.topicId) return "Estudo geral";
-  return findTopic(topics, task.topicId)?.name ?? "Tópico excluído";
+  return studyTitle(task.topicId, task.areaId, topics);
 }
 
 const ORIGIN_LABELS: Partial<Record<PlanTask["origin"], string>> = {

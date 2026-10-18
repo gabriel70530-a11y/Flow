@@ -3,7 +3,7 @@ import type { ProgressMap } from "@/lib/reviews";
 import type { StudySession } from "@/lib/sessions";
 import { DEFAULT_GOAL, type WeeklyGoal } from "@/lib/stats";
 import { DEFAULT_TIMER, type TimerState } from "@/lib/timer";
-import { defaultTopics, type TopicRecord } from "@/lib/topics";
+import type { TopicRecord } from "@/lib/topics";
 
 export type Theme = "system" | "light" | "dark";
 
@@ -33,7 +33,7 @@ export function emptyData(): StudyData {
   return {
     version: 2,
     demo: false,
-    topics: defaultTopics(),
+    topics: [],
     progress: {},
     sessions: [],
     tasks: [],

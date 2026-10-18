@@ -59,8 +59,9 @@ components/
   shell/                Sidebar, TabBar, Wordmark, ThemeSelect, avisos globais
   painel/ cronograma/ materias/ timer/ revisoes/ ajustes/ planos/ onboarding/ site/
 lib/
-  syllabus.ts           áreas e tópicos padrão (estático, só semente)
-  topics.ts             lista de tópicos do usuário: criar, editar, ocultar, restaurar padrão
+  syllabus.ts           as cinco áreas do ENEM (sem tópicos prontos)
+  legacy-topics.ts      lista antiga de tópicos, só para migração, dados de exemplo e testes
+  topics.ts             tópicos criados pelo estudante: criar, editar, ocultar, excluir, filtrar
   dates.ts              chave YYYY-MM-DD local, addDays, mondayOf, shortDate
   reviews.ts            agendamento, conclusão, adiamento e reagendamento de revisões
   sessions.ts           criação e validação de sessões
@@ -84,9 +85,9 @@ type AreaId = 'mat' | 'lin' | 'nat' | 'hum' | 'red';
 type TopicStatus = 'nao' | 'and' | 'concluido' | 'revisar';
 type Priority = 'alta' | 'media' | 'baixa';
 
-interface TopicRecord {                      // tópicos padrão e personalizados, na ordem de exibição
+interface TopicRecord {                      // criados pelo estudante, na ordem de criação
   id: string; areaId: AreaId; name: string; description: string;
-  priority: Priority; hidden: boolean; origin: 'padrao' | 'personalizado';
+  priority: Priority; hidden: boolean;
 }
 interface Review {
   stage: 1 | 2 | 3 | 4; due: string; done?: string;            // datas 'YYYY-MM-DD'
@@ -112,7 +113,8 @@ interface PlanTask {                         // uma matéria do dia, sem duraç�
 
 O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `sessions`, `tasks`, `timer`, a meta (`goal: { type: 'horas' | 'sessoes' | 'topicos'; value }`), as preferências de cronograma (dias de estudo de segunda a domingo, áreas prioritárias e difíceis, data-alvo, estratégia), o onboarding e as preferências de interface (tema, som, sequência visível).
 
-- IDs estáveis. Tópicos padrão mantêm `${areaId}-${índice}` (`mat-3`); personalizados usam `custom-…`. Nunca use o nome como chave.
+- IDs estáveis. Tópicos novos usam `custom-…`; os que vieram da lista antiga mantêm `${areaId}-${índice}` (`mat-3`). Nunca use o nome como chave.
+- Ao carregar dados antigos, os tópicos padrão que nunca foram usados (sem progresso, sessão nem tarefa) são descartados; os usados ficam.
 - Chave do `localStorage`: `enem-flow:v2`. Se ela não existir, migre de `enem-flow:v1` (formato do protótipo) e deixe a v1 intacta como cópia de segurança.
 - JSON corrompido: guarde o texto bruto em `enem-flow:v2:corrompido` e comece do zero sem quebrar a aplicação.
 - Falha ao salvar (cota, modo privado): avise na interface e ofereça tentar de novo.
@@ -120,10 +122,9 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 ## Regras de negócio
 
 **Matérias**
-- Os 44 tópicos padrão aparecem sem cadastro. São uma estrutura de organização, não o conteúdo oficial do ENEM.
-- O estudante pode criar, editar, ocultar e reexibir tópicos; só os personalizados podem ser excluídos, com confirmação, e a exclusão não apaga sessões (elas passam a aparecer como "Tópico excluído").
+- O app não traz tópicos prontos, só as cinco áreas: Matemática, Linguagens, Ciências da Natureza, Ciências Humanas e Redação. O estudante decide o que estuda e quanto estuda.
+- O estudante cria, edita, oculta, reexibe e exclui tópicos (excluir pede confirmação e não apaga sessões, que passam a aparecer como "Tópico excluído").
 - Ocultar não apaga sessões, revisões nem progresso; tópicos ocultos saem das listas e do cronograma até serem reexibidos.
-- "Restaurar lista padrão" reexibe os padrões ocultos e devolve nome, descrição e área originais. Antes, mostra o que vai mudar e pede confirmação. Não duplica nem mexe em personalizados, progresso ou histórico.
 - Busca por nome; filtros por área, status e prioridade; ordenação por nome, prioridade, status ou próxima revisão.
 
 **Revisão espaçada**
@@ -141,7 +142,7 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 - Fim da pausa: volta para foco, parado, oferecendo o próximo bloco.
 - Finalizar: registra o tempo decorrido se for de pelo menos 1 minuto (no Pomodoro antes do fim do bloco, a sessão fica "interrompida") e zera o timer. Descartar zera sem registrar. Clicar várias vezes nunca duplica a sessão.
 - Pausas nunca contam como estudo.
-- É preciso escolher o que estudar: um tópico ou "Estudo geral" (sem área).
+- É preciso escolher o que estudar: um tópico, uma área inteira sem tópico (valor `area:<id>`, exibido como "Matemática (geral)") ou "Estudo geral" (sem área).
 - Registrar uma sessão num tópico "Não iniciado" muda o status para "Em andamento". Sessão concluída nunca marca o tópico como concluído.
 - Depois de registrar, ofereça a reflexão opcional (Entendi bem, Entendi parcialmente, Preciso revisar, Tive dificuldade). As duas últimas sugerem marcar o tópico como "Precisa revisar".
 - Não deixa trocar de modo ou de duração com sessão em andamento.
@@ -149,14 +150,14 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 
 **Cronograma**
 - O cronograma organiza, não limita: não existe duração por matéria nem limite de horas. A pessoa escolhe só em quais dias estuda (dias de estudo), as áreas prioritárias e difíceis, a data-alvo opcional e a estratégia (equilibrada ou foco nas prioridades).
-- Cada dia de estudo recebe **no máximo 2 matérias** (revisões contam como matéria). Estudar as duas não é obrigatório.
+- Cada dia de estudo recebe **no máximo 2 matérias** (revisões contam como matéria), **sempre da mesma área**: dia de Matemática tem até duas de Matemática, nunca Matemática e Linguagens. Estudar as duas não é obrigatório.
 - Ordem de escolha: revisões vencidas ou do dia, tópicos "Precisa revisar", "Em andamento" e "Não iniciado", pesando prioridade do tópico, áreas prioritárias e áreas pouco contempladas na semana. Tópicos ocultos e concluídos ficam de fora. O que não couber na semana aparece como pendente.
 - Regenerar mantém tarefas concluídas, iniciadas, manuais, repetições e transferidas; substitui só as geradas e ainda planejadas a partir de hoje. Antes, mostra quantas serão trocadas.
 - Começar uma matéria abre o Timer no cronômetro, sem limite de tempo. O foco registrado com a tarefa ativa soma em `focusSec` e a tarefa fica "iniciada". O tempo nunca conclui a tarefa.
 - Ao terminar, o app pergunta "Você sente que dominou?". **Dominei**: a tarefa conclui e o tópico vira Concluído (agendando as revisões) ou, se era revisão, a revisão é concluída. **Ainda não dominei**: a tarefa do dia fecha e a matéria é repetida no próximo dia de estudo (de preferência amanhã).
 - O que ficou sem estudar em dias anteriores passa **sozinho** para o próximo dia de estudo, ao abrir o app, com um aviso. Sem linguagem de culpa.
 - Repetições e transferências respeitam o limite de 2 por dia: se o dia já está cheio, uma tarefa gerada e ainda não começada sai para dar lugar; tarefas manuais, iniciadas ou concluídas nunca saem. Sem dia livre em duas semanas, a tarefa fica adiada.
-- A pessoa ainda pode mover uma matéria para outro dia (com menos de 2), baixar a prioridade ou deixar para outra semana.
+- A pessoa ainda pode mover ou adicionar uma matéria em outro dia (com menos de 2 e da mesma área), baixar a prioridade ou deixar para outra semana.
 - Quem não quiser cronograma usa o app manualmente.
 
 **Painel**
@@ -170,7 +171,7 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 - Na primeira visita (sem nada salvo), carregue dados de exemplo e mostre um aviso com "Apagar e começar do zero". A confirmação acontece na própria interface (dois cliques), sem `window.confirm`.
 
 **Gratuito e Pro**
-- Gratuito: tópicos, personalização, status, timer, sessões, revisões, progresso, meta semanal e Painel. Nunca bloqueie isso.
+- Gratuito: áreas e tópicos, status, timer, sessões, revisões, progresso, meta semanal e Painel. Nunca bloqueie isso.
 - Pro experimental, R$ 19,90/mês: cronograma avançado, reorganização sugerida, estatísticas detalhadas. Sem provedor de pagamento e sem backend, tudo fica liberado durante o teste e a tela de planos diz isso com transparência. O acesso Pro nunca é decidido só pelo frontend em produção (`lib/plan.ts`).
 
 **Métricas de validação**
@@ -256,5 +257,5 @@ Recriado em texto, nunca como imagem: "FLOW" em Saira itálico 800, `font-stretc
 
 - Todas as telas funcionam nos dois temas, em 400px e em 1440px, sem rolagem horizontal.
 - `npm run build`, `npm run lint` e `npm test` passam.
-- Testes cobrem: revisões (agendar, reagendar, adiar, feedback), tópicos (criar, editar, ocultar, restaurar sem duplicar), sessões (sem duplicar, sem pausa), cronograma (no máximo 2 matérias por dia, só em dias de estudo, regenera sem perder concluídas, repete o que não foi dominado, transfere o que não foi estudado sem passar de 2 por dia), estatísticas e migração v1 → v2.
+- Testes cobrem: revisões (agendar, reagendar, adiar, feedback), tópicos (criar, editar, ocultar, excluir), migração (descarta padrões não usados), sessões (sem duplicar, sem pausa), cronograma (no máximo 2 matérias por dia e da mesma área, só em dias de estudo, regenera sem perder concluídas, repete o que não foi dominado, transfere o que não foi estudado sem passar de 2 por dia), estatísticas e migração v1 → v2.
 - O `README.md` explica como rodar, onde os dados ficam e o que depende de configuração externa.

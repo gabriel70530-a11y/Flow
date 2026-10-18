@@ -4,6 +4,7 @@ import {
   MAX_TOPICS_PER_DAY,
   applyFocusToTask,
   carryOverMissed,
+  dayConflict,
   generatePlan,
   lowerPriority,
   missedTasks,
@@ -18,7 +19,9 @@ import {
   type PlannerSettings,
 } from "./planner";
 import { EMPTY_PROGRESS, changeStatus, type ProgressMap } from "./reviews";
-import { defaultTopics, setTopicHidden, updateTopic } from "./topics";
+import type { AreaId } from "./syllabus";
+import { legacyTopics } from "./legacy-topics";
+import { setTopicHidden, updateTopic } from "./topics";
 
 // 2026-10-16 é sexta-feira. Estuda de segunda a sábado; domingo é livre.
 const today = "2026-10-16";
@@ -31,14 +34,15 @@ function idGenerator() {
 }
 
 function context(overrides: Partial<PlanContext> = {}): PlanContext {
-  return { today, topics: defaultTopics(), progress: {}, tasks: [], settings, newId: idGenerator(), ...overrides };
+  return { today, topics: legacyTopics(), progress: {}, tasks: [], settings, newId: idGenerator(), ...overrides };
 }
 
 function task(overrides: Partial<PlanTask>): PlanTask {
+  const topicId = overrides.topicId ?? "mat-0";
   return {
     id: "x",
-    topicId: "mat-0",
-    areaId: "mat",
+    topicId,
+    areaId: topicId ? (topicId.split("-")[0] as AreaId) : null,
     kind: "estudo",
     date: today,
     priority: "media",
@@ -49,17 +53,27 @@ function task(overrides: Partial<PlanTask>): PlanTask {
   };
 }
 
+function areasOn(tasks: readonly PlanTask[], date: string): Set<AreaId | null> {
+  return new Set(tasks.filter((item) => item.date === date && item.status !== "adiada").map((item) => item.areaId));
+}
+
+function expectOneAreaPerDay(tasks: readonly PlanTask[]) {
+  for (const date of week) {
+    expect(topicsOn(tasks, date)).toBeLessThanOrEqual(MAX_TOPICS_PER_DAY);
+    expect(areasOn(tasks, date).size).toBeLessThanOrEqual(1);
+  }
+}
+
 describe("generatePlan", () => {
-  it("puts at most two topics on each study day and none on rest days", () => {
+  it("puts up to two topics of the same area on each study day and none on rest days", () => {
     const { tasks } = generatePlan(context());
-    for (const date of week) {
-      expect(topicsOn(tasks, date)).toBe(date === "2026-10-18" ? 0 : MAX_TOPICS_PER_DAY);
-    }
-    expect(tasks).toHaveLength(12);
+    expectOneAreaPerDay(tasks);
+    expect(topicsOn(tasks, "2026-10-18")).toBe(0);
+    expect(topicsOn(tasks, today)).toBe(MAX_TOPICS_PER_DAY);
   });
 
   it("schedules a topic at most once and leaves hidden and concluded topics out", () => {
-    const topics = setTopicHidden(defaultTopics(), "mat-0", true);
+    const topics = setTopicHidden(legacyTopics(), "mat-0", true);
     const progress: ProgressMap = { "mat-1": changeStatus(EMPTY_PROGRESS, "concluido", "2026-09-01") };
     const { tasks } = generatePlan(context({ topics, progress }));
     const studyIds = tasks.filter((item) => item.kind === "estudo").map((item) => item.topicId);
@@ -68,29 +82,34 @@ describe("generatePlan", () => {
     expect(studyIds).not.toContain("mat-1");
   });
 
-  it("puts overdue and due reviews first, on the first study day from their date", () => {
+  it("puts due reviews first and keeps the rest of their day in the same area", () => {
     const progress: ProgressMap = {
       "hum-1": changeStatus(EMPTY_PROGRESS, "concluido", "2026-10-01"),
       "lin-0": changeStatus(EMPTY_PROGRESS, "concluido", "2026-10-17"),
     };
-    const reviews = generatePlan(context({ progress })).added.filter((item) => item.kind === "revisao");
+    const { tasks, added } = generatePlan(context({ progress }));
+    const reviews = added.filter((item) => item.kind === "revisao");
     // A revisão de lin-0 vence no domingo, dia livre: vai para segunda.
     expect(reviews.map((item) => [item.topicId, item.date])).toEqual([
       ["hum-1", today],
       ["lin-0", "2026-10-19"],
     ]);
+    expect(areasOn(tasks, today)).toEqual(new Set(["hum"]));
+    expect(areasOn(tasks, "2026-10-19")).toEqual(new Set(["lin"]));
   });
 
   it("prefers topics that need review, are in progress or have high priority", () => {
-    const topics = updateTopic(defaultTopics(), "red-6", { name: "Repertório sociocultural", areaId: "red", description: "", priority: "alta" });
+    const topics = updateTopic(legacyTopics(), "lin-5", { name: "Escolas literárias", areaId: "lin", description: "", priority: "alta" });
     const progress: ProgressMap = { "nat-9": { status: "revisar", mastery: 1, reviews: [] } };
     const { added } = generatePlan(context({ topics, progress }));
-    expect(added.slice(0, 2).map((item) => item.topicId).sort()).toEqual(["nat-9", "red-6"]);
+    expect(added[0]).toMatchObject({ topicId: "nat-9", date: today });
+    expect(added.find((item) => item.topicId === "lin-5")?.date).toBe("2026-10-17");
   });
 
-  it("spreads areas in the balanced strategy and focuses on priority areas otherwise", () => {
+  it("rotates areas across days in the balanced strategy and focuses on priority areas otherwise", () => {
     const balanced = generatePlan(context()).added;
-    expect(new Set(balanced.slice(0, 5).map((item) => item.areaId)).size).toBe(5);
+    const firstDays = [today, "2026-10-17", "2026-10-19", "2026-10-20", "2026-10-21"];
+    expect(new Set(firstDays.map((date) => [...areasOn(balanced, date)][0])).size).toBe(5);
 
     const focused = generatePlan(context({ settings: { ...settings, strategy: "prioridades", difficultAreas: ["nat"] } })).added;
     expect(focused.filter((item) => item.areaId === "nat").length).toBeGreaterThan(
@@ -102,9 +121,9 @@ describe("generatePlan", () => {
     const tasks = [
       task({ id: "done", status: "concluida", topicId: "mat-0" }),
       task({ id: "started", status: "iniciada", topicId: "mat-1" }),
-      task({ id: "manual", origin: "manual", topicId: "mat-2", date: "2026-10-19" }),
-      task({ id: "repeat", origin: "repeticao", topicId: "mat-5", date: "2026-10-20" }),
-      task({ id: "carried", origin: "transferida", topicId: "mat-6", date: "2026-10-20" }),
+      task({ id: "manual", origin: "manual", topicId: "lin-2", date: "2026-10-19" }),
+      task({ id: "repeat", origin: "repeticao", topicId: "nat-5", date: "2026-10-20" }),
+      task({ id: "carried", origin: "transferida", topicId: "nat-6", date: "2026-10-20" }),
       task({ id: "past", date: "2026-10-14", topicId: "mat-3" }),
       task({ id: "old-plan", date: "2026-10-21", topicId: "mat-4" }),
     ];
@@ -113,9 +132,10 @@ describe("generatePlan", () => {
     expect(ids).toEqual(expect.arrayContaining(["done", "started", "manual", "repeat", "carried", "past"]));
     expect(ids).not.toContain("old-plan");
     expect(result.removed.map((item) => item.id)).toEqual(["old-plan"]);
-    expect(result.added.map((item) => item.topicId)).not.toContain("mat-1");
-    // Hoje e terça já têm duas matérias mantidas: nada novo entra nesses dias.
     expect(result.added.filter((item) => item.date === today || item.date === "2026-10-20")).toEqual([]);
+    // Segunda já tem uma matéria manual de Linguagens: a segunda vaga é de Linguagens.
+    expect(areasOn(result.tasks, "2026-10-19")).toEqual(new Set(["lin"]));
+    expectOneAreaPerDay(result.tasks);
   });
 
   it("is stable: regenerating twice gives the same plan without duplicates", () => {
@@ -132,8 +152,8 @@ describe("generatePlan", () => {
       "nat-3": { status: "and", mastery: 2, reviews: [] },
     };
     const result = generatePlan(context({ settings: onlySunday, progress }));
-    expect(result.added).toHaveLength(2);
-    expect(result.leftovers.map((item) => item.topicId)).toHaveLength(1);
+    expect(result.added.map((item) => item.areaId)).toEqual(["mat", "mat"]);
+    expect(result.leftovers.map((item) => item.topicId)).toEqual(["lin-3", "nat-3"]);
   });
 });
 
@@ -142,7 +162,7 @@ describe("repeatNextDay", () => {
     const original = task({ id: "a", status: "concluida" });
     const { repeat, displaced, tasks } = repeatNextDay([original], original, settings, today, idGenerator());
     expect(repeat).toMatchObject({ topicId: "mat-0", date: "2026-10-17", origin: "repeticao", status: "planejada", focusSec: 0 });
-    expect(displaced).toBeNull();
+    expect(displaced).toEqual([]);
     expect(tasks).toHaveLength(2);
   });
 
@@ -151,30 +171,42 @@ describe("repeatNextDay", () => {
     expect(repeatNextDay([saturday], saturday, settings, "2026-10-17", idGenerator()).repeat.date).toBe("2026-10-19");
   });
 
-  it("takes the place of a generated task when tomorrow already has two topics", () => {
-    const original = task({ id: "a", status: "concluida" });
-    const tomorrow = [task({ id: "b", date: "2026-10-17", topicId: "lin-0" }), task({ id: "c", date: "2026-10-17", topicId: "nat-0" })];
-    const result = repeatNextDay([original, ...tomorrow], original, settings, today, idGenerator());
-    expect(result.repeat.date).toBe("2026-10-17");
-    expect(result.displaced?.id).toBe("c");
-    expect(topicsOn(result.tasks, "2026-10-17")).toBe(2);
-  });
-
-  it("never pushes out manual or started tasks and moves on to the next day", () => {
+  it("takes a spot on a full day of the same area, bumping a study task before a review", () => {
     const original = task({ id: "a", status: "concluida" });
     const tomorrow = [
-      task({ id: "b", date: "2026-10-17", origin: "manual", topicId: "lin-0" }),
-      task({ id: "c", date: "2026-10-17", status: "iniciada", topicId: "nat-0" }),
+      task({ id: "study", date: "2026-10-17", topicId: "mat-4" }),
+      task({ id: "review", date: "2026-10-17", topicId: "mat-5", kind: "revisao" }),
     ];
+    const result = repeatNextDay([original, ...tomorrow], original, settings, today, idGenerator());
+    expect(result.repeat.date).toBe("2026-10-17");
+    expect(result.displaced.map((item) => item.id)).toEqual(["study"]);
+    expect(result.tasks.find((item) => item.id === "study")).toMatchObject({ date: "2026-10-19", origin: "transferida" });
+    expectOneAreaPerDay(result.tasks);
+  });
+
+  it("turns tomorrow into a day of its area when tomorrow only has untouched generated tasks", () => {
+    const original = task({ id: "a", status: "concluida" });
+    const tomorrow = [task({ id: "b", date: "2026-10-17", topicId: "lin-0" }), task({ id: "c", date: "2026-10-17", topicId: "lin-1" })];
+    const result = repeatNextDay([original, ...tomorrow], original, settings, today, idGenerator());
+    expect(result.repeat.date).toBe("2026-10-17");
+    expect(result.displaced.map((item) => item.id)).toEqual(["b", "c"]);
+    expect(areasOn(result.tasks, "2026-10-17")).toEqual(new Set(["mat"]));
+    expect(result.tasks.filter((item) => item.areaId === "lin").every((item) => item.date === "2026-10-19")).toBe(true);
+    expectOneAreaPerDay(result.tasks);
+  });
+
+  it("never pushes out manual or started tasks of another area and moves on to the next day", () => {
+    const original = task({ id: "a", status: "concluida" });
+    const tomorrow = [task({ id: "b", date: "2026-10-17", origin: "manual", topicId: "lin-0" })];
     expect(repeatNextDay([original, ...tomorrow], original, settings, today, idGenerator()).repeat.date).toBe("2026-10-19");
   });
 });
 
 describe("carryOverMissed", () => {
-  it("moves topics not studied on past days to the next study day, without being required", () => {
+  it("moves topics not studied on past days to the next study day of the same area", () => {
     const tasks = [
       task({ id: "a", date: "2026-10-14", topicId: "mat-3" }),
-      task({ id: "b", date: "2026-10-15", status: "iniciada", focusSec: 600, topicId: "lin-3" }),
+      task({ id: "b", date: "2026-10-15", status: "iniciada", focusSec: 600, topicId: "mat-4" }),
       task({ id: "done", date: "2026-10-15", status: "concluida", topicId: "nat-3" }),
     ];
     expect(missedTasks(tasks, today).map((item) => item.id)).toEqual(["a", "b"]);
@@ -188,17 +220,19 @@ describe("carryOverMissed", () => {
     expect(missedTasks(result, today)).toEqual([]);
   });
 
-  it("does not overload today: extra topics go to the following study days", () => {
+  it("never mixes areas or overloads a day", () => {
     const tasks = [
       task({ id: "m1", date: "2026-10-15", topicId: "mat-1" }),
+      task({ id: "l1", date: "2026-10-15", topicId: "lin-1" }),
       task({ id: "m2", date: "2026-10-15", topicId: "mat-2" }),
-      task({ id: "m3", date: "2026-10-15", topicId: "mat-3" }),
-      task({ id: "today", date: today, origin: "manual", topicId: "lin-0" }),
+      task({ id: "today", date: today, origin: "manual", topicId: "nat-0" }),
     ];
     const { tasks: result } = carryOverMissed(tasks, settings, today);
-    for (const date of week) expect(topicsOn(result, date)).toBeLessThanOrEqual(MAX_TOPICS_PER_DAY);
-    expect(result.find((item) => item.id === "m1")?.date).toBe(today);
+    expectOneAreaPerDay(result);
+    expect(areasOn(result, today)).toEqual(new Set(["nat"]));
+    expect(result.find((item) => item.id === "m1")?.date).toBe("2026-10-17");
     expect(result.find((item) => item.id === "m2")?.date).toBe("2026-10-17");
+    expect(result.find((item) => item.id === "l1")?.date).toBe("2026-10-19");
   });
 
   it("does nothing when there is nothing to move", () => {
@@ -208,12 +242,22 @@ describe("carryOverMissed", () => {
 });
 
 describe("moving and validating", () => {
-  const tasks = [task({ id: "a" }), task({ id: "b", topicId: "lin-0" })];
+  const tasks = [task({ id: "a" }), task({ id: "b", topicId: "mat-1" })];
 
-  it("suggests the first study day with fewer than two topics", () => {
-    expect(suggestDay(tasks, settings, today)).toBe("2026-10-17");
-    expect(suggestDay(tasks, settings, today, "a")).toBe(today);
-    expect(suggestDay(tasks, { ...settings, studyDays: Array(7).fill(false) }, today)).toBeNull();
+  it("suggests the first study day of the same area (or empty) with fewer than two topics", () => {
+    expect(suggestDay(tasks, settings, today, "mat")).toBe("2026-10-17");
+    expect(suggestDay(tasks, settings, today, "mat", "a")).toBe(today);
+    expect(suggestDay([task({ id: "c", topicId: "lin-0" })], settings, today, "mat")).toBe("2026-10-17");
+    expect(suggestDay(tasks, { ...settings, studyDays: Array(7).fill(false) }, today, "mat")).toBeNull();
+  });
+
+  it("explains why a topic does not fit a day", () => {
+    const single = [task({ id: "a" })];
+    expect(dayConflict(single, today, "mat")).toBeNull();
+    expect(dayConflict(single, today, "lin")).toMatch(/Esse dia é de Matemática/);
+    expect(dayConflict(single, today, null)).toBeNull();
+    expect(dayConflict(tasks, today, "mat")).toMatch(/já tem 2 matérias/);
+    expect(dayConflict(tasks, today, "mat", "a")).toBeNull();
   });
 
   it("moves a task to a date or to another week", () => {
@@ -241,31 +285,5 @@ describe("moving and validating", () => {
     const started = applyFocusToTask([task({ id: "a" })], "a", 7200);
     expect(started[0]).toMatchObject({ status: "iniciada", focusSec: 7200 });
     expect(applyFocusToTask(started, "a", 7200)[0]).toMatchObject({ status: "iniciada", focusSec: 14400 });
-  });
-});
-
-describe("displaced tasks", () => {
-  it("move forward to the next study day instead of disappearing", () => {
-    const original = task({ id: "a", status: "concluida" });
-    const tomorrow = [task({ id: "b", date: "2026-10-17", topicId: "lin-0" }), task({ id: "c", date: "2026-10-17", topicId: "nat-0" })];
-    const monday = [task({ id: "d", date: "2026-10-19", topicId: "hum-0" })];
-    const result = repeatNextDay([original, ...tomorrow, ...monday], original, settings, today, idGenerator());
-    expect(result.displaced?.id).toBe("c");
-    expect(result.tasks.find((item) => item.id === "c")).toMatchObject({ date: "2026-10-19", origin: "transferida" });
-    expect(result.tasks).toHaveLength(5);
-    for (const date of week) expect(topicsOn(result.tasks, date)).toBeLessThanOrEqual(MAX_TOPICS_PER_DAY);
-  });
-});
-
-describe("making room", () => {
-  it("bumps a study task before a review", () => {
-    const original = task({ id: "a", status: "concluida" });
-    const tomorrow = [
-      task({ id: "study", date: "2026-10-17", topicId: "lin-0" }),
-      task({ id: "review", date: "2026-10-17", topicId: "nat-0", kind: "revisao" }),
-    ];
-    const result = repeatNextDay([original, ...tomorrow], original, settings, today, idGenerator());
-    expect(result.displaced?.id).toBe("study");
-    expect(result.tasks.find((item) => item.id === "review")?.date).toBe("2026-10-17");
   });
 });

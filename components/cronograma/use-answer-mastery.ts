@@ -29,7 +29,8 @@ export function useAnswerMastery() {
       return;
     }
     const when = dayLabel(result.repeat.date, toDateKey(new Date())).toLowerCase();
-    const displaced = result.displaced ? ` ${taskTitle(result.displaced, topics)} passou para o próximo dia com vaga.` : "";
+    const movedNames = result.displaced.map((item) => taskTitle(item, topics)).join(" e ");
+    const displaced = movedNames ? ` ${movedNames} ${result.displaced.length === 1 ? "passou" : "passaram"} para frente.` : "";
     showToast(`Sem problema: ${name} volta ${when === "amanhã" ? "amanhã" : `em ${when}`}.${displaced}`);
   };
 }

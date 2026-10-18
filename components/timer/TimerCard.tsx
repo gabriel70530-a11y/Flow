@@ -8,7 +8,7 @@ import { NumberInput } from "@/components/ui/NumberInput";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Segmented } from "@/components/ui/Segmented";
 import { showToast } from "@/components/ui/Toast";
-import { GENERAL_STUDY } from "@/lib/sessions";
+import { GENERAL_STUDY, areaStudyValue, parseStudyChoice } from "@/lib/sessions";
 import { formatDuration } from "@/lib/stats";
 import { AREAS } from "@/lib/syllabus";
 import { clockText, displaySeconds, elapsed, isIdle, phaseSeconds, type TimerMode } from "@/lib/timer";
@@ -104,13 +104,14 @@ export function TimerCard() {
           onChange={(event) => actions.setTimerTopic(event.target.value)}
           className="h-[42px] w-full rounded-lg border border-line bg-surface px-2.5 text-[15px] font-normal text-text"
         >
-          <option value="">Escolha um tópico</option>
-          <option value={GENERAL_STUDY}>Estudo geral (sem tópico)</option>
-          {timer.topicId && timer.topicId !== GENERAL_STUDY && !selected && (
+          <option value="">Escolha uma área ou tópico</option>
+          <option value={GENERAL_STUDY}>Estudo geral (sem área)</option>
+          {timer.topicId && parseStudyChoice(timer.topicId, topics).topicId && !selected && (
             <option value={timer.topicId}>Tópico excluído</option>
           )}
           {AREAS.map((area) => (
             <optgroup key={area.id} label={area.name}>
+              <option value={areaStudyValue(area.id)}>{area.name} (geral)</option>
               {selectable
                 .filter((topic) => topic.areaId === area.id)
                 .map((topic) => (

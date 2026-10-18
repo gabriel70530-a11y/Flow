@@ -47,6 +47,7 @@ function OnboardingSteps() {
   const router = useRouter();
   const stored = useStudyStore((state) => state.planner);
   const storedMode = useStudyStore((state) => state.onboarding.planMode);
+  const hasTopics = useStudyStore((state) => state.topics.some((topic) => !topic.hidden));
   const { finishOnboarding, skipOnboarding } = useStudyStore.getState();
   const [step, setStep] = useState(0);
   const [settings, setSettings] = useState<PlannerSettings>(stored);
@@ -79,6 +80,11 @@ function OnboardingSteps() {
     const result = finishOnboarding(settings, planMode);
     if (result) {
       setError(result);
+      return;
+    }
+    if (planMode === "sugerido" && !hasTopics) {
+      showToast("Preferências salvas. Crie seus tópicos para gerar o plano.");
+      router.push("/materias");
       return;
     }
     showToast(planMode === "sugerido" ? "Plano criado. Ajuste o que quiser." : "Preferências salvas.");

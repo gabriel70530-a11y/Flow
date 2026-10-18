@@ -11,9 +11,10 @@ import {
   scheduleReviews,
   type TopicProgress,
 } from "./reviews";
-import { defaultTopics, setTopicHidden } from "./topics";
+import { legacyTopics } from "./legacy-topics";
+import { setTopicHidden } from "./topics";
 
-const topics = defaultTopics();
+const topics = legacyTopics();
 
 const today = "2026-10-16";
 

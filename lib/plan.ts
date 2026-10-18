@@ -9,7 +9,7 @@ export interface Entitlement {
 export const PRO_PRICE = "R$ 19,90/mês";
 
 export const FREE_FEATURES = [
-  "Matérias e tópicos prontos, com tópicos personalizados",
+  "As cinco áreas do ENEM, com os tópicos que você criar",
   "Status, prioridade e nível de domínio por tópico",
   "Timer Pomodoro e cronômetro com registro de sessões",
   "Revisões espaçadas de 1, 7, 15 e 30 dias",

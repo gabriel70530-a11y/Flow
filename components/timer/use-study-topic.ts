@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { showToast } from "@/components/ui/Toast";
 import type { PlanTask } from "@/lib/planner";
-import { GENERAL_STUDY } from "@/lib/sessions";
+import { GENERAL_STUDY, areaStudyValue } from "@/lib/sessions";
 import { useStudyStore } from "@/store/study-store";
 
 // Leva para o Timer já com o tópico (e, vindo do cronograma, com a tarefa no cronômetro, sem limite de tempo).
@@ -12,7 +12,8 @@ export function useStudyTopic() {
   const studyTopic = useStudyStore((state) => state.studyTopic);
 
   return (topicId: string | null, task?: PlanTask) => {
-    if (!studyTopic(topicId ?? GENERAL_STUDY, task?.id)) {
+    const choice = topicId ?? (task?.areaId ? areaStudyValue(task.areaId) : GENERAL_STUDY);
+    if (!studyTopic(choice, task?.id)) {
       showToast("Finalize ou descarte a sessão em andamento primeiro.");
       return false;
     }

@@ -78,6 +78,10 @@ export function CronogramaScreen() {
   };
 
   const requestPlan = () => {
+    if (!topics.some((topic) => !topic.hidden)) {
+      showToast("Crie seus tópicos em Matérias para gerar o plano.");
+      return;
+    }
     const result = generatePlan({ today, topics, progress, tasks, settings: planner, newId: () => "" });
     if (result.removed.length === 0) apply();
     else setPreview({ added: result.added.length, removed: result.removed.length });

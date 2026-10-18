@@ -12,7 +12,7 @@ import {
   topicCounts,
   weekDays,
 } from "./stats";
-import { defaultTopics } from "./topics";
+import { legacyTopics } from "./legacy-topics";
 import type { StudySession } from "./sessions";
 import type { AreaId } from "./syllabus";
 
@@ -156,7 +156,7 @@ describe("goals and summaries", () => {
   });
 
   it("counts visible topics by status", () => {
-    const topics = defaultTopics().map((topic) => (topic.id === "mat-3" ? { ...topic, hidden: true } : topic));
+    const topics = legacyTopics().map((topic) => (topic.id === "mat-3" ? { ...topic, hidden: true } : topic));
     expect(topicCounts(progress, topics)).toEqual({ total: 43, concluded: 2, inProgress: 1, needsReview: 0 });
   });
 });

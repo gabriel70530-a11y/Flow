@@ -6,13 +6,8 @@ import { Drawer, DrawerSection } from "@/components/ui/Drawer";
 import { Field, inputStyles } from "@/components/ui/Field";
 import { showToast } from "@/components/ui/Toast";
 import { useStudyTopic } from "@/components/timer/use-study-topic";
-import { dayLabel, isDateKey } from "@/lib/dates";
-import {
-  MAX_TOPICS_PER_DAY,
-  suggestDay,
-  topicsOn,
-  type PlanTask,
-} from "@/lib/planner";
+import { dayLabel } from "@/lib/dates";
+import { suggestDay, type PlanTask } from "@/lib/planner";
 import { useStudyStore } from "@/store/study-store";
 import { taskDetails, taskStatusLabel, taskTitle } from "./task-format";
 import { useAnswerMastery } from "./use-answer-mastery";
@@ -41,7 +36,7 @@ export function TaskDrawer({ task, today, onClose }: TaskDrawerProps) {
     onClose();
   };
   const done = task.status === "concluida";
-  const suggestion = done ? null : suggestDay(tasks, planner, today, task.id);
+  const suggestion = done ? null : suggestDay(tasks, planner, today, task.areaId, task.id);
   const act = (message: string, action: () => void) => {
     action();
     showToast(message);
@@ -51,15 +46,13 @@ export function TaskDrawer({ task, today, onClose }: TaskDrawerProps) {
   const moveTo = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const date = String(new FormData(event.currentTarget).get("date") ?? "");
-    if (!isDateKey(date) || date < today) {
-      setError("Escolha hoje ou uma data futura.");
+    const problem = moveTask(task.id, date);
+    if (problem) {
+      setError(problem);
       return;
     }
-    if (topicsOn(tasks.filter((other) => other.id !== task.id), date) >= MAX_TOPICS_PER_DAY) {
-      setError("Esse dia já tem 2 matérias. Escolha outro dia.");
-      return;
-    }
-    act(`Tarefa movida para ${dayLabel(date, today).toLowerCase()}.`, () => moveTask(task.id, date));
+    showToast(`Tarefa movida para ${dayLabel(date, today).toLowerCase()}.`);
+    close();
   };
 
   const remove = () => {
@@ -91,7 +84,7 @@ export function TaskDrawer({ task, today, onClose }: TaskDrawerProps) {
           )}
           {!suggestion && (
             <p className="text-[13px] text-muted">
-              Os próximos dias de estudo já têm 2 matérias. Escolha uma data ou deixe para
+              Os próximos dias de estudo já estão cheios ou são de outra área. Escolha uma data ou deixe para
               depois.
             </p>
           )}

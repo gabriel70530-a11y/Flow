@@ -1,13 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { legacyTopics } from "./legacy-topics";
 import {
   EMPTY_FILTER,
   createTopic,
-  defaultTopics,
   deleteTopic,
   filterTopics,
   findTopic,
-  restoreDefaults,
-  restoreDefaultsChanges,
   setTopicHidden,
   sortTopics,
   updateTopic,
@@ -18,17 +16,8 @@ import {
 
 const input: TopicInput = { name: "Matrizes", areaId: "mat", description: "Determinantes também", priority: "alta" };
 
-describe("defaultTopics", () => {
-  it("seeds the 44 default topics with stable ids", () => {
-    const topics = defaultTopics();
-    expect(topics).toHaveLength(44);
-    expect(findTopic(topics, "mat-3")?.name).toBe("Probabilidade");
-    expect(new Set(topics.map((topic) => topic.id)).size).toBe(44);
-  });
-});
-
 describe("validateTopic", () => {
-  const topics = defaultTopics();
+  const topics = legacyTopics();
 
   it("requires a name", () => {
     expect(validateTopic({ ...input, name: "   " }, topics)).toBe("Dê um nome ao tópico.");
@@ -50,11 +39,14 @@ describe("validateTopic", () => {
 });
 
 describe("create, edit, hide and delete", () => {
-  const created = createTopic(defaultTopics(), input, "custom-1");
-
-  it("adds a custom topic with a trimmed name", () => {
-    expect(findTopic(created, "custom-1")).toMatchObject({ name: "Matrizes", origin: "personalizado", hidden: false });
+  it("starts from an empty list and adds a topic with a trimmed name", () => {
+    const created = createTopic([], { ...input, name: "  Matrizes " }, "custom-1");
+    expect(created).toEqual([
+      { id: "custom-1", areaId: "mat", name: "Matrizes", description: "Determinantes também", priority: "alta", hidden: false },
+    ]);
   });
+
+  const created = createTopic(legacyTopics(), input, "custom-1");
 
   it("renames without changing the id", () => {
     const renamed = updateTopic(created, "mat-3", { ...input, name: "Probabilidade e estatística" });
@@ -68,45 +60,14 @@ describe("create, edit, hide and delete", () => {
     expect(findTopic(setTopicHidden(hidden, "mat-3", false), "mat-3")?.hidden).toBe(false);
   });
 
-  it("deletes only custom topics", () => {
-    expect(deleteTopic(created, "custom-1")).toHaveLength(44);
-    expect(deleteTopic(created, "mat-3")).toHaveLength(45);
-  });
-});
-
-describe("restoreDefaults", () => {
-  const edited = setTopicHidden(
-    updateTopic(createTopic(defaultTopics(), input, "custom-1"), "mat-3", { ...input, name: "Prob", priority: "baixa" }),
-    "lin-0",
-    true,
-  );
-
-  it("lists what will change before restoring", () => {
-    expect(restoreDefaultsChanges(edited).map(({ topic, changes }) => [topic.id, changes])).toEqual([
-      ["mat-3", ["nome", "descricao"]],
-      ["lin-0", ["reexibir"]],
-    ]);
-  });
-
-  it("restores names and visibility, keeps priority and custom topics, never duplicates", () => {
-    const restored = restoreDefaults(edited);
-    expect(restored).toHaveLength(45);
-    expect(findTopic(restored, "mat-3")).toMatchObject({ name: "Probabilidade", description: "", priority: "baixa" });
-    expect(findTopic(restored, "lin-0")?.hidden).toBe(false);
-    expect(findTopic(restored, "custom-1")?.name).toBe("Matrizes");
-    expect(restoreDefaults(restored)).toEqual(restored);
-    expect(restoreDefaultsChanges(restored)).toEqual([]);
-  });
-
-  it("adds back a default that is missing", () => {
-    const missing = defaultTopics().filter((topic) => topic.id !== "red-6");
-    expect(restoreDefaultsChanges(missing)).toEqual([{ topic: expect.objectContaining({ id: "red-6" }), changes: ["adicionar"] }]);
-    expect(restoreDefaults(missing)).toHaveLength(44);
+  it("deletes any topic", () => {
+    expect(findTopic(deleteTopic(created, "custom-1"), "custom-1")).toBeUndefined();
+    expect(deleteTopic(created, "mat-3")).toHaveLength(created.length - 1);
   });
 });
 
 describe("filterTopics and sortTopics", () => {
-  const topics = setTopicHidden(createTopic(defaultTopics(), input, "custom-1"), "mat-1", true);
+  const topics = setTopicHidden(createTopic(legacyTopics(), input, "custom-1"), "mat-1", true);
   const progress = {
     "mat-0": { status: "concluido" as const, mastery: 4 as const, reviews: [{ stage: 1 as const, due: "2026-10-20" }] },
     "mat-2": { status: "revisar" as const, mastery: 2 as const, reviews: [] },
@@ -127,13 +88,13 @@ describe("filterTopics and sortTopics", () => {
     expect(filterTopics(topics, progress, { ...EMPTY_FILTER, priority: "alta" }).map((topic) => topic.id)).toEqual(["custom-1"]);
   });
 
-  it("sorts by status, priority, name and next review", () => {
+  it("sorts by status, priority, name, next review and creation order", () => {
     const math = filterTopics(topics, progress, { ...EMPTY_FILTER, areaId: "mat" });
     expect(sortTopics(math, progress, "status").slice(0, 2).map((topic) => topic.id)).toEqual(["mat-2", "mat-3"]);
     expect(sortTopics(math, progress, "status").at(-1)?.id).toBe("mat-0");
     expect(sortTopics(math, progress, "prioridade")[0].id).toBe("custom-1");
     expect(sortTopics(math, progress, "nome")[0].name).toBe("Análise combinatória");
     expect(sortTopics(math, progress, "revisao").slice(0, 2).map((topic) => topic.id)).toEqual(["mat-3", "mat-0"]);
-    expect(sortTopics(math, progress, "padrao")).toEqual(math);
+    expect(sortTopics(math, progress, "criacao")).toEqual(math);
   });
 });

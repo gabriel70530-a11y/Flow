@@ -23,8 +23,8 @@ export default function TermosPage() {
       <section>
         <h2>Lista de tópicos</h2>
         <p>
-          Os tópicos iniciais são uma estrutura de organização por área e não representam o conteúdo oficial completo da prova.
-          Confira sempre o edital e as fontes oficiais.
+          O Flow traz só as cinco áreas do ENEM como organização. Os tópicos são criados por você e não representam o
+          conteúdo oficial da prova. Confira sempre o edital e as fontes oficiais.
         </p>
       </section>
       <section>

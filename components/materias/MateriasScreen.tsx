@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Search, Settings2 } from "lucide-react";
+import { EyeOff, Plus, Search } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
@@ -33,10 +33,10 @@ import { ManageTopicsDrawer } from "./ManageTopicsDrawer";
 import { TopicDrawer } from "./TopicDrawer";
 import { TopicForm } from "./TopicForm";
 
-const HINT = "Toque em um tópico para atualizar, editar ou ocultar.";
+const HINT = "Você decide o que estudar: crie os tópicos de cada área e toque em um para atualizar.";
 
 const SORT_LABELS: Record<TopicSort, string> = {
-  padrao: "Padrão",
+  criacao: "Criação",
   nome: "Nome",
   prioridade: "Prioridade",
   status: "Status",
@@ -51,9 +51,9 @@ export function MateriasScreen() {
   const allTopics = useStudyStore((state) => state.topics);
   const addTopic = useStudyStore((state) => state.addTopic);
   const [filter, setFilter] = useState<TopicFilter>(EMPTY_FILTER);
-  const [sort, setSort] = useState<TopicSort>("padrao");
+  const [sort, setSort] = useState<TopicSort>("criacao");
   const [openTopicId, setOpenTopicId] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
+  const [creatingIn, setCreatingIn] = useState<AreaId | null>(null);
   const [managing, setManaging] = useState(false);
   const closeDrawer = useCallback(() => setOpenTopicId(null), []);
   const updateFilter = (changes: Partial<TopicFilter>) => setFilter({ ...filter, ...changes });
@@ -74,14 +74,16 @@ export function MateriasScreen() {
   const concluded = visible.filter((topic) => progressOf(progress, topic.id).status === "concluido").length;
   const matches = sortTopics(filterTopics(allTopics, progress, filter), progress, sort);
   const filtering = JSON.stringify(filter) !== JSON.stringify(EMPTY_FILTER);
+  // Só a área escolhida ainda mostra todas as áreas, inclusive vazias; busca, status e prioridade escondem as sem resultado.
+  const narrowing = filter.query.trim() !== "" || filter.status !== "todos" || filter.priority !== "todas";
   const areaFilters = [{ id: "todas" as const, name: "Todas" }, ...AREAS];
+  const summary = visible.length
+    ? `${concluded} de ${visible.length} tópicos concluídos${hiddenCount ? ` · ${hiddenCount} ${hiddenCount === 1 ? "oculto" : "ocultos"}` : ""}. ${HINT}`
+    : "As cinco áreas do ENEM. Crie os tópicos que você quer estudar em cada uma.";
 
   return (
     <div className="grid gap-5">
-      <PageHeader
-        title="Matérias"
-        subtitle={`${concluded} de ${visible.length} tópicos concluídos${hiddenCount ? ` · ${hiddenCount} ${hiddenCount === 1 ? "oculto" : "ocultos"}` : ""}. ${HINT}`}
-      />
+      <PageHeader title="Matérias" subtitle={summary} />
 
       <div className="flex flex-wrap items-center gap-2">
         <label className="relative min-w-[200px] flex-1">
@@ -95,14 +97,16 @@ export function MateriasScreen() {
             className={`${inputStyles} pl-8`}
           />
         </label>
-        <Button variant="primary" onClick={() => setCreating(true)}>
+        <Button variant="primary" onClick={() => setCreatingIn(filter.areaId === "todas" ? "mat" : filter.areaId)}>
           <Plus size={16} aria-hidden />
           Novo tópico
         </Button>
-        <Button onClick={() => setManaging(true)}>
-          <Settings2 size={16} aria-hidden />
-          Gerenciar tópicos
-        </Button>
+        {hiddenCount > 0 && (
+          <Button onClick={() => setManaging(true)}>
+            <EyeOff size={16} aria-hidden />
+            Ocultos ({hiddenCount})
+          </Button>
+        )}
       </div>
 
       <div className="flex max-w-full gap-1.5 overflow-x-auto">
@@ -171,51 +175,53 @@ export function MateriasScreen() {
         )}
       </div>
 
-      {matches.length === 0 && (
+      {narrowing && matches.length === 0 && (
         <Card flush>
-          <EmptyState title={visible.length ? "Nenhum tópico encontrado" : "Nenhum tópico na lista"}>
-            {visible.length ? (
-              <>
-                Tente outro termo ou{" "}
-                <button type="button" onClick={() => setFilter(EMPTY_FILTER)} className="underline underline-offset-3">
-                  limpe os filtros
-                </button>
-                .
-              </>
-            ) : (
-              "Todos os tópicos estão ocultos. Reexiba alguns em Gerenciar tópicos ou crie um novo."
-            )}
+          <EmptyState title="Nenhum tópico encontrado">
+            Tente outro termo ou{" "}
+            <button type="button" onClick={() => setFilter(EMPTY_FILTER)} className="underline underline-offset-3">
+              limpe os filtros
+            </button>
+            .
           </EmptyState>
         </Card>
       )}
 
-      {AREAS.map((area) => {
+      {AREAS.filter((area) => filter.areaId === "todas" || area.id === filter.areaId).map((area) => {
         const areaTopics = visible.filter((topic) => topic.areaId === area.id);
         const shown = matches.filter((topic) => topic.areaId === area.id);
-        if (shown.length === 0) return null;
+        if (narrowing && shown.length === 0) return null;
         const done = areaTopics.filter((topic) => progressOf(progress, topic.id).status === "concluido").length;
         return (
           <Card key={area.id} flush>
             <CardHeader flush title={area.name} className="border-b border-line">
               <div className="flex items-center gap-3">
-                <span className="text-[13px] text-muted tabular-nums">
-                  {done}/{areaTopics.length}
-                  <span className="sr-only"> concluídos</span>
-                </span>
-                <ProgressBar
-                  thin
-                  value={areaTopics.length ? done / areaTopics.length : 0}
-                  className="hidden w-[120px] md:block"
-                />
+                {areaTopics.length > 0 && (
+                  <>
+                    <span className="text-[13px] text-muted tabular-nums">
+                      {done}/{areaTopics.length}
+                      <span className="sr-only"> concluídos</span>
+                    </span>
+                    <ProgressBar thin value={done / areaTopics.length} className="hidden w-[120px] md:block" />
+                  </>
+                )}
+                <Button onClick={() => setCreatingIn(area.id)} aria-label={`Adicionar tópico em ${area.name}`}>
+                  <Plus size={16} aria-hidden />
+                  Adicionar
+                </Button>
               </div>
             </CardHeader>
+            {shown.length === 0 && (
+              <p className="px-4 py-4 text-[13px] text-muted md:px-5">
+                Nenhum tópico em {area.name} ainda. Adicione o que você vai estudar, do jeito que preferir.
+              </p>
+            )}
             <ul>
               {shown.map((topic) => {
                 const topicProgress = progressOf(progress, topic.id);
                 const review = nextReview(topicProgress);
                 const details = [
                   topic.priority !== "media" && `Prioridade ${PRIORITY_LABELS[topic.priority].toLowerCase()}`,
-                  topic.origin === "personalizado" && "Personalizado",
                 ].filter(Boolean);
                 return (
                   <ListRow
@@ -253,24 +259,21 @@ export function MateriasScreen() {
 
       <TopicDrawer topic={findTopic(allTopics, openTopicId)} today={today} onClose={closeDrawer} />
       <ManageTopicsDrawer open={managing} onClose={() => setManaging(false)} />
-      <Drawer open={creating} onClose={() => setCreating(false)} eyebrow="Matérias" title="Novo tópico">
-        <TopicForm
-          initial={{
-            name: "",
-            areaId: filter.areaId === "todas" ? "mat" : filter.areaId,
-            description: "",
-            priority: "media",
-          }}
-          submitLabel="Criar tópico"
-          onCancel={() => setCreating(false)}
-          onSubmit={(input) => {
-            const result = addTopic(input);
-            if ("error" in result) return result.error;
-            setCreating(false);
-            showToast("Tópico criado.");
-            return null;
-          }}
-        />
+      <Drawer open={creatingIn !== null} onClose={() => setCreatingIn(null)} eyebrow="Matérias" title="Novo tópico">
+        {creatingIn && (
+          <TopicForm
+            initial={{ name: "", areaId: creatingIn, description: "", priority: "media" }}
+            submitLabel="Criar tópico"
+            onCancel={() => setCreatingIn(null)}
+            onSubmit={(input) => {
+              const result = addTopic(input);
+              if ("error" in result) return result.error;
+              setCreatingIn(null);
+              showToast("Tópico criado.");
+              return null;
+            }}
+          />
+        )}
       </Drawer>
     </div>
   );

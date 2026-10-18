@@ -102,7 +102,7 @@ export function TopicDrawer({ topic, today, onClose }: TopicDrawerProps) {
     <Drawer
       open
       onClose={close}
-      eyebrow={`${findArea(topic.areaId).name}${topic.origin === "personalizado" ? " · Personalizado" : ""}${topic.hidden ? " · Oculto" : ""}`}
+      eyebrow={`${findArea(topic.areaId).name}${topic.hidden ? " · Oculto" : ""}`}
       title={topic.name}
     >
       {topic.description && <p className="-mt-3 mb-4 text-sm text-muted whitespace-pre-line">{topic.description}</p>}
@@ -170,11 +170,9 @@ export function TopicDrawer({ topic, today, onClose }: TopicDrawerProps) {
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => setEditing(true)}>Editar</Button>
           <Button onClick={toggleHidden}>{topic.hidden ? "Reexibir" : "Ocultar"}</Button>
-          {topic.origin === "personalizado" && (
-            <Button onClick={remove} className={confirmingDelete ? "text-danger" : ""}>
-              {confirmingDelete ? "Clique de novo para excluir" : "Excluir"}
-            </Button>
-          )}
+          <Button onClick={remove} className={confirmingDelete ? "text-danger" : ""}>
+            {confirmingDelete ? "Clique de novo para excluir" : "Excluir"}
+          </Button>
         </div>
         <p className="text-[13px] text-muted">
           {confirmingDelete

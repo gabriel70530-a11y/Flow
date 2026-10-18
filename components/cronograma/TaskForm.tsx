@@ -6,6 +6,7 @@ import { Field, inputStyles } from "@/components/ui/Field";
 import { Segmented } from "@/components/ui/Segmented";
 import { priorityOptions } from "@/components/materias/TopicForm";
 import type { TaskInput } from "@/lib/planner";
+import { areaStudyValue } from "@/lib/sessions";
 import { AREAS } from "@/lib/syllabus";
 import { visibleTopics } from "@/lib/topics";
 import { useStudyStore } from "@/store/study-store";
@@ -41,9 +42,10 @@ export function TaskForm({ today, initialDate, onDone }: TaskFormProps) {
           onChange={(event) => update({ topicId: event.target.value || null })}
           className={inputStyles}
         >
-          <option value="">Estudo geral (sem tópico)</option>
+          <option value="">Estudo geral (sem área)</option>
           {AREAS.map((area) => (
             <optgroup key={area.id} label={area.name}>
+              <option value={areaStudyValue(area.id)}>{area.name} (geral)</option>
               {visibleTopics(topics)
                 .filter((topic) => topic.areaId === area.id)
                 .map((topic) => (

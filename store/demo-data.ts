@@ -1,11 +1,13 @@
 import { addDays, fromDateKey, mondayOf } from "@/lib/dates";
 import { scheduleReviews, type Mastery, type ProgressMap } from "@/lib/reviews";
 import type { StudySession } from "@/lib/sessions";
+import { legacyTopics } from "@/lib/legacy-topics";
 import type { AreaId } from "@/lib/syllabus";
+import type { TopicRecord } from "@/lib/topics";
 
 const currentWeek: [topicId: string, minutes: number][][] = [
   [["mat-3", 95], ["lin-3", 50]],
-  [["nat-1", 80], ["red-5", 45], ["mat-4", 60]],
+  [["nat-1", 80], ["red-0", 45], ["mat-4", 60]],
   [["hum-2", 110], ["mat-3", 50]],
   [["nat-3", 75], ["lin-3", 40]],
   [["mat-4", 120], ["red-0", 50]],
@@ -15,7 +17,22 @@ const currentWeek: [topicId: string, minutes: number][][] = [
 
 const previousWeekMinutes = [200, 150, 180, 90, 240, 60];
 
-export function createDemoData(today: string): { progress: ProgressMap; sessions: StudySession[] } {
+// Os dados de exemplo trazem alguns tópicos criados "pelo estudante"; somem ao apagar e começar do zero.
+const DEMO_TOPIC_IDS = [
+  "mat-0", "mat-1", "mat-2", "mat-3", "mat-4", "mat-5", "mat-8",
+  "lin-0", "lin-2", "lin-3",
+  "nat-0", "nat-1", "nat-3",
+  "hum-1", "hum-2",
+  "red-0",
+];
+
+function demoTopics(): TopicRecord[] {
+  return legacyTopics()
+    .filter((topic) => DEMO_TOPIC_IDS.includes(topic.id))
+    .map((topic) => (topic.id === "red-0" ? { ...topic, name: "Prática de redação" } : topic));
+}
+
+export function createDemoData(today: string): { topics: TopicRecord[]; progress: ProgressMap; sessions: StudySession[] } {
   const progress: ProgressMap = {};
   const sessions: StudySession[] = [];
 
@@ -51,7 +68,6 @@ export function createDemoData(today: string): { progress: ProgressMap; sessions
   conclude("lin-0", 30, 4);
   conclude("lin-2", 1, 3);
   conclude("nat-0", 7, 3);
-  conclude("red-0", 7, 4);
   conclude("hum-1", 10, 4, 1);
   studying("mat-3", 2);
   studying("mat-4", 2);
@@ -59,7 +75,7 @@ export function createDemoData(today: string): { progress: ProgressMap; sessions
   studying("nat-1", 2);
   studying("nat-3", 1);
   studying("hum-2", 3);
-  studying("red-5", 2);
+  studying("red-0", 2);
 
   const monday = mondayOf(today);
   currentWeek.forEach((daySessions, dayIndex) => {
@@ -72,5 +88,5 @@ export function createDemoData(today: string): { progress: ProgressMap; sessions
   );
   addSession("mat-3", today, 50, 8);
 
-  return { progress, sessions };
+  return { topics: demoTopics(), progress, sessions };
 }

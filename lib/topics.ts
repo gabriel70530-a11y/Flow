@@ -1,8 +1,9 @@
 import { nextReview, progressOf, type ProgressMap, type TopicStatus } from "./reviews";
-import { AREAS, type AreaId } from "./syllabus";
+import type { AreaId } from "./syllabus";
 
 export type Priority = "alta" | "media" | "baixa";
 
+// Tópico criado pelo estudante dentro de uma das cinco áreas, na ordem em que foi criado.
 export interface TopicRecord {
   id: string;
   areaId: AreaId;
@@ -10,7 +11,6 @@ export interface TopicRecord {
   description: string;
   priority: Priority;
   hidden: boolean;
-  origin: "padrao" | "personalizado";
 }
 
 export interface TopicInput {
@@ -20,27 +20,11 @@ export interface TopicInput {
   priority: Priority;
 }
 
-export type RestoreChange = "reexibir" | "nome" | "descricao" | "area" | "adicionar";
-
 export const PRIORITY_LABELS: Record<Priority, string> = { alta: "Alta", media: "Média", baixa: "Baixa" };
 export const PRIORITY_WEIGHT: Record<Priority, number> = { alta: 3, media: 2, baixa: 1 };
 
 export const TOPIC_NAME_MAX = 120;
 export const TOPIC_DESCRIPTION_MAX = 500;
-
-export function defaultTopics(): TopicRecord[] {
-  return AREAS.flatMap((area) =>
-    area.topics.map((name, index) => ({
-      id: `${area.id}-${index}`,
-      areaId: area.id,
-      name,
-      description: "",
-      priority: "media" as const,
-      hidden: false,
-      origin: "padrao" as const,
-    })),
-  );
-}
 
 export function findTopic(topics: readonly TopicRecord[], id: string | null): TopicRecord | undefined {
   return id ? topics.find((topic) => topic.id === id) : undefined;
@@ -74,7 +58,6 @@ export function createTopic(topics: readonly TopicRecord[], input: TopicInput, i
     description: input.description.trim(),
     priority: input.priority,
     hidden: false,
-    origin: "personalizado",
   };
   return [...topics, topic];
 }
@@ -91,37 +74,11 @@ export function setTopicHidden(topics: readonly TopicRecord[], id: string, hidde
   return topics.map((topic) => (topic.id === id ? { ...topic, hidden } : topic));
 }
 
-// Só tópicos personalizados podem sair da lista; os padrão apenas se ocultam.
 export function deleteTopic(topics: readonly TopicRecord[], id: string): TopicRecord[] {
-  return topics.filter((topic) => topic.id !== id || topic.origin === "padrao");
+  return topics.filter((topic) => topic.id !== id);
 }
 
-export function restoreDefaultsChanges(topics: readonly TopicRecord[]): { topic: TopicRecord; changes: RestoreChange[] }[] {
-  return defaultTopics().flatMap((original) => {
-    const current = findTopic(topics, original.id);
-    if (!current) return [{ topic: original, changes: ["adicionar" as const] }];
-    const changes: RestoreChange[] = [];
-    if (current.hidden) changes.push("reexibir");
-    if (current.name !== original.name) changes.push("nome");
-    if (current.description !== original.description) changes.push("descricao");
-    if (current.areaId !== original.areaId) changes.push("area");
-    return changes.length ? [{ topic: current, changes }] : [];
-  });
-}
-
-// Devolve os padrões ao original sem tocar em prioridade, personalizados, progresso ou histórico.
-export function restoreDefaults(topics: readonly TopicRecord[]): TopicRecord[] {
-  const originals = new Map(defaultTopics().map((topic) => [topic.id, topic]));
-  const restored = topics.map((topic) => {
-    const original = originals.get(topic.id);
-    if (!original || topic.origin !== "padrao") return topic;
-    return { ...topic, name: original.name, description: original.description, areaId: original.areaId, hidden: false };
-  });
-  const missing = [...originals.values()].filter((original) => !findTopic(topics, original.id));
-  return [...restored, ...missing];
-}
-
-export type TopicSort = "padrao" | "nome" | "prioridade" | "status" | "revisao";
+export type TopicSort = "criacao" | "nome" | "prioridade" | "status" | "revisao";
 
 export interface TopicFilter {
   query: string;
@@ -155,7 +112,7 @@ export function sortTopics(topics: readonly TopicRecord[], progress: ProgressMap
   const byName = (first: TopicRecord, second: TopicRecord) => first.name.localeCompare(second.name, "pt-BR");
   const dueOf = (topic: TopicRecord) => nextReview(progressOf(progress, topic.id))?.due ?? "9999-12-31";
   const compare: Record<TopicSort, ((first: TopicRecord, second: TopicRecord) => number) | null> = {
-    padrao: null,
+    criacao: null,
     nome: byName,
     prioridade: (first, second) => PRIORITY_WEIGHT[second.priority] - PRIORITY_WEIGHT[first.priority] || byName(first, second),
     status: (first, second) =>

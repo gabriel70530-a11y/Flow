@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { GENERAL_STUDY, createSession, needsReinforcement } from "./sessions";
-import { defaultTopics } from "./topics";
+import { legacyTopics } from "./legacy-topics";
 
-const topics = defaultTopics();
+const topics = legacyTopics();
 const end = new Date(2026, 9, 16, 10, 30).getTime();
 const base = { id: "s1", topics, mode: "pomodoro" as const, state: "concluida" as const, start: 0, end };
 

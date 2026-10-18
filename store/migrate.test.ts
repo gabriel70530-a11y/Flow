@@ -24,7 +24,9 @@ describe("loadData", () => {
     const { data, corrupt } = loadData({ current: null, legacy: null }, today);
     expect(corrupt).toBe(false);
     expect(data.demo).toBe(true);
-    expect(data.topics).toHaveLength(44);
+    expect(data.topics.length).toBeGreaterThan(0);
+    expect(data.topics.every((topic) => !("origin" in topic))).toBe(true);
+    expect(data.sessions.every((session) => data.topics.some((topic) => topic.id === session.topicId))).toBe(true);
     expect(data.sessions.every((session) => session.state === "concluida" && session.areaId)).toBe(true);
   });
 
@@ -40,6 +42,22 @@ describe("loadData", () => {
       { id: "a2", topicId: "lin-0", areaId: "lin", date: "2026-10-16", start: 2_000_000 - 600_000, end: 2_000_000, sec: 600, mode: "cronometro", state: "concluida" },
     ]);
     expect(data.timer).toMatchObject({ focus: 50, brk: 10, banked: 120, topicId: "mat-3", sessionStart: 0, taskId: "" });
+    expect(data.topics.map((topic) => [topic.id, topic.name])).toEqual([
+      ["mat-3", "Probabilidade"],
+      ["lin-0", "Interpretação de texto"],
+    ]);
+  });
+
+  it("drops old default topics nobody used and keeps the ones with history or created by the student", () => {
+    const topic = (id: string, origin: string) => ({ id, areaId: "mat", name: id, description: "", priority: "media", hidden: false, origin });
+    const current = JSON.stringify({
+      ...emptyData(),
+      topics: [topic("mat-0", "padrao"), topic("mat-1", "padrao"), topic("custom-1", "personalizado")],
+      progress: { "mat-1": { status: "and", mastery: 1, reviews: [] } },
+    });
+    const { data } = loadData({ current, legacy: null }, today);
+    expect(data.topics.map((kept) => kept.id)).toEqual(["mat-1", "custom-1"]);
+    expect(data.topics.every((kept) => !("origin" in kept))).toBe(true);
   });
 
   it("keeps only the topic of the timer saved in the prototype's first format", () => {
