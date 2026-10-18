@@ -9,7 +9,7 @@ export default function PrivacidadePage() {
       <section>
         <h2>Onde ficam seus dados</h2>
         <p>
-          O Flow não tem conta nem servidor de dados. Tópicos, sessões, revisões, cronograma e preferências ficam salvos no
+          O Flow não tem conta nem servidor de dados. Tópicos, sessões, revisões, cronograma, caderno de erros, simulados, redações e preferências ficam salvos no
           armazenamento local do seu navegador, neste aparelho. Nós não recebemos esse conteúdo.
         </p>
       </section>

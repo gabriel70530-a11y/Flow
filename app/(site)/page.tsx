@@ -16,7 +16,7 @@ const BENEFITS = [
   ["Semana organizada, sem rigidez", "Até 2 matérias por dia nos dias que você escolher. Sem limite de horas e sem obrigação de fazer tudo."],
   ["Saber o que estudar hoje", "O painel abre com as matérias do dia e um botão para começar."],
   ["Timer Pomodoro e cronômetro", "O tempo de foco entra sozinho no painel. Pausas não contam como estudo."],
-  ["Revisões espaçadas", "Ao concluir um tópico, as revisões de 1, 7, 15 e 30 dias são agendadas."],
+  ["Revisões espaçadas", "Ao concluir um tópico, as revisões de 1, 7, 15 e 30 dias são agendadas. Questões que você errou também voltam."],
   ["Evolução com dados reais", "Horas por dia e por área, planejado x realizado, tudo a partir das suas sessões."],
   ["Estude até dominar", "Ainda não dominou? A matéria volta no dia seguinte. Não deu tempo? Ela passa para o próximo dia, sem culpa."],
 ];
