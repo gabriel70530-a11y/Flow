@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prévia do Pro · Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira:ital,wdth,wght@0,100..125,300..800;1,100..125,300..800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f3f8fb; --surface: #ffffff; --soft: #e9f4f9; --line: #dcebf2; --text: #0b2a42; --muted: #4f6f83;
+    --accent: #135487; --accent-soft: #e2f3fa; --action: #135487; --edge: #135487; --success: #2e7d4f; --danger: #c42b3f; --mid: #2f87b5;
+    --track: #dcebf2; --hero: #0f4470; --hero-soft: #b0e1f1;
+  }
+  :root[data-theme="dark"] {
+    --bg: #061829; --surface: #0b2238; --soft: #102d48; --line: #15344f; --text: #e6f3f9; --muted: #85b0c6;
+    --accent: #47bcdf; --accent-soft: #10324f; --action: #135487; --edge: #eef7fb; --success: #6fcf97; --danger: #ff7a8a; --mid: #47bcdf;
+    --track: #15344f; --hero: #135487;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  [hidden] { display: none !important; }
+  body { font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { background: none; border: 0; cursor: pointer; }
+
+  .preview-bar { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; padding: 12px 16px; background: #0b2a42; color: #fff; font-size: 13px; }
+  .preview-bar .label { opacity: .6; margin-right: 4px; }
+  .preview-bar .group { display: flex; flex-wrap: wrap; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(255,255,255,.1); }
+  .preview-bar button { padding: 6px 14px; border-radius: 999px; color: #fff; font-weight: 600; }
+  .preview-bar button[aria-pressed="true"] { background: #fff; color: #135487; }
+  .preview-note { max-width: 780px; margin: 20px auto 0; padding: 0 16px; color: var(--muted); font-size: 14px; text-align: center; }
+
+  .stage { display: flex; justify-content: center; padding: 24px 16px 64px; }
+  .frame { width: 100%; max-width: 1180px; background: var(--bg); border-radius: 20px; overflow: hidden; box-shadow: 0 0 0 1px var(--line), 0 30px 60px rgba(15,27,45,.08); }
+  .frame.phone { max-width: 400px; }
+  .page { padding: 40px 48px; display: grid; gap: 24px; align-content: start; }
+  .phone .page { padding: 24px 16px; }
+  .page h1 { font-family: "Saira", sans-serif; font-weight: 700; font-stretch: 112%; font-size: 32px; }
+  .phone .page h1 { font-size: 26px; }
+  .sub { color: var(--muted); margin-top: 6px; }
+  .cols { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; align-items: start; }
+  .cols.even { grid-template-columns: 1fr 1fr; }
+  .phone .cols { grid-template-columns: 1fr; }
+  .col { display: grid; gap: 24px; }
+
+  .card { background: var(--surface); border: 2px solid var(--edge); box-shadow: 4px 4px 0 var(--edge); border-radius: 18px; padding: 28px; display: grid; gap: 14px; align-content: start; }
+  .phone .card { padding: 20px; }
+  .card h2 { font-family: "Saira", sans-serif; font-weight: 600; font-stretch: 108%; font-size: 18px; }
+  .head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .ghost { opacity: .45; min-height: 140px; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  .num { font-variant-numeric: tabular-nums; }
+  .rowline { display: grid; gap: 4px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .rowline:first-of-type { border-top: 0; padding-top: 0; }
+  .rowline > span:first-child { font-size: 13px; color: var(--muted); }
+  .bar { height: 6px; border-radius: 999px; background: var(--track); overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--mid); border-radius: 999px; }
+  .big { font-family: "Saira", sans-serif; font-style: italic; font-weight: 800; font-stretch: 120%; font-size: 56px; line-height: 1; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 999px; font-weight: 600; font-size: 14px; background: var(--soft); white-space: nowrap; }
+  .btn-primary { background: var(--action); color: #fff; border: 2px solid var(--edge); box-shadow: 3px 3px 0 var(--edge); }
+  .btn-lg { height: 44px; padding: 0 22px; font-size: 15px; }
+  .btn-wide { width: 100%; }
+  .iconbtn { width: 36px; height: 36px; border-radius: 999px; display: grid; place-items: center; background: var(--soft); }
+  .iconbtn[disabled] { opacity: .4; }
+  .link { color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+  .pill { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); padding: 2px 8px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .tip { border-radius: 12px; background: var(--soft); padding: 12px 14px; font-size: 14px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+  .pro { display: grid; gap: 8px; border-radius: 12px; background: var(--accent-soft); padding: 14px; font-size: 14px; }
+  .pro strong { display: flex; align-items: center; gap: 6px; }
+  .pro strong svg { width: 16px; height: 16px; color: var(--accent); flex-shrink: 0; }
+  .pro .link { font-size: 14px; justify-self: start; }
+
+  .field { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .input { height: 40px; width: 100%; border-radius: 10px; border: 2px solid var(--line); background: var(--surface); padding: 0 12px; font-size: 15px; font-weight: 400; color: var(--text); }
+  .check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
+  .check input { width: 18px; height: 18px; margin-top: 2px; accent-color: #135487; flex-shrink: 0; }
+  .segmented { display: flex; padding: 3px; border-radius: 999px; background: var(--soft); }
+  .segmented span { flex: 1; height: 32px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--muted); display: grid; place-items: center; }
+  .segmented .on { background: var(--action); color: #fff; }
+  .or { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; }
+  .or::before, .or::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { border-radius: 999px; border: 2px solid var(--line); padding: 4px 12px; font-size: 13px; }
+  .chip.off { opacity: .45; }
+  .tabs { display: flex; gap: 6px; }
+  .tabs span { border-radius: 999px; padding: 6px 14px; font-weight: 600; font-size: 14px; background: var(--soft); }
+  .tabs .on { background: var(--action); color: #fff; }
+  .list-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .list-row:first-child { border-top: 0; padding-top: 0; }
+  .dot { width: 8px; height: 8px; border-radius: 999px; background: var(--mid); display: inline-block; margin-right: 6px; }
+
+  .scores { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .phone .scores { grid-template-columns: repeat(3, 1fr); }
+  .score { border-radius: 12px; background: var(--soft); padding: 10px; text-align: center; }
+  .score b { display: block; font-family: "Saira", sans-serif; font-size: 22px; font-variant-numeric: tabular-nums; }
+  .photo { height: 120px; border-radius: 12px; border: 2px dashed var(--line); display: grid; place-items: center; color: var(--muted); font-size: 14px; text-align: center; padding: 12px; }
+
+  .answers { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 24px; }
+  .phone .answers { grid-template-columns: 1fr; }
+  .answer { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+  .answer b { width: 30px; font-variant-numeric: tabular-nums; }
+  .answer span { width: 28px; height: 28px; border-radius: 999px; border: 2px solid var(--line); display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+  .answer span.on { background: var(--action); border-color: var(--action); color: #fff; }
+  .clock { font-family: "Saira", sans-serif; font-style: italic; font-weight: 300; font-stretch: 120%; font-size: 40px; font-variant-numeric: tabular-nums; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 8px; border-top: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 13px; color: var(--muted); font-weight: 600; border-top: 0; }
+  td.c { text-align: center; white-space: nowrap; }
+  tr.group td { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; padding-top: 18px; }
+  .yes { color: var(--success); font-weight: 700; }
+  .part { color: var(--muted); font-size: 13px; }
+  .new { color: var(--accent); font-size: 12px; font-weight: 700; margin-left: 4px; }
+  .list { display: grid; gap: 8px; font-size: 14px; padding: 0; list-style: none; }
+  .list li { display: flex; gap: 8px; }
+  .list li::before { content: "✓"; color: var(--success); font-weight: 700; }
+  .price { font-family: "Saira", sans-serif; font-style: italic; font-weight: 800; font-stretch: 120%; font-size: 30px; }
+
+  .gate { min-height: 640px; display: grid; place-items: center; padding: 40px 16px; }
+  .gate .card { width: 100%; max-width: 420px; }
+  .mark { display: flex; align-items: center; gap: 10px; font-family: "Saira", sans-serif; font-style: italic; font-weight: 800; font-stretch: 125%; font-size: 26px; color: var(--accent); }
+  .mark i { width: 34px; height: 34px; border-radius: 9px; background: var(--action); color: #fff; display: grid; place-items: center; border: 2px solid var(--edge); box-shadow: 2px 2px 0 var(--edge); font-style: italic; }
+</style>
+</head>
+<body>
+
+<div class="preview-bar">
+  <span class="label">Tela</span>
+  <div class="group" data-control="screen">
+    <button data-value="tabela">O que muda</button>
+    <button data-value="entrar">Entrar</button>
+    <button data-value="materias">Matérias</button>
+    <button data-value="revisoes">Revisões</button>
+    <button data-value="erros">Caderno de erros</button>
+    <button data-value="redacao">Redação com IA</button>
+    <button data-value="simulado">Simulado no app</button>
+    <button data-value="painel">Painel</button>
+    <button data-value="cronograma">Cronograma</button>
+    <button data-value="planos">Planos</button>
+  </div>
+  <span class="label">Plano</span>
+  <div class="group" data-control="plan">
+    <button data-value="free">Gratuito</button>
+    <button data-value="pro">Pro</button>
+  </div>
+  <span class="label">Tema</span>
+  <div class="group" data-control="theme">
+    <button data-value="light">Claro</button>
+    <button data-value="dark">Escuro</button>
+  </div>
+  <span class="label">Tamanho</span>
+  <div class="group" data-control="size">
+    <button data-value="desktop">Computador</button>
+    <button data-value="phone">Celular</button>
+  </div>
+</div>
+<p class="preview-note">O gratuito faz o essencial para estudar e registrar, com a pessoa no controle. O Pro faz o trabalho por você (revisões, plano, sugestões), mostra o que os números dizem e traz a IA. Nada é apagado ao perder o Pro. Os cards em cinza são o resto da tela, sem mudança. Detalhes, custos e preço em <code>docs/plano-pro.md</code>.</p>
+
+<div class="stage">
+  <div class="frame" id="frame">
+
+    <!-- O QUE MUDA -->
+    <div class="page" data-screen="tabela">
+      <div><h1>Gratuito e Pro</h1><p class="sub">O que fica em cada plano. Conta obrigatória nos dois.</p></div>
+      <section class="card">
+        <table>
+          <thead><tr><th>Recurso</th><th style="text-align:center">Gratuito</th><th style="text-align:center">Pro</th></tr></thead>
+          <tbody>
+            <tr class="group"><td colspan="3">Estudar</td></tr>
+            <tr><td>Áreas, tópicos sem limite, status, prioridade e domínio</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+            <tr><td>Sugestões do que mais cai ao criar tópico</td><td class="c part">—</td><td class="c yes">✓</td></tr>
+            <tr><td>Timer Pomodoro, cronômetro e modo foco</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+            <tr><td>Cronograma montado à mão (o que ficou volta sozinho)</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+            <tr><td>Plano da semana gerado e atualizado sozinho</td><td class="c part">—</td><td class="c yes">✓</td></tr>
+            <tr class="group"><td colspan="3">Revisar</td></tr>
+            <tr><td>Revisões com data escolhida por você</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+            <tr><td>Revisões agendadas sozinhas ao concluir (+1, +7, +15, +30)</td><td class="c part">—</td><td class="c yes">✓</td></tr>
+            <tr><td>Caderno de erros com revisão espaçada</td><td class="c part">só leitura</td><td class="c yes">✓</td></tr>
+            <tr><td>Análise de erro com IA <span class="new">novo</span></td><td class="c part">—</td><td class="c yes">60/mês</td></tr>
+            <tr class="group"><td colspan="3">Preparação</td></tr>
+            <tr><td>Registrar simulados, redações e repertório; checklist da prova</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+            <tr><td>Simulado no app: cartão-resposta com a prova oficial <span class="new">novo</span></td><td class="c part">—</td><td class="c yes">✓</td></tr>
+            <tr><td>Correção de redação com IA <span class="new">novo</span></td><td class="c part">—</td><td class="c yes">8/mês</td></tr>
+            <tr><td>Evolução nos simulados e ponto a treinar na redação</td><td class="c part">—</td><td class="c yes">✓</td></tr>
+            <tr class="group"><td colspan="3">Acompanhar</td></tr>
+            <tr><td>Painel: semana, meta, sequência e conquistas</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+            <tr><td>Histórico do Painel</td><td class="c part">4 semanas</td><td class="c yes">tudo</td></tr>
+            <tr><td>Resumo da semana</td><td class="c part">sessões e tópicos</td><td class="c yes">completo</td></tr>
+            <tr><td>Conta, cópia na nuvem e sincronização</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+          </tbody>
+        </table>
+        <p class="muted small">Preço proposto: R$ 14,90/mês ou R$ 119,90/ano (a IA aumenta o custo; ver o estudo). Enquanto não houver pagamento, ninguém é cobrado e a tela de planos diz isso.</p>
+      </section>
+    </div>
+
+    <!-- ENTRAR -->
+    <div data-screen="entrar" hidden>
+      <div class="gate">
+        <section class="card">
+          <div class="mark"><i>F</i>FLOW</div>
+          <p class="muted">Entre para começar. Seus dados ficam no aparelho e numa cópia na sua conta, e o Flow funciona sem internet depois de entrar.</p>
+          <div class="segmented"><span class="on">Entrar</span><span>Criar conta</span></div>
+          <button class="btn btn-lg btn-wide">G&nbsp; Entrar com Google</button>
+          <div class="or">ou</div>
+          <label class="field">E-mail<input class="input" type="email" value="voce@exemplo.com"></label>
+          <label class="field">Senha<input class="input" type="password" value="senha-exemplo"></label>
+          <button class="btn btn-primary btn-lg btn-wide">Entrar</button>
+          <p><a class="link" href="#" style="font-size:14px">Esqueci minha senha</a></p>
+          <p class="muted small">Ao criar a conta: ano de nascimento e, se tiver menos de 18 anos, a confirmação de que um responsável sabe. "Entrar com Google" é uma sugestão (não gasta e-mail nem senha).</p>
+          <p class="muted small"><a class="link" href="#">Privacidade</a> · <a class="link" href="#">Termos</a> · <a class="link" href="#">Voltar ao início</a></p>
+        </section>
+      </div>
+    </div>
+
+    <!-- MATÉRIAS -->
+    <div class="page" data-screen="materias" hidden>
+      <div><h1>Matérias</h1><p class="sub">Crie os tópicos que você vai estudar.</p></div>
+      <div class="cols">
+        <section class="card">
+          <h2>Novo tópico</h2>
+          <label class="field">Área<input class="input" value="Ciências da Natureza"></label>
+          <label class="field">Matéria<input class="input" value="Química"></label>
+          <label class="field">Nome<input class="input" placeholder="Ex.: Estequiometria"></label>
+          <div data-show="pro" style="display:grid;gap:8px">
+            <span class="small muted" style="font-weight:600">O que mais cai em Química</span>
+            <div class="chips"><span class="chip">Estequiometria</span><span class="chip">Funções orgânicas</span><span class="chip off">✓ Eletroquímica</span><span class="chip">Soluções</span><span class="chip">Termoquímica</span><span class="chip">pH e equilíbrio</span></div>
+          </div>
+          <div class="pro" data-show="free">
+            <strong>Veja o que mais cai em cada matéria com o Pro</strong>
+            <span class="muted">Até 10 sugestões por matéria, pelo que mais apareceu no Enem de 2014 a 2024. Tocar só preenche o nome.</span>
+            <a class="link" href="#" data-go="planos">Conhecer o Pro</a>
+          </div>
+          <button class="btn btn-primary btn-lg">Criar tópico</button>
+        </section>
+        <div class="card ghost"><h2>Seus tópicos</h2></div>
+      </div>
+    </div>
+
+    <!-- REVISÕES -->
+    <div class="page" data-screen="revisoes" hidden>
+      <div><h1>Revisões</h1><p class="sub">Revise antes de esquecer.</p></div>
+      <div class="tabs"><span class="on">Tópicos</span><span>Caderno de erros</span></div>
+      <div class="cols">
+        <div class="col">
+          <section class="card">
+            <div class="head"><h2>Hoje</h2><span class="muted small num">2</span></div>
+            <div class="list-row"><span><span class="dot"></span>Estequiometria <span class="muted small">· 2ª revisão</span></span><button class="btn">Concluir</button></div>
+            <div class="list-row"><span><span class="dot"></span>Revolução Industrial <span class="muted small">· revisão</span></span><button class="btn">Concluir</button></div>
+          </section>
+          <div class="card ghost"><h2>Próximos 7 dias</h2></div>
+        </div>
+        <div class="col">
+          <section class="card" data-show="free">
+            <h2>Agendar revisão</h2>
+            <p class="muted small">No gratuito, você escolhe quando revisar cada tópico.</p>
+            <label class="field">Tópico<input class="input" value="Funções do 1º grau"></label>
+            <label class="field">Data<input class="input" value="25/10"></label>
+            <div class="row"><span class="small muted">Atalhos:</span><button class="btn">Amanhã</button><button class="btn">Em 7 dias</button><button class="btn">Em 15 dias</button></div>
+            <button class="btn btn-primary btn-lg">Agendar</button>
+            <div class="pro">
+              <strong>Deixe o Flow agendar por você com o Pro</strong>
+              <span class="muted">Ao concluir um tópico, as 4 revisões (amanhã, 7, 15 e 30 dias) entram sozinhas, no tempo certo para não esquecer.</span>
+              <a class="link" href="#" data-go="planos">Conhecer o Pro</a>
+            </div>
+          </section>
+          <section class="card" data-show="pro">
+            <h2>Revisões automáticas</h2>
+            <p class="muted">Ao concluir um tópico, o Flow agenda 4 revisões: amanhã, em 7, 15 e 30 dias.</p>
+            <button class="btn">Agendar revisões do que já estudei</button>
+            <button class="btn">Agendar uma revisão avulsa</button>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- CADERNO DE ERROS -->
+    <div class="page" data-screen="erros" hidden>
+      <div><h1>Revisões</h1><p class="sub">Revise antes de esquecer.</p></div>
+      <div class="tabs"><span>Tópicos</span><span class="on">Caderno de erros <span class="pill" style="margin-left:4px">Pro</span></span></div>
+      <div class="pro" data-show="free" style="max-width:680px">
+        <strong>O caderno de erros faz parte do Pro</strong>
+        <span class="muted">Guarde as questões que errou, reveja cada uma em 1, 7, 15 e 30 dias e peça para a IA explicar onde o raciocínio desviou.</span>
+        <span class="muted small">Os 3 erros que você já registrou continuam guardados e aparecem abaixo só para leitura.</span>
+        <a class="link" href="#" data-go="planos">Conhecer o Pro</a>
+      </div>
+      <div class="cols">
+        <section class="card" data-show="pro">
+          <h2>Analisar erro com IA</h2>
+          <div class="photo">Foto da questão<br><span class="small">ou cole o enunciado</span></div>
+          <div class="row"><span class="small muted">Você marcou:</span><span class="chip">A</span><span class="chip" style="border-color:var(--action)">B</span><span class="chip">C</span><span class="chip">D</span><span class="chip">E</span></div>
+          <button class="btn btn-primary btn-lg">Analisar</button>
+          <div class="tip" style="display:grid;gap:8px">
+            <strong>Resposta: D</strong>
+            <span>A questão pede a massa de CO₂, não de C. Você parou na proporção em mols e não converteu com a massa molar (44 g/mol).</span>
+            <span class="small muted">Motivo provável: <strong>comando</strong> · Tópico: Estequiometria</span>
+            <div class="row"><button class="btn btn-primary">Salvar no caderno</button><button class="btn">Ajustar</button></div>
+          </div>
+          <p class="muted small num">Análise com IA, pode errar. 52 de 60 restantes neste mês.</p>
+        </section>
+        <section class="card">
+          <div class="head"><h2>Seus erros</h2><span class="muted small num">3</span></div>
+          <div class="list-row"><span>Estequiometria <span class="muted small">· comando</span></span><span class="muted small" data-show="pro">Rever hoje</span></div>
+          <div class="list-row"><span>Interpretação de gráfico <span class="muted small">· pressa</span></span><span class="muted small" data-show="pro">27/10</span></div>
+          <div class="list-row"><span>Figuras de linguagem <span class="muted small">· conteúdo</span></span><span class="muted small" data-show="pro">02/11</span></div>
+          <button class="btn btn-primary" data-show="pro">Registrar erro</button>
+        </section>
+      </div>
+    </div>
+
+    <!-- REDAÇÃO COM IA -->
+    <div class="page" data-screen="redacao" hidden>
+      <div class="head"><div><h1>Redação</h1><p class="sub">Registre as notas e acompanhe a evolução.</p></div><button class="btn btn-primary btn-lg">＋ Registrar redação</button></div>
+      <div class="cols">
+        <section class="card">
+          <div class="head"><h2>Corrigir com IA</h2><span class="pill">Pro</span></div>
+          <div data-show="pro" style="display:grid;gap:14px">
+            <label class="field">Tema<input class="input" value="Desafios para a valorização da herança africana no Brasil"></label>
+            <div class="photo">Fotos da redação (até 2)<br><span class="small">ou cole o texto</span></div>
+            <button class="btn btn-primary btn-lg">Corrigir</button>
+            <div class="scores">
+              <div class="score"><span class="small muted">C1</span><b>160</b></div>
+              <div class="score"><span class="small muted">C2</span><b>160</b></div>
+              <div class="score"><span class="small muted">C3</span><b>120</b></div>
+              <div class="score"><span class="small muted">C4</span><b>160</b></div>
+              <div class="score"><span class="small muted">C5</span><b>120</b></div>
+            </div>
+            <p><strong class="num">720</strong> <span class="muted">estimados</span></p>
+            <p class="tip"><strong>C3:</strong> o 2º parágrafo apresenta dados sem ligá-los à tese. Explique por que o dado sustenta o argumento.<br><strong>C5:</strong> a proposta não diz o meio (como) nem o detalhamento.</p>
+            <p class="muted small num">Estimativa feita por IA. Não é a nota oficial nem substitui um corretor. 6 de 8 correções restantes neste mês.</p>
+            <button class="btn">Salvar nas minhas redações</button>
+          </div>
+          <div class="pro" data-show="free">
+            <strong>Corrija sua redação com IA no Pro</strong>
+            <span class="muted">Fotografe a redação e receba a nota estimada por competência, com o que melhorar em cada uma. Até 8 por mês.</span>
+            <a class="link" href="#" data-go="planos">Conhecer o Pro</a>
+          </div>
+          <p class="muted small" data-show="free">Você continua podendo registrar as notas que recebeu de um corretor.</p>
+        </section>
+        <div class="card ghost"><h2>Evolução</h2></div>
+      </div>
+    </div>
+
+    <!-- SIMULADO NO APP -->
+    <div class="page" data-screen="simulado" hidden>
+      <div><h1>Simulados</h1><p class="sub">Treine com a prova oficial e no tempo do Enem.</p></div>
+      <div class="cols">
+        <section class="card">
+          <div class="head"><h2>Enem 2024 · 1º dia (azul)</h2><span class="pill">Pro</span></div>
+          <div data-show="pro" style="display:grid;gap:14px">
+            <div class="head"><span class="clock">02:14:37</span><div class="row"><button class="btn">Pausar</button><a class="link" href="#" style="font-size:14px">Abrir a prova (PDF do Inep)</a></div></div>
+            <div class="answers">
+              <div class="answer"><b>01</b><span>A</span><span class="on">B</span><span>C</span><span>D</span><span>E</span></div>
+              <div class="answer"><b>02</b><span>A</span><span>B</span><span>C</span><span class="on">D</span><span>E</span></div>
+              <div class="answer"><b>03</b><span class="on">A</span><span>B</span><span>C</span><span>D</span><span>E</span></div>
+              <div class="answer"><b>04</b><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span></div>
+              <div class="answer"><b>05</b><span>A</span><span>B</span><span class="on">C</span><span>D</span><span>E</span></div>
+              <div class="answer"><b>06</b><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span></div>
+            </div>
+            <p class="muted small">Você resolve no PDF oficial e marca aqui. Ao terminar, o Flow corrige pelo gabarito oficial.</p>
+            <button class="btn btn-primary btn-lg">Terminar e corrigir</button>
+          </div>
+          <div class="pro" data-show="free">
+            <strong>Faça o simulado no Flow com o Pro</strong>
+            <span class="muted">Cartão-resposta com cronômetro, correção automática pelo gabarito oficial, acertos por área e as questões erradas direto para o caderno de erros.</span>
+            <a class="link" href="#" data-go="planos">Conhecer o Pro</a>
+          </div>
+          <p class="muted small" data-show="free">Você continua podendo registrar os acertos de um simulado feito fora do app.</p>
+        </section>
+        <section class="card" data-show="pro">
+          <h2>Resultado</h2>
+          <div class="rowline"><span>Linguagens</span><span class="num">31 de 45 · 69%</span><div class="bar"><i style="width:69%"></i></div></div>
+          <div class="rowline"><span>Ciências Humanas</span><span class="num">34 de 45 · 76%</span><div class="bar"><i style="width:76%"></i></div></div>
+          <div class="rowline"><span>Tempo</span><span class="num">4h12 · 2,8 min por questão (alvo: 3,0)</span></div>
+          <button class="btn">Mandar os 25 erros para o caderno</button>
+          <p class="muted small">O Flow não calcula nota TRI (decisão pendente no estudo).</p>
+        </section>
+        <div class="card ghost" data-show="free"><h2>Seus simulados</h2></div>
+      </div>
+    </div>
+
+    <!-- PAINEL -->
+    <div class="page" data-screen="painel" hidden>
+      <div><h1>Boa tarde</h1><p class="sub">Sábado, 18 de outubro</p></div>
+      <div class="card ghost" style="min-height:110px"><h2>Estudar hoje</h2></div>
+      <div class="cols">
+        <div class="col">
+          <section class="card">
+            <div class="head">
+              <h2 data-week-title>Esta semana</h2>
+              <div class="row" style="gap:4px">
+                <span class="muted small num" data-week-range>13/10 – 19/10</span>
+                <button class="iconbtn" aria-label="Semana anterior" data-week-prev>‹</button>
+                <button class="iconbtn" aria-label="Próxima semana" data-week-next disabled>›</button>
+              </div>
+            </div>
+            <p><span class="big num" data-week-hours>12,5</span> <span class="muted">horas</span></p>
+            <div data-week-locked hidden class="pro">
+              <strong>Semanas mais antigas ficam no Pro</strong>
+              <span>No gratuito, o Painel mostra as últimas 4 semanas. Seus registros continuam guardados e aparecem ao assinar.</span>
+              <a class="link" href="#" data-go="planos">Conhecer o Pro</a>
+            </div>
+            <p class="muted small">Use a seta para voltar semanas. No gratuito, a 5ª semana para trás mostra o aviso.</p>
+          </section>
+          <section class="card">
+            <div class="head"><h2>Resumo da semana</h2><span class="pill" data-show="pro">Pro</span></div>
+            <div class="rowline"><span>Sessões registradas</span><span class="num">9 sessões, 1 finalizada antes do fim do bloco.</span></div>
+            <div class="rowline"><span>Tópicos</span><span class="num">4 concluídos, 3 em andamento e 1 para revisar, de 12.</span></div>
+            <div data-show="pro" style="display:grid;gap:12px">
+              <div class="rowline"><span>Matérias da semana</span><span class="num">5 de 8 matérias dominadas · 7h40 estudados nelas.</span><div class="bar"><i style="width:62%"></i></div></div>
+              <div class="rowline"><span>Constância (últimos 14 dias)</span><span class="num">10 de 14 dias.</span></div>
+              <div class="rowline"><span>Comparado à semana anterior</span><span class="num">10,2 h → 12,5 h (+2,3 h)</span></div>
+              <div class="rowline"><span>Sugestão</span><span>Ciências Humanas teve menos tempo nos últimos 14 dias.</span></div>
+            </div>
+            <div class="pro" data-show="free">
+              <strong>Veja o resto do resumo com o Pro</strong>
+              <span class="muted">Planejado x realizado, constância dos últimos 14 dias, comparação com a semana anterior e a área que ficou esquecida.</span>
+              <a class="link" href="#" data-go="planos">Conhecer o Pro</a>
+            </div>
+          </section>
+        </div>
+        <div class="col">
+          <div class="card ghost"><h2>Preparação</h2></div>
+          <div class="card ghost"><h2>Horas por área</h2></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CRONOGRAMA -->
+    <div class="page" data-screen="cronograma" hidden>
+      <div><h1>Cronograma</h1><p class="sub">Até 2 matérias por dia, sem limite de horas.</p></div>
+      <div class="row">
+        <button class="btn btn-primary">↻ Gerar plano <span class="pill" data-show="free" style="background:rgba(255,255,255,.18);color:#fff">Pro</span></button>
+        <button class="btn">＋ Adicionar tarefa</button>
+        <button class="btn">Dias de estudo</button>
+      </div>
+      <div class="pro" data-show="free" style="max-width:640px">
+        <strong>O Flow monta a semana por você no Pro</strong>
+        <span class="muted">Ele escolhe as matérias de cada dia pelas suas prioridades, revisões e áreas difíceis. No gratuito, você adiciona as matérias à mão, e o que ficar sem estudar continua passando sozinho para o próximo dia.</span>
+        <a class="link" href="#" data-go="planos">Conhecer o Pro</a>
+      </div>
+      <p class="muted small" data-show="free">No gratuito, tocar em "Gerar plano" mostra este aviso, em vez de um botão desativado sem explicação.</p>
+      <div class="card ghost" style="min-height:280px"><h2>Semana</h2></div>
+    </div>
+
+    <!-- PLANOS -->
+    <div class="page" data-screen="planos" hidden>
+      <div><h1>Planos</h1><p class="sub">O gratuito resolve o essencial. O Pro organiza por você, analisa e corrige com IA.</p></div>
+      <div class="cols even">
+        <section class="card">
+          <h2>Gratuito</h2>
+          <p><span class="price">R$ 0</span> <span class="muted">para sempre</span></p>
+          <ul class="list">
+            <li>As cinco áreas do ENEM, com quantos tópicos você quiser</li>
+            <li>Timer Pomodoro, cronômetro e modo foco</li>
+            <li>Revisões nas datas que você escolher</li>
+            <li>Registro de simulados, redações e repertório</li>
+            <li>Cronograma montado à mão</li>
+            <li>Painel com as últimas 4 semanas, meta e conquistas</li>
+            <li>Conta com cópia na nuvem</li>
+          </ul>
+          <p class="muted small" data-show="free">É o que você usa hoje.</p>
+        </section>
+        <section class="card">
+          <div class="head"><h2>Flow Pro</h2><span class="pill">Em breve</span></div>
+          <p><span class="price num">R$ 14,90</span> <span class="muted">/mês ou R$ 119,90/ano</span></p>
+          <ul class="list">
+            <li>Tudo do gratuito</li>
+            <li>Correção de redação com IA, até 8 por mês</li>
+            <li>Caderno de erros com análise por IA</li>
+            <li>Simulado no app, corrigido pelo gabarito oficial</li>
+            <li>Revisões agendadas sozinhas e sugestões do que mais cai</li>
+            <li>Semana montada e atualizada sozinha</li>
+            <li>Resumo completo, evolução e histórico inteiro</li>
+          </ul>
+          <div class="tip" style="display:grid;gap:6px;font-size:13px">
+            <p><strong>Ainda não é possível assinar.</strong> A assinatura abre em breve; nada é cobrado antes disso.</p>
+            <p class="muted">Preço, forma de cobrança, cancelamento e reembolso serão informados antes de qualquer pagamento.</p>
+          </div>
+          <button class="btn btn-primary btn-lg">Quero saber quando abrir</button>
+        </section>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const state = { screen: "tabela", plan: "free", theme: "light", size: "desktop" };
+  const lock = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+  document.querySelectorAll(".pro > strong").forEach((title) => title.insertAdjacentHTML("afterbegin", lock));
+  let weeksBack = 0;
+  const frame = document.getElementById("frame");
+
+  function render() {
+    document.documentElement.dataset.theme = state.theme;
+    frame.classList.toggle("phone", state.size === "phone");
+    document.querySelectorAll("[data-screen]").forEach((el) => (el.hidden = el.dataset.screen !== state.screen));
+    document.querySelectorAll("[data-show]").forEach((el) => (el.hidden = el.dataset.show !== state.plan));
+    document.querySelectorAll("[data-control]").forEach((group) => {
+      group.querySelectorAll("button").forEach((button) => button.setAttribute("aria-pressed", String(state[group.dataset.control] === button.dataset.value)));
+    });
+    const locked = state.plan === "free" && weeksBack >= 4;
+    document.querySelector("[data-week-locked]").hidden = !locked;
+    document.querySelector("[data-week-hours]").textContent = locked ? "—" : weeksBack === 0 ? "12,5" : (10 - weeksBack * 0.7).toFixed(1).replace(".", ",");
+    document.querySelector("[data-week-title]").textContent = weeksBack === 0 ? "Esta semana" : "Semana";
+    document.querySelector("[data-week-next]").disabled = weeksBack === 0;
+    document.querySelector("[data-week-prev]").disabled = locked;
+    const start = new Date(2026, 9, 13 - weeksBack * 7);
+    const end = new Date(start); end.setDate(end.getDate() + 6);
+    const format = (date) => `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}`;
+    document.querySelector("[data-week-range]").textContent = `${format(start)} – ${format(end)}`;
+  }
+
+  document.querySelectorAll("[data-control] button").forEach((button) => {
+    button.addEventListener("click", () => {
+      state[button.closest("[data-control]").dataset.control] = button.dataset.value;
+      render();
+    });
+  });
+  document.querySelectorAll("[data-go]").forEach((link) => link.addEventListener("click", (event) => { event.preventDefault(); state.screen = link.dataset.go; render(); }));
+  document.querySelectorAll("a[href='#']:not([data-go])").forEach((link) => link.addEventListener("click", (event) => event.preventDefault()));
+  document.querySelector("[data-week-prev]").addEventListener("click", () => { weeksBack += 1; render(); });
+  document.querySelector("[data-week-next]").addEventListener("click", () => { weeksBack = Math.max(0, weeksBack - 1); render(); });
+  render();
+</script>
+</body>
+</html>
