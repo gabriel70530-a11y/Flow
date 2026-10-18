@@ -10,7 +10,7 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Segmented } from "@/components/ui/Segmented";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { showToast } from "@/components/ui/Toast";
-import { AreaChips, StudyDaysFields, strategyOptions } from "@/components/cronograma/planner-fields";
+import { AreaChips, LightDaysField, StudyDaysFields, strategyOptions } from "@/components/cronograma/planner-fields";
 import { shortDate, toDateKey } from "@/lib/dates";
 import type { PlannerSettings } from "@/lib/planner";
 import { findArea, type AreaId } from "@/lib/syllabus";
@@ -55,6 +55,7 @@ function OnboardingSteps() {
   const [error, setError] = useState<string | null>(null);
   const today = toDateKey(new Date());
   const studyDayNames = WEEKDAY_NAMES.filter((_, index) => settings.studyDays[index]);
+  const lightDayNames = WEEKDAY_NAMES.filter((_, index) => settings.studyDays[index] && settings.lightDays[index]);
 
   const update = (changes: Partial<PlannerSettings>) => {
     setSettings((current) => ({ ...current, ...changes }));
@@ -93,7 +94,13 @@ function OnboardingSteps() {
 
   const summary: [string, string, number][] = [
     ["Objetivo", settings.course || "Não informado", 0],
-    ["Dias de estudo", `${studyDayNames.join(", ")}, com até 2 matérias por dia`, 1],
+    [
+      "Dias de estudo",
+      `${studyDayNames.join(", ")}, com até 2 matérias por dia${
+        lightDayNames.length ? ` (só 1 em ${lightDayNames.join(", ")})` : ""
+      }`,
+      1,
+    ],
     ["Áreas prioritárias ou difíceis", areaNames(settings.difficultAreas), 2],
     ["Áreas em que vai bem", areaNames(settings.strongAreas), 2],
     ["Data da prova", settings.targetDate ? shortDate(settings.targetDate) + "/" + settings.targetDate.slice(0, 4) : "Não informada", 3],
@@ -141,6 +148,11 @@ function OnboardingSteps() {
               <span className="text-[13px] font-semibold text-muted">Em quais dias você quer estudar?</span>
               <StudyDaysFields value={settings.studyDays} onChange={(studyDays) => update({ studyDays })} />
             </div>
+            <LightDaysField
+              studyDays={settings.studyDays}
+              value={settings.lightDays}
+              onChange={(lightDays) => update({ lightDays })}
+            />
             <p className="text-[13px] text-muted">
               Cada dia de estudo recebe até 2 matérias. Não precisa fazer as duas: o que não der passa para o dia seguinte. Não há
               limite de tempo: estude cada matéria até sentir que dominou.
