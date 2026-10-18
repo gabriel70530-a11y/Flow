@@ -255,7 +255,8 @@ function authMessage(error: AuthError, fallback: string): string | null {
     return "Muitas tentativas seguidas. Espere um minuto e tente de novo.";
   }
   if (error.code === "invalid_credentials") return "E-mail ou senha incorretos.";
-  if (error.code === "email_not_confirmed") return "Confirme seu e-mail pelo link que enviamos antes de entrar.";
+  if (error.code === "user_already_exists") return "Este e-mail já tem conta. Entre com sua senha ou use \"Esqueci minha senha\".";
+  if (error.code === "email_not_confirmed")return "Confirme seu e-mail pelo link que enviamos antes de entrar.";
   if (error.code === "weak_password") return `Use uma senha mais forte, com pelo menos ${PASSWORD_MIN} caracteres.`;
   if (error.code === "same_password") return "A senha nova precisa ser diferente da atual.";
   return fallback;
