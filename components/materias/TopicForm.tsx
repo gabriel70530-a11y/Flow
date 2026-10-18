@@ -4,7 +4,8 @@ import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { Field, inputStyles } from "@/components/ui/Field";
 import { Segmented } from "@/components/ui/Segmented";
-import { AREAS, subjectsOf, type AreaId, type SubjectId } from "@/lib/syllabus";
+import { hasTopicNamed, topicSuggestions } from "@/lib/suggestions";
+import { AREAS, findArea, findSubject, subjectsOf, type AreaId, type SubjectId } from "@/lib/syllabus";
 import {
   PRIORITY_LABELS,
   TOPIC_DESCRIPTION_MAX,
@@ -12,6 +13,7 @@ import {
   type Priority,
   type TopicInput,
 } from "@/lib/topics";
+import { useStudyStore } from "@/store/study-store";
 
 export const priorityOptions = (Object.keys(PRIORITY_LABELS) as Priority[]).map((value) => ({
   value,
@@ -23,9 +25,49 @@ interface TopicFormProps {
   submitLabel: string;
   onSubmit: (input: TopicInput) => string | null;
   onCancel?: () => void;
+  // Só ao criar: mostra o que mais cai na área ou matéria escolhida, como atalho para o nome.
+  suggest?: boolean;
 }
 
-export function TopicForm({ initial, submitLabel, onSubmit, onCancel }: TopicFormProps) {
+function Suggestions({ input, onPick }: { input: TopicInput; onPick: (name: string) => void }) {
+  const topics = useStudyStore((state) => state.topics);
+  const list = topicSuggestions(input.areaId, input.subjectId);
+  if (!list) return <p className="-mt-1 text-[13px] text-muted">Escolha a matéria para ver o que mais cai.</p>;
+  const scope = input.subjectId ? findSubject(input.subjectId)?.name : findArea(input.areaId).name;
+  return (
+    <div className="-mt-1 grid gap-2" aria-live="polite">
+      <div className="flex items-baseline justify-between gap-2 text-[13px]">
+        <span className="font-semibold text-text">O que mais cai em {scope}</span>
+        <span className="text-muted">toque para usar</span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {list.map((name) => {
+          const exists = hasTopicNamed(topics, input.areaId, name);
+          return (
+            <button
+              key={name}
+              type="button"
+              disabled={exists}
+              aria-pressed={input.name.trim() === name}
+              aria-label={exists ? `${name}, já criado` : undefined}
+              onClick={() => onPick(name)}
+              className="min-h-[34px] rounded-full border-2 border-transparent bg-hover px-3.5 text-sm font-semibold text-text hover:border-edge aria-pressed:border-edge aria-pressed:bg-action aria-pressed:text-on-action disabled:border-dashed disabled:border-line disabled:bg-transparent disabled:font-semibold disabled:text-muted disabled:opacity-100 disabled:hover:border-line"
+            >
+              {exists && (
+                <span className="mr-1 text-success" aria-hidden>
+                  ✓
+                </span>
+              )}
+              {name}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export function TopicForm({ initial, submitLabel, onSubmit, onCancel, suggest = false }: TopicFormProps) {
   const [input, setInput] = useState(initial);
   const [error, setError] = useState<string | null>(null);
   const update = (changes: Partial<TopicInput>) => {
@@ -47,11 +89,13 @@ export function TopicForm({ initial, submitLabel, onSubmit, onCancel }: TopicFor
           value={input.name}
           maxLength={TOPIC_NAME_MAX}
           onChange={(event) => update({ name: event.target.value })}
+          placeholder={suggest ? "Ex.: Porcentagem" : undefined}
           className={inputStyles}
           required
           aria-invalid={Boolean(error)}
         />
       </Field>
+      {suggest && <Suggestions input={input} onPick={(name) => update({ name })} />}
       <Field label="Área">
         <select
           value={input.areaId}
@@ -105,6 +149,11 @@ export function TopicForm({ initial, submitLabel, onSubmit, onCancel }: TopicFor
           </Button>
         )}
       </div>
+      {suggest && (
+        <p className="text-xs text-muted">
+          Sugestões a partir de levantamentos do que caiu no Enem de 2014 a 2024. Elas não dizem o que vai cair.
+        </p>
+      )}
     </form>
   );
 }

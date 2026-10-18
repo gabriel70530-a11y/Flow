@@ -366,6 +366,7 @@ export function MateriasScreen() {
           <TopicForm
             initial={{ name: "", ...creatingIn, description: "", priority: "media" }}
             submitLabel="Criar tópico"
+            suggest
             onCancel={() => setCreatingIn(null)}
             onSubmit={(input) => {
               const result = addTopic(input);

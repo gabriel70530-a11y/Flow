@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prévia das sugestões · Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira:ital,wdth,wght@0,100..125,300..800;1,100..125,300..800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f3f8fb; --surface: #ffffff; --soft: #e9f4f9; --line: #dcebf2; --text: #0b2a42; --muted: #4f6f83;
+    --accent: #135487; --action: #135487; --mid: #2f87b5; --edge: #135487; --success: #2e7d4f;
+  }
+  :root[data-theme="dark"] {
+    --bg: #061829; --surface: #0b2238; --soft: #102d48; --line: #15344f; --text: #e6f3f9; --muted: #85b0c6;
+    --accent: #47bcdf; --action: #135487; --mid: #47bcdf; --edge: #eef7fb; --success: #6fcf97;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  [hidden] { display: none !important; }
+  body { font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+  button, select, input, textarea { font: inherit; color: inherit; }
+  button { background: none; border: 0; cursor: pointer; }
+  .heading { font-family: "Saira", sans-serif; }
+
+  .preview-bar { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; padding: 12px 16px; background: #0b2a42; color: #fff; font-size: 13px; }
+  .preview-bar .label { opacity: .6; margin-right: 4px; }
+  .preview-bar .group { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(255,255,255,.1); }
+  .preview-bar button { padding: 6px 14px; border-radius: 999px; color: #fff; font-weight: 600; }
+  .preview-bar button[aria-pressed="true"] { background: #fff; color: #135487; }
+  .preview-note { max-width: 760px; margin: 20px auto 0; padding: 0 16px; color: var(--muted); font-size: 14px; text-align: center; }
+
+  .stage { display: flex; justify-content: center; padding: 24px 16px 64px; }
+  .frame { position: relative; width: 100%; max-width: 1180px; min-height: 820px; background: var(--bg); border-radius: 20px; overflow: hidden; box-shadow: 0 0 0 1px var(--line), 0 30px 60px rgba(15,27,45,.08); }
+  .frame.phone { max-width: 400px; }
+
+  /* Fundo: a tela de Matérias, esmaecida pelo drawer */
+  .page { padding: 40px 48px; display: grid; gap: 24px; }
+  .phone .page { padding: 24px 16px; }
+  .page h1 { font-family: "Saira", sans-serif; font-weight: 700; font-stretch: 112%; font-size: 32px; }
+  .page .sub { color: var(--muted); margin-top: 6px; }
+  .ghost-card { height: 84px; border-radius: 18px; border: 2px solid var(--edge); box-shadow: 4px 4px 0 var(--edge); background: var(--surface); }
+  .scrim { position: absolute; inset: 0; background: rgba(0,0,0,.35); }
+
+  /* Drawer */
+  .drawer { position: absolute; top: 0; right: 0; bottom: 0; width: 420px; background: var(--surface); padding: 16px 24px 24px; overflow-y: auto; box-shadow: -8px 0 24px rgba(0,0,0,.12); }
+  .phone .drawer { top: auto; left: 0; width: auto; max-height: 92%; border-radius: 16px 16px 0 0; padding: 16px 20px 24px; }
+  .drawer-head { display: flex; justify-content: space-between; align-items: start; margin-bottom: 24px; }
+  .drawer-head small { color: var(--muted); font-size: 13px; }
+  .drawer-head h2 { font-family: "Saira", sans-serif; font-weight: 600; font-stretch: 108%; font-size: 20px; margin-top: 4px; }
+  .close { width: 36px; height: 36px; border-radius: 999px; display: grid; place-items: center; color: var(--muted); }
+  form { display: grid; gap: 16px; }
+  label.field { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .input { height: 40px; width: 100%; border-radius: 10px; border: 2px solid var(--line); background: var(--surface); padding: 0 12px; font-size: 15px; font-weight: 400; color: var(--text); }
+  .input:focus { outline: none; border-color: var(--edge); }
+  textarea.input { height: auto; padding: 8px 12px; resize: none; }
+
+  /* Novo: sugestões */
+  .suggest { display: grid; gap: 8px; margin-top: -4px; }
+  .suggest-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 13px; }
+  .suggest-head strong { color: var(--text); font-weight: 600; }
+  .suggest-head span { color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { min-height: 34px; padding: 0 14px; border-radius: 999px; background: var(--soft); font-size: 14px; font-weight: 600; color: var(--text); border: 2px solid transparent; }
+  .chip:hover { border-color: var(--edge); }
+  .chip[aria-pressed="true"] { background: var(--action); color: #fff; border-color: var(--edge); }
+  .chip:disabled { background: none; color: var(--muted); border: 2px dashed var(--line); cursor: default; }
+  .chip:disabled::before { content: "✓ "; color: var(--success); }
+  .suggest-empty { font-size: 13px; color: var(--muted); }
+  .source { font-size: 12px; color: var(--muted); }
+
+  .segmented { display: flex; padding: 3px; border-radius: 20px; background: var(--soft); }
+  .segmented button { flex: 1; height: 32px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--muted); }
+  .segmented button[aria-pressed="true"] { background: var(--action); color: #fff; }
+  .btn-primary { height: 44px; border-radius: 999px; background: var(--action); color: #fff; font-weight: 600; border: 2px solid var(--edge); box-shadow: 3px 3px 0 var(--edge); }
+  .callout { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+</style>
+</head>
+<body>
+
+<div class="preview-bar">
+  <span class="label">Tema</span>
+  <div class="group" data-control="theme">
+    <button aria-pressed="true" data-value="light">Claro</button>
+    <button aria-pressed="false" data-value="dark">Escuro</button>
+  </div>
+  <span class="label">Tamanho</span>
+  <div class="group" data-control="size">
+    <button aria-pressed="true" data-value="desktop">Computador</button>
+    <button aria-pressed="false" data-value="phone">Celular</button>
+  </div>
+</div>
+<p class="preview-note">Prévia: no formulário "Novo tópico", embaixo do nome, aparecem sugestões do que mais cai na área ou matéria escolhida. Tocar numa sugestão só preenche o nome; nada é criado sozinho. Troque a área e a matéria para ver as listas. O que você já criou aparece apagado, com ✓, e não pode ser tocado.</p>
+
+<div class="stage">
+  <div class="frame" id="frame">
+    <div class="page">
+      <div><h1>Matérias</h1><p class="sub">17 tópicos · 1 concluído</p></div>
+      <div class="ghost-card"></div><div class="ghost-card"></div><div class="ghost-card"></div>
+    </div>
+    <div class="scrim"></div>
+
+    <aside class="drawer" role="dialog" aria-label="Novo tópico">
+      <div class="drawer-head">
+        <div><small>Matérias</small><h2>Novo tópico</h2></div>
+        <button class="close" aria-label="Fechar">✕</button>
+      </div>
+      <form onsubmit="return false">
+        <label class="field">Nome
+          <input class="input" id="name" placeholder="Ex.: Porcentagem">
+        </label>
+
+        <div class="suggest" aria-live="polite">
+          <div class="suggest-head"><strong id="suggest-title"></strong><span>toque para usar</span></div>
+          <div class="chips" id="chips"></div>
+          <p class="suggest-empty" id="suggest-empty" hidden>Escolha a matéria para ver o que mais cai.</p>
+        </div>
+
+        <label class="field">Área
+          <select class="input" id="area">
+            <option value="mat">Matemática</option>
+            <option value="lin">Linguagens</option>
+            <option value="nat" selected>Ciências da Natureza</option>
+            <option value="hum">Ciências Humanas</option>
+            <option value="red">Redação</option>
+          </select>
+        </label>
+        <label class="field" id="subject-field">Matéria
+          <select class="input" id="subject"></select>
+        </label>
+        <label class="field">Descrição (opcional)
+          <textarea class="input" rows="3"></textarea>
+        </label>
+        <div style="display:grid;gap:6px">
+          <span style="font-size:13px;font-weight:600;color:var(--muted)">Prioridade</span>
+          <div class="segmented"><button aria-pressed="true">Alta</button><button>Média</button><button>Baixa</button></div>
+        </div>
+        <button class="btn-primary">Criar tópico</button>
+        <p class="source">Sugestões a partir de levantamentos públicos das provas de 2016 a 2025. Elas não dizem o que vai cair.</p>
+      </form>
+    </aside>
+  </div>
+</div>
+
+<script>
+  const SUBJECTS = {
+    nat: [["", "Escolha a matéria"], ["qui", "Química"], ["fis", "Física"], ["bio", "Biologia"]],
+    hum: [["", "Escolha a matéria"], ["geo", "Geografia"], ["his", "História"], ["fil", "Filosofia"], ["soc", "Sociologia"]],
+  };
+  const NAMES = { mat: "Matemática", lin: "Linguagens", red: "Redação", qui: "Química", fis: "Física", bio: "Biologia", geo: "Geografia", his: "História", fil: "Filosofia", soc: "Sociologia" };
+  const SUGGESTIONS = {
+    mat: ["Porcentagem", "Razão e proporção", "Estatística: média, moda e mediana", "Leitura de gráficos e tabelas", "Geometria plana", "Geometria espacial", "Funções", "Análise combinatória", "Probabilidade", "Escalas e unidades de medida"],
+    lin: ["Interpretação de texto", "Gêneros textuais", "Funções da linguagem", "Figuras de linguagem", "Variação linguística", "Modernismo", "Inglês ou espanhol: leitura"],
+    red: ["Estrutura dissertativa-argumentativa", "Proposta de intervenção", "Repertório sociocultural", "Coesão e conectivos", "Norma culta"],
+    qui: ["Estequiometria", "Funções orgânicas", "Soluções e concentração", "Eletroquímica", "Termoquímica", "Química ambiental"],
+    fis: ["Eletrodinâmica", "Cinemática", "Dinâmica e leis de Newton", "Energia e trabalho", "Ondulatória", "Termologia", "Óptica"],
+    bio: ["Ecologia", "Genética", "Fisiologia humana", "Citologia", "Evolução", "Doenças e parasitoses"],
+    geo: ["Questões ambientais", "Espaço urbano e agrário", "Cartografia", "Clima e vegetação", "Geopolítica"],
+    his: ["Brasil República", "Era Vargas", "Brasil Colônia", "Escravidão e resistência", "Ditadura militar", "Guerras mundiais"],
+    fil: ["Ética", "Contratualistas", "Filosofia antiga", "Iluminismo"],
+    soc: ["Cidadania e movimentos sociais", "Trabalho e sociedade", "Indústria cultural", "Durkheim, Weber e Marx"],
+  };
+  // Tópicos que a pessoa já tem (como na conta de exemplo): aparecem com ✓.
+  const EXISTING = ["Ecologia", "Genética", "Citologia", "Ondulatória", "Termologia", "Eletrodinâmica", "Cinemática", "Razão e proporção", "Funções da linguagem", "Figuras de linguagem"];
+
+  const area = document.getElementById("area");
+  const subject = document.getElementById("subject");
+  const subjectField = document.getElementById("subject-field");
+  const name = document.getElementById("name");
+  const chips = document.getElementById("chips");
+  const title = document.getElementById("suggest-title");
+  const empty = document.getElementById("suggest-empty");
+
+  function fillSubjects() {
+    const list = SUBJECTS[area.value];
+    subjectField.hidden = !list;
+    subject.innerHTML = list ? list.map(([value, label]) => `<option value="${value}">${label}</option>`).join("") : "";
+    if (area.value === "nat") subject.value = "bio";
+  }
+
+  function render() {
+    const key = SUBJECTS[area.value] ? subject.value : area.value;
+    const list = SUGGESTIONS[key];
+    empty.hidden = Boolean(list);
+    title.parentElement.hidden = !list;
+    chips.hidden = !list;
+    if (!list) return;
+    title.textContent = `O que mais cai em ${NAMES[key]}`;
+    chips.innerHTML = list
+      .map((label) => `<button type="button" class="chip" ${EXISTING.includes(label) ? "disabled aria-label=\"" + label + ", já criado\"" : ""} aria-pressed="${name.value === label}">${label}</button>`)
+      .join("");
+  }
+
+  chips.addEventListener("click", (event) => {
+    const chip = event.target.closest(".chip");
+    if (!chip || chip.disabled) return;
+    name.value = chip.textContent;
+    name.focus();
+    render();
+  });
+  name.addEventListener("input", render);
+  area.addEventListener("change", () => { fillSubjects(); render(); });
+  subject.addEventListener("change", render);
+  fillSubjects();
+  render();
+
+  const frame = document.getElementById("frame");
+  const apply = {
+    theme: (value) => document.documentElement.setAttribute("data-theme", value),
+    size: (value) => frame.classList.toggle("phone", value === "phone"),
+  };
+  document.querySelectorAll("[data-control]").forEach((group) => {
+    group.addEventListener("click", (event) => {
+      const button = event.target.closest("button");
+      if (!button) return;
+      group.querySelectorAll("button").forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
+      apply[group.dataset.control](button.dataset.value);
+    });
+  });
+</script>
+</body>
+</html>
