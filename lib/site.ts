@@ -1,8 +1,12 @@
 // Endereço público do site, usado no sitemap, no robots e nos cartões de compartilhamento.
-// Sem NEXT_PUBLIC_SITE_URL configurada, os links apontam para o servidor local.
+// Ordem: NEXT_PUBLIC_SITE_URL (domínio próprio), o endereço de produção que a Vercel informa no build e,
+// sem nenhum dos dois, o servidor local.
 export function siteUrl(): URL {
   const url = process.env.NEXT_PUBLIC_SITE_URL;
-  return new URL(url && /^https?:\/\/[^\s]+$/.test(url) ? url : "http://localhost:3000");
+  if (url && /^https?:\/\/[^\s]+$/.test(url)) return new URL(url);
+  const vercelHost = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  if (vercelHost && /^[a-z0-9.-]+$/i.test(vercelHost)) return new URL(`https://${vercelHost}`);
+  return new URL("http://localhost:3000");
 }
 
 export const SITE_TITLE = "Flow · Sua preparação para o ENEM, no ritmo certo.";
