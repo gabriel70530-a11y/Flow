@@ -160,7 +160,7 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 - O `AudioContext` só pode ser criado no clique de Iniciar (regra dos navegadores).
 
 **Cronograma**
-- O cronograma organiza, não limita: não existe duração por matéria nem limite de horas. A pessoa escolhe só em quais dias estuda (dias de estudo), as áreas prioritárias e difíceis, a data-alvo opcional e a estratégia (equilibrada ou foco nas prioridades).
+- O cronograma organiza, não limita: não existe duração por matéria nem limite de horas. A pessoa escolhe só em quais dias estuda (dias de estudo), as áreas prioritárias e difíceis e a estratégia (equilibrada ou foco nas prioridades). A data da prova não é perguntada: é sempre a do Enem (`ENEM_DATES` em `lib/exam.ts`, hoje 8/11 e 15/11 de 2026), mostrada no onboarding e nas preferências só para leitura. Atualize a constante a cada edição.
 - Cada dia de estudo recebe **no máximo 2 matérias** (revisões contam como matéria), **sempre do mesmo assunto**: dia de Matemática tem até duas de Matemática, nunca Matemática e Linguagens; dia de Química tem até duas de Química, nunca Química e Biologia. A área inteira ("Ciências da Natureza (geral)") cabe com qualquer matéria dela. Estudar as duas não é obrigatório.
 - Ordem de escolha: revisões vencidas ou do dia, tópicos "Precisa revisar", "Em andamento" e "Não iniciado", pesando prioridade do tópico, áreas prioritárias e áreas pouco contempladas na semana. Tópicos ocultos e concluídos ficam de fora. O que não couber na semana aparece como pendente.
 - Regenerar mantém tarefas concluídas, iniciadas, manuais, repetições e transferidas; substitui só as geradas e ainda planejadas a partir de hoje. Antes, mostra quantas serão trocadas.
@@ -172,7 +172,7 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 - Quem não quiser cronograma usa o app manualmente.
 - **Dias corridos** (`lightDays`, opcional): dias de estudo em que o plano coloca só 1 matéria (escola integral, trabalho). Vale para gerar, repetir e transferir; à mão a pessoa ainda pode pôr 2.
 - **Dia leve**: no Painel, com 2 matérias abertas hoje, "Dia leve" deixa só uma (a iniciada, se houver) e passa a outra planejada para o próximo dia de estudo, pela regra das transferências. O toast diz para onde foi, sem culpa.
-- **Reta final**: nas 4 semanas antes da data da prova, tópicos "Não iniciado" perdem peso no plano; revisões, "Precisa revisar" e "Em andamento" vêm antes. Sem data informada, o Painel sugere a do Enem 2026 (8/11), sem impor.
+- **Reta final**: nas 4 semanas antes da data da prova, tópicos "Não iniciado" perdem peso no plano; revisões, "Precisa revisar" e "Em andamento" vêm antes. O Painel conta os dias até o próximo dia de prova (o 1º e, entre os dois domingos, o 2º).
 
 **Preparação** (tudo opcional, nada bloqueia o resto do app)
 - **Caderno de erros** (`/revisoes/erros`): cada erro guarda o assunto (tópico, matéria, área ou nenhum), o motivo (conteúdo, comando, pressa, chute), a questão, o que aprendeu e a origem. Volta em +1, +7, +15 e +30 dias; "Lembrei" avança, "Não lembrei" recomeça amanhã; depois da 4ª lembrança sai da fila. Dois erros em aberto no mesmo tópico sugerem "Precisa revisar" (a pessoa confirma). Com 3 ou mais erros, mostra o motivo mais frequente e uma dica. O contador de Revisões soma os erros do dia.
