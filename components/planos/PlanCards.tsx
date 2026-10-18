@@ -3,6 +3,7 @@ import Link from "next/link";
 import { buttonStyles } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { FREE_FEATURES, PRO_FEATURES, PRO_PRICE, interestListUrl } from "@/lib/plan";
+import { appOpen } from "@/lib/site";
 import { InterestLink } from "./InterestLink";
 
 function FeatureList({ items }: { items: string[] }) {
@@ -33,10 +34,12 @@ export function PlanCards({ inApp = false }: { inApp?: boolean }) {
         <FeatureList items={FREE_FEATURES} />
         {inApp ? (
           <p className="text-[13px] text-muted">É o que você já usa.</p>
-        ) : (
+        ) : appOpen() ? (
           <Link href="/painel" className={buttonStyles("primary", "lg")}>
             Começar grátis
           </Link>
+        ) : (
+          <p className="text-[13px] text-muted">O Flow abre em breve.</p>
         )}
       </Card>
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { linkStyles } from "@/components/ui/Button";
 import { Wordmark } from "@/components/shell/Wordmark";
 import { contactEmail } from "@/lib/plan";
+import { appOpen } from "@/lib/site";
 
 export function SiteHeader() {
   return (
@@ -21,12 +22,18 @@ export function SiteHeader() {
             Dúvidas
           </Link>
         </nav>
-        <Link
-          href="/painel"
-          className="inline-flex h-9 items-center rounded-full bg-white px-4 text-sm font-semibold whitespace-nowrap text-action"
-        >
-          Abrir o app
-        </Link>
+        {appOpen() ? (
+          <Link
+            href="/painel"
+            className="inline-flex h-9 items-center rounded-full bg-white px-4 text-sm font-semibold whitespace-nowrap text-action"
+          >
+            Abrir o app
+          </Link>
+        ) : (
+          <span className="inline-flex h-9 items-center rounded-full border-2 border-white/40 px-4 text-sm font-semibold whitespace-nowrap">
+            Em breve
+          </span>
+        )}
       </div>
     </header>
   );

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { siteUrl } from "./site";
+import { appOpen, isAppRoute, siteUrl } from "./site";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -20,5 +20,29 @@ describe("siteUrl", () => {
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "flowestudos");
     vi.stubEnv("VERCEL_PROJECT_PRODUCTION_URL", "bad host/");
     expect(siteUrl().href).toBe("http://localhost:3000/");
+  });
+});
+
+describe("appOpen", () => {
+  it("closes the app only in Vercel production, unless APP_OPEN is true", () => {
+    vi.stubEnv("APP_OPEN", "");
+    vi.stubEnv("VERCEL_ENV", "");
+    expect(appOpen()).toBe(true);
+    vi.stubEnv("VERCEL_ENV", "preview");
+    expect(appOpen()).toBe(true);
+    vi.stubEnv("VERCEL_ENV", "production");
+    expect(appOpen()).toBe(false);
+    vi.stubEnv("APP_OPEN", "true");
+    expect(appOpen()).toBe(true);
+  });
+});
+
+describe("isAppRoute", () => {
+  it("matches app screens and their subpaths, not the site pages", () => {
+    expect(isAppRoute("/painel")).toBe(true);
+    expect(isAppRoute("/revisoes/erros")).toBe(true);
+    expect(isAppRoute("/")).toBe(false);
+    expect(isAppRoute("/privacidade")).toBe(false);
+    expect(isAppRoute("/painelzinho")).toBe(false);
   });
 });

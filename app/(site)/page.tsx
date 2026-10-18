@@ -3,7 +3,7 @@ import Link from "next/link";
 import { buttonStyles } from "@/components/ui/Button";
 import { PlanCards } from "@/components/planos/PlanCards";
 import { Wordmark } from "@/components/shell/Wordmark";
-import { SITE_TITLE } from "@/lib/site";
+import { SITE_TITLE, appOpen } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: { absolute: SITE_TITLE },
@@ -52,6 +52,8 @@ const FAQ = [
 const sectionTitle = "font-heading text-[26px] leading-[1.1] font-bold uppercase font-stretch-115% md:text-[40px]";
 
 export default function LandingPage() {
+  const open = appOpen();
+
   return (
     <>
       <section className="relative overflow-hidden bg-hero text-white" aria-labelledby="titulo">
@@ -71,12 +73,14 @@ export default function LandingPage() {
             Saiba o que estudar hoje, organize a semana sem rigidez e lembre das revisões na hora certa. Grátis e sem cadastro.
           </p>
           <div className="mt-9 flex flex-wrap gap-3">
-            <Link
-              href="/painel"
-              className="inline-flex h-[52px] items-center rounded-full border-2 border-hero-edge bg-white px-7 font-semibold text-action shadow-[4px_4px_0_var(--hero-bright)] transition-transform hover:-translate-x-px hover:-translate-y-px active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
-            >
-              Começar agora
-            </Link>
+            {open && (
+              <Link
+                href="/painel"
+                className="inline-flex h-[52px] items-center rounded-full border-2 border-hero-edge bg-white px-7 font-semibold text-action shadow-[4px_4px_0_var(--hero-bright)] transition-transform hover:-translate-x-px hover:-translate-y-px active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+              >
+                Começar agora
+              </Link>
+            )}
             <a
               href="#como-funciona"
               className="inline-flex h-[52px] items-center rounded-full border-2 border-white px-7 font-semibold text-white hover:bg-white/10"
@@ -84,7 +88,9 @@ export default function LandingPage() {
               Ver como funciona
             </a>
           </div>
-          <p className="mt-5 text-[13px] text-white/70">Os dados ficam no seu navegador.</p>
+          <p className="mt-5 text-[13px] text-white/70">
+            {open ? "Os dados ficam no seu navegador." : "O Flow abre em breve. Por enquanto, conheça como ele funciona."}
+          </p>
         </div>
       </section>
 
@@ -152,10 +158,16 @@ export default function LandingPage() {
           <h2 id="comecar-titulo" className="font-heading text-[22px] font-bold font-stretch-112%">
             Comece pelo que importa hoje.
           </h2>
-          <p className="max-w-md text-muted">Leva 2 minutos para montar o plano. Ou abra o app e estude do seu jeito.</p>
-          <Link href="/painel" className={buttonStyles("primary", "lg")}>
-            Organizar meus estudos
-          </Link>
+          {open ? (
+            <>
+              <p className="max-w-md text-muted">Leva 2 minutos para montar o plano. Ou abra o app e estude do seu jeito.</p>
+              <Link href="/painel" className={buttonStyles("primary", "lg")}>
+                Organizar meus estudos
+              </Link>
+            </>
+          ) : (
+            <p className="max-w-md text-muted">O Flow abre em breve.</p>
+          )}
         </section>
       </div>
     </>

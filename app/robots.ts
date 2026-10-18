@@ -1,19 +1,5 @@
 import type { MetadataRoute } from "next";
-import { siteUrl } from "@/lib/site";
-
-const APP_ROUTES = [
-  "/painel",
-  "/cronograma",
-  "/materias",
-  "/timer",
-  "/revisoes",
-  "/simulados",
-  "/redacao",
-  "/prova",
-  "/ajustes",
-  "/planos",
-  "/comecar",
-];
+import { APP_ROUTES, siteUrl } from "@/lib/site";
 
 export default function robots(): MetadataRoute.Robots {
   return {

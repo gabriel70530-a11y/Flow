@@ -12,3 +12,27 @@ export function siteUrl(): URL {
 export const SITE_TITLE = "Flow · Sua preparação para o ENEM, no ritmo certo.";
 export const SITE_DESCRIPTION =
   "Organize as matérias da semana e do dia, use o timer e lembre das revisões. Grátis, sem cadastro.";
+
+export const APP_ROUTES = [
+  "/painel",
+  "/cronograma",
+  "/materias",
+  "/timer",
+  "/revisoes",
+  "/simulados",
+  "/redacao",
+  "/prova",
+  "/ajustes",
+  "/planos",
+  "/comecar",
+];
+
+// Enquanto o Flow está só em divulgação, a produção mostra apenas a página inicial, a privacidade e os termos.
+// Para abrir o app, defina APP_OPEN=true na Vercel e publique de novo. Local e prévias continuam abertos.
+export function appOpen(): boolean {
+  return process.env.VERCEL_ENV !== "production" || process.env.APP_OPEN === "true";
+}
+
+export function isAppRoute(pathname: string): boolean {
+  return APP_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
+}
