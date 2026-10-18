@@ -4,7 +4,7 @@ Organizador de estudos para estudantes do ensino médio e candidatos ao ENEM. A 
 
 O escopo do produto está em `prompt_mestre_enem_flow_claude_code.md` (fase 2). O protótipo em `docs/prototype.html` continua sendo a referência visual e dos fluxos que ele já cobre. Se o prompt mestre e o protótipo divergirem, vale o prompt mestre.
 
-**Local primeiro, conta opcional.** Os dados vivem no `localStorage` do navegador e o app funciona inteiro sem conta e sem internet. A conta (Supabase: login com e-mail e senha, banco Postgres com RLS em São Paulo) só guarda uma cópia e sincroniza entre aparelhos; sem as variáveis do Supabase, a interface diz que a conta não está disponível. Recursos que dependem de servidor ainda não feito (cobrança do Pro, coleta de métricas, lista de interesse) ficam com a camada desacoplada pronta e documentados como pendentes no README; nunca simule compra ou assinatura. O estudo de custos e as escolhas aprovadas estão em `docs/estudo-custos-e-preco.md` e o plano da fase em `docs/roadmap-proxima-fase.md`.
+**Local primeiro, conta obrigatória.** Os dados vivem no `localStorage` do navegador e o app funciona sem internet, mas só depois de entrar numa conta (Supabase: e-mail e senha ou Google, banco Postgres com RLS em São Paulo), que guarda uma cópia e sincroniza entre aparelhos. Sem as variáveis do Supabase, a produção diz que a conta não está disponível e o desenvolvimento local abre o app direto. Pagamento (Mercado Pago) e IA (Anthropic) rodam só nas funções do Supabase (`supabase/functions`), com as chaves no servidor; nunca simule compra ou assinatura. O estudo do Pro, com custos, preço e decisões aprovadas, está em `docs/plano-pro.md` (prévia em `docs/previa-pro.html`); os anteriores em `docs/estudo-custos-e-preco.md` e `docs/roadmap-proxima-fase.md`.
 
 ## Stack
 
@@ -13,7 +13,8 @@ O escopo do produto está em `prompt_mestre_enem_flow_claude_code.md` (fase 2). 
 - Zustand com o middleware `persist` para o estado
 - Vitest para testes das funções puras e da store
 - `lucide-react` para ícones
-- `@supabase/supabase-js` para a conta e a sincronização (só em `store/cloud.ts`)
+- `@supabase/supabase-js` para a conta, a sincronização e as chamadas às funções (só em `store/cloud.ts`)
+- Funções do Supabase em Deno (`supabase/functions`, fora do `tsconfig` e do ESLint): conferir com `deno check` e `deno lint` dentro da pasta
 - Nada além disso sem necessidade clara. Gráficos são divs com altura calculada, não biblioteca.
 
 ## Comandos
@@ -73,9 +74,11 @@ lib/
   exam.ts               data da prova, reta final e checklist do dia da prova
   mistakes.ts           caderno de erros com revisão espaçada própria
   mock-exams.ts         simulados registrados: acertos por área e ritmo
+  official-exams.ts     provas oficiais do Inep (gabarito transcrito), correção e rascunho do simulado no app
+  age.ts                idade mínima (13) e menor de idade pelo ano de nascimento
   essays.ts             redações registradas (notas por competência) e repertório
   suggestions.ts        sugestões de nome de tópico pelo que mais cai, por área e matéria
-  plan.ts               gratuito x Pro (acesso liberado durante o teste), lista de interesse, contato
+  plan.ts               gratuito x Pro: preços, recursos, acesso a partir do registro do servidor, teste aberto
   sync.ts               registros por item, mudanças pendentes e junção com a nuvem (mudança mais recente vence)
   site.ts               endereço público, título e descrição (sitemap, robots, manifest, cartão social)
   *.test.ts
@@ -84,9 +87,10 @@ store/
   state.ts              tipo StudyData e estado vazio
   migrate.ts            leitura do localStorage, migração v1 → v2 e backup
   analytics.ts          eventos de uso: só com endpoint configurado e consentimento
-  cloud.ts              login, sincronização com o Supabase, sair e excluir conta
-  demo-data.ts
-supabase/migrations/    tabela records com RLS, push_records e delete_account
+  cloud.ts              login (e-mail e Google), sincronização, Pro do servidor, pagamento e IA, sair e excluir conta
+  pro.ts                registro do Pro confirmado pelo servidor (proAccessNow, useProAccess)
+supabase/migrations/    records com RLS, push_records, delete_account; entitlements, payments e ai_usage
+supabase/functions/     checkout, mercadopago-webhook, cancel-subscription, ai-essay, ai-mistake
 ```
 
 ## Modelo de dados (v2)
@@ -102,7 +106,8 @@ interface TopicRecord {                      // criados pelo estudante, na ordem
   name: string; description: string; priority: Priority; hidden: boolean;
 }
 interface Review {
-  stage: 1 | 2 | 3 | 4; due: string; done?: string;            // datas 'YYYY-MM-DD'
+  stage: number; due: string; done?: string;                   // datas 'YYYY-MM-DD'
+  manual?: boolean;                                            // agendada pela pessoa (gratuito), fora das 4 etapas
   feedback?: 'bem' | 'parcial' | 'dificil';
   reschedules?: { from: string; to: string; at: string }[];
 }
@@ -123,7 +128,7 @@ interface PlanTask {                         // uma matéria do dia, sem duraç�
 }
 ```
 
-O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `sessions`, `tasks`, `timer`, a meta (`goal: { type: 'horas' | 'sessoes' | 'topicos'; value }`), as preferências de cronograma (dias de estudo de segunda a domingo, áreas prioritárias e difíceis, data-alvo, estratégia), o onboarding e as preferências de interface (tema, som, sequência visível). Também guarda o caderno de erros (`mistakes`), os simulados (`mockExams`), as redações (`essays`), o repertório (`repertoire`) e os itens marcados no checklist da prova (`examChecklist`). Sessões podem ter `distracted` (resposta opcional "se distraiu?").
+O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `sessions`, `tasks`, `timer`, a meta (`goal: { type: 'horas' | 'sessoes' | 'topicos'; value }`), as preferências de cronograma (dias de estudo de segunda a domingo, áreas prioritárias e difíceis, data-alvo, estratégia), o onboarding e as preferências de interface (tema, som, sequência visível). Também guarda o caderno de erros (`mistakes`), os simulados (`mockExams`), as redações (`essays`), o repertório (`repertoire`) e os itens marcados no checklist da prova (`examChecklist`). Sessões podem ter `distracted` (resposta opcional "se distraiu?"). O simulado oficial em andamento fica em `examDraft` (respostas, `banked` e `startedAt`), no aparelho, sem sincronizar.
 
 - IDs estáveis. Tópicos novos usam `custom-…`; os que vieram da lista antiga mantêm `${areaId}-${índice}` (`mat-3`). Nunca use o nome como chave.
 - Ao carregar dados antigos, os tópicos padrão que nunca foram usados (sem progresso, sessão nem tarefa) são descartados; os usados ficam.
@@ -135,7 +140,7 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 
 **Matérias**
 - O app não traz tópicos prontos, nem nos dados de exemplo, só as cinco áreas: Matemática, Linguagens, Ciências da Natureza, Ciências Humanas e Redação. O estudante decide o que estuda e quanto estuda.
-- Ao **criar** um tópico, o formulário mostra até 10 sugestões do que mais cai na área ou matéria escolhida (`lib/suggestions.ts`, a partir da análise de incidência 2014–2024 "ENEM's Anatomy" e de levantamentos públicos). Tocar só preenche o nome; nada é criado sozinho. Sugestões que já existem na área (sem diferenciar acento) aparecem com ✓ e desativadas. Em Natureza e Humanas, aparecem depois de escolher a matéria.
+- No Pro, ao **criar** um tópico, o formulário mostra até 10 sugestões do que mais cai na área ou matéria escolhida (`lib/suggestions.ts`, a partir da análise de incidência 2014–2024 "ENEM's Anatomy" e de levantamentos públicos). Tocar só preenche o nome; nada é criado sozinho. Sugestões que já existem na área (sem diferenciar acento) aparecem com ✓ e desativadas. Em Natureza e Humanas, aparecem depois de escolher a matéria.
 - Natureza se divide em Química, Física e Biologia; Humanas em Geografia, História, Filosofia e Sociologia. Todo tópico dessas áreas pertence a uma matéria (`subjectId`), e a tela de Matérias agrupa por ela. Tarefas e sessões guardam a matéria do tópico.
 - O estudante cria, edita, oculta, reexibe e exclui tópicos (excluir pede confirmação e não apaga sessões, que passam a aparecer como "Tópico excluído").
 - Ocultar não apaga sessões, revisões nem progresso; tópicos ocultos saem das listas e do cronograma até serem reexibidos.
@@ -143,8 +148,8 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 - Cada área é um card recolhível (só o resumo até abrir). Abre sozinha a primeira área com tópicos, a área filtrada e as que têm resultado de busca.
 
 **Revisão espaçada**
-- Ao marcar um tópico como Concluído, agende 4 revisões a partir de hoje: +1, +7, +15 e +30 dias.
-- Em Revisões, "Agendar revisões do que já estudei" abre um drawer com os tópicos visíveis ainda não concluídos (por área e matéria, com busca) e a opção de criar um tópico ali mesmo. Os marcados viram Concluído e ganham as 4 revisões a partir de hoje (`markStudied`).
+- No Pro, ao marcar um tópico como Concluído, agende 4 revisões a partir de hoje: +1, +7, +15 e +30 dias. No gratuito, concluir não agenda nada: em Revisões, "Agendar revisão" deixa a pessoa escolher o tópico e a data (`scheduleReview`, revisão `manual`); escolher de novo move a pendente, nunca cria duas.
+- Em Revisões (Pro), "Agendar revisões do que já estudei" abre um drawer com os tópicos visíveis ainda não concluídos (por área e matéria, com busca) e a opção de criar um tópico ali mesmo. Os marcados viram Concluído e ganham as 4 revisões a partir de hoje (`markStudied`).
 - Ao tirar de Concluído (para qualquer outro status), remova as revisões não feitas e mantenha as já feitas.
 - Ao reconcluir, mantenha as feitas e agende só as etapas restantes a partir de hoje, com os intervalos da própria etapa.
 - A tela mostra Atrasadas, Hoje, Próximos 7 dias e Futuras. Atrasadas continuam visíveis até serem concluídas ou reagendadas.
@@ -180,9 +185,9 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 - **Reta final**: nas 4 semanas antes da data da prova, tópicos "Não iniciado" perdem peso no plano; revisões, "Precisa revisar" e "Em andamento" vêm antes. O Painel conta os dias até o próximo dia de prova (o 1º e, entre os dois domingos, o 2º).
 
 **Preparação** (tudo opcional, nada bloqueia o resto do app)
-- **Caderno de erros** (`/revisoes/erros`): cada erro guarda o assunto (tópico, matéria, área ou nenhum), o motivo (conteúdo, comando, pressa, chute), a questão, o que aprendeu e a origem. Volta em +1, +7, +15 e +30 dias; "Lembrei" avança, "Não lembrei" recomeça amanhã; depois da 4ª lembrança sai da fila. Dois erros em aberto no mesmo tópico sugerem "Precisa revisar" (a pessoa confirma). Com 3 ou mais erros, mostra o motivo mais frequente e uma dica. O contador de Revisões soma os erros do dia.
-- **Simulados** (`/simulados`): a pessoa registra acertos por área (45 questões cada), o tempo e uma observação. O Flow mostra acertos, a comparação com o simulado anterior e o ritmo em minutos por questão contra o tempo oficial (no 1º dia desconta 1h de redação). **Nunca calcula nota TRI**; a tela explica por quê.
-- **Redação** (`/redacao`): o Flow não corrige. A pessoa registra tema, data e as notas por competência (0 a 200, de 40 em 40) que recebeu fora; o app mostra a última nota, as anteriores e a competência mais fraca nas últimas 3 corrigidas. Banco de repertório pessoal com busca sem acento.
+- **Caderno de erros** (`/revisoes/erros`, Pro; no gratuito os erros já salvos ficam só para leitura): "Analisar com IA" (foto ou texto da questão e a letra marcada) preenche questão, o que aprendeu e motivo para a pessoa conferir. Cada erro guarda o assunto (tópico, matéria, área ou nenhum), o motivo (conteúdo, comando, pressa, chute), a questão, o que aprendeu e a origem. Volta em +1, +7, +15 e +30 dias; "Lembrei" avança, "Não lembrei" recomeça amanhã; depois da 4ª lembrança sai da fila. Dois erros em aberto no mesmo tópico sugerem "Precisa revisar" (a pessoa confirma). Com 3 ou mais erros, mostra o motivo mais frequente e uma dica. O contador de Revisões soma os erros do dia.
+- **Simulados** (`/simulados`): no Pro, simulado no app com a prova oficial do Inep (caderno azul, PDF oficial em link): cartão-resposta, cronômetro com a regra do timer, correção pelo gabarito oficial (anulada sai do total, em branco é erro), registro como simulado e opção de mandar os erros para o caderno. Nunca invente gabarito: só transcreva o publicado pelo Inep e cubra com teste. Em qualquer plano, a pessoa registra acertos por área (45 questões cada), o tempo e uma observação. O Flow mostra acertos, a comparação com o simulado anterior e o ritmo em minutos por questão contra o tempo oficial (no 1º dia desconta 1h de redação). **Nunca calcula nota TRI**; a tela explica por quê.
+- **Redação** (`/redacao`): no Pro, "Corrigir com IA" (tema e até 2 fotos ou o texto) mostra a nota estimada por competência, com o aviso de que não é a oficial, e pode salvar como redação (corretor "IA (estimativa)"). A pessoa também registra tema, data e as notas por competência (0 a 200, de 40 em 40) que recebeu fora; o app mostra a última nota, as anteriores e a competência mais fraca nas últimas 3 corrigidas. Banco de repertório pessoal com busca sem acento.
 - **Dia da prova** (`/prova`): checklist por dia (semana e véspera), marcado e salvo no aparelho. "Durante a prova" são só recomendações, sem marcar (ritmo de tempo, pular a questão que travar, fáceis primeiro). Remete ao edital e ao cartão de confirmação para as regras oficiais.
 - **Modo foco** no Timer: tela cheia só com o relógio. Depois da sessão, a pergunta opcional "se distraiu?" vira uma linha no resumo da semana.
 - **Offline**: em produção, um service worker (`public/sw.js`) guarda as páginas e os arquivos do app; os dados já são locais.
@@ -194,18 +199,20 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 - Números vêm só de sessões registradas. Sem denominador válido, não mostre porcentagem. Estado vazio explica como começar.
 - Sequência = dias consecutivos com estudo, contando hoje ou, se hoje ainda não teve estudo, a partir de ontem. É opcional (pode ser escondida em Ajustes) e discreta.
 
-**Conta e sincronização** (opcional)
-- Em Ajustes, card "Conta e dados" (prévia em `docs/previa-conta.html`). Entrar com e-mail e senha (mínimo de 8 caracteres). Criar conta pede a confirmação de que leu privacidade e termos (e, se menor, que um responsável sabe) e confirma o e-mail por link. "Esqueci minha senha" manda um link que volta para Ajustes pedindo a senha nova.
+**Conta e sincronização** (obrigatória)
+- Sem login, o `AuthGate` mostra a tela de entrar no lugar do app. Entrar com e-mail e senha (mínimo de 8 caracteres) ou com o Google. Criar conta pede o ano de nascimento (mínimo de 13 anos; menor de 18 confirma que um responsável sabe) e a confirmação de que leu privacidade e termos, e confirma o e-mail por link. Quem entra pelo Google responde ano e aceite depois do primeiro login. "Esqueci minha senha" manda um link que volta para Ajustes pedindo a senha nova. Ajustes mostra a conta, sair e excluir.
 - Um registro por item na tabela `records` (`collection`, `id`, `data`, `deleted`, `updated_at` do aparelho, `synced_at` do servidor). Tema, som, consentimento de métricas e timer não sincronizam.
 - Primeiro login: junta aparelho e conta; no mesmo registro, vence a conta. Depois, vence a mudança mais recente; empate, a nuvem. Apagar vira `deleted`. Dados de exemplo nunca sobem.
 - Sair mantém os dados no aparelho. Outra conta no mesmo aparelho começa com os dados dela. "Apagar todos os dados" com conta apaga também na nuvem. "Excluir conta" apaga conta e nuvem e mantém o aparelho.
 
 **Dados de exemplo**
-- Na primeira visita (sem nada salvo), carregue dados de exemplo (só sessões por área e matéria, sem tópicos) e mostre um aviso com "Apagar e começar do zero". A confirmação acontece na própria interface (dois cliques), sem `window.confirm`.
+- Conta nova começa vazia. Dados de exemplo salvos por versões antigas continuam com o aviso "Apagar e começar do zero" (dois cliques, sem `window.confirm`) e nunca sobem para a nuvem.
 
-**Gratuito e Pro**
-- Gratuito: áreas e tópicos, status, timer, sessões, revisões, progresso, meta semanal e Painel. Nunca bloqueie isso.
-- Pro experimental, R$ 19,90/mês: cronograma avançado, reorganização sugerida, estatísticas detalhadas. Sem provedor de pagamento e sem backend, tudo fica liberado durante o teste e a tela de planos diz isso com transparência. O acesso Pro nunca é decidido só pelo frontend em produção (`lib/plan.ts`).
+**Gratuito e Pro** (prévia aprovada em `docs/previa-pro.html`)
+- Gratuito: áreas e tópicos, status, timer, sessões, revisões agendadas pela pessoa, progresso, meta semanal, registro de simulados e redações, cronograma à mão e Painel das últimas 4 semanas (`FREE_HISTORY_WEEKS`). Nunca bloqueie isso.
+- Pro, R$ 14,90/mês ou R$ 119,90/ano: revisões automáticas, sugestões do que mais cai, semana montada sozinha, caderno de erros, resumo e evolução completos, histórico inteiro, simulado no app e IA (redação até 8 por mês, erros até 60 por mês). O site público não mostra o preço; Planos, dentro do app, mostra.
+- O que é do Pro aparece com `ProNotice` (o que faz e "Conhecer o Pro"), nunca escondendo dados já salvos. Ações da store que são do Pro conferem `proAccessNow()`.
+- O acesso vem só do servidor (`entitlements`, gravada pelo webhook do Mercado Pago), com cópia no aparelho para valer offline até `proUntil`. `NEXT_PUBLIC_PRO_TRIAL` libera para todos em testes. Os botões de assinar só aparecem com `NEXT_PUBLIC_PAYMENTS_OPEN=true`; sem isso, Planos diz que ainda não dá para assinar.
 
 **Métricas de validação**
 - Eventos sem dado pessoal (`app_aberto`, `onboarding_concluido`, `onboarding_pulado`, `plano_gerado`, `sessao_registrada`, `revisao_concluida`, `pro_interesse`) com o dia e um código aleatório do navegador.
@@ -294,5 +301,5 @@ Recriado em texto, nunca como imagem: o símbolo (quadrado azul `action` com o F
 
 - Todas as telas funcionam nos dois temas, em 400px e em 1440px, sem rolagem horizontal.
 - `npm run build`, `npm run lint` e `npm test` passam.
-- Testes cobrem: sincronização (junção, conflitos, primeiro login), revisões (agendar, reagendar, adiar, feedback), tópicos (criar, editar, ocultar, excluir), migração (descarta padrões não usados), sessões (sem duplicar, sem pausa), cronograma (no máximo 2 matérias por dia e da mesma área, só em dias de estudo, regenera sem perder concluídas, repete o que não foi dominado, transfere o que não foi estudado sem passar de 2 por dia), estatísticas e migração v1 → v2.
+- Testes cobrem: sincronização (junção, conflitos, primeiro login), revisões (agendar, reagendar, adiar, feedback, agendamento manual do gratuito), simulado oficial (gabaritos, correção, rascunho), idade mínima, tópicos (criar, editar, ocultar, excluir), migração (descarta padrões não usados), sessões (sem duplicar, sem pausa), cronograma (no máximo 2 matérias por dia e da mesma área, só em dias de estudo, regenera sem perder concluídas, repete o que não foi dominado, transfere o que não foi estudado sem passar de 2 por dia), estatísticas e migração v1 → v2.
 - O `README.md` explica como rodar, onde os dados ficam e o que depende de configuração externa.

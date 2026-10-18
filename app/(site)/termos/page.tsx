@@ -10,7 +10,8 @@ export default function TermosPage() {
         <h2>O que é o Flow</h2>
         <p>
           Uma ferramenta para organizar estudos: matérias, cronograma, timer, revisões e acompanhamento. Não é cursinho, não
-          oferece aulas e não é oficial: não tem vínculo com o INEP nem com o MEC.
+          oferece aulas e não é oficial: não tem vínculo com o INEP nem com o MEC. As provas e gabaritos usados no simulado do
+          app são os publicados pelo INEP, com link para os arquivos oficiais.
         </p>
       </section>
       <section>
@@ -28,29 +29,43 @@ export default function TermosPage() {
         </p>
       </section>
       <section>
-        <h2>Seus dados</h2>
+        <h2>Conta e dados</h2>
         <p>
-          Sem conta, os dados ficam só no seu navegador: se forem apagados (por você, pelo navegador ou por falta de espaço), não
-          há como recuperar sem um backup. Com a conta opcional, uma cópia fica na nuvem e é sincronizada entre os seus aparelhos;
-          apagar os dados em um aparelho conectado apaga também a cópia. Recomendamos baixar backups de tempos em tempos em
-          Ajustes.
+          Para usar o Flow é preciso criar uma conta, com pelo menos 13 anos. Quem tem menos de 18 usa com o conhecimento de um
+          responsável. Os dados ficam no aparelho e uma cópia fica na conta, sincronizada entre os seus aparelhos; apagar os dados
+          em um aparelho conectado apaga também a cópia. Recomendamos baixar backups de tempos em tempos em Ajustes.
+        </p>
+      </section>
+      <section>
+        <h2>Correção e análise com IA</h2>
+        <p>
+          No Pro, a nota da redação e a análise de erros são estimativas feitas por inteligência artificial. Podem errar, não são a
+          nota oficial e não substituem um professor ou corretor. Confira sempre antes de salvar.
         </p>
       </section>
       <section>
         <h2>Plano gratuito e Pro</h2>
         <ul>
           <li>O plano gratuito não tem prazo e não exige pagamento.</li>
+          <li>O preço do Flow Pro aparece em Planos, dentro do app, antes de qualquer pagamento, que é feito no Mercado Pago.</li>
           <li>
-            O Flow Pro está em validação. Hoje não há venda nem cobrança. Antes de
-            qualquer assinatura existir, preço, forma de cobrança, renovação, cancelamento e reembolso serão informados.
+            Mensal: no cartão. Renova sozinho todo mês até você cancelar em Planos; depois de cancelar, nada mais é cobrado e o Pro
+            continua até o fim do período pago.
           </li>
+          <li>Anual: uma cobrança só, por Pix ou cartão. Vale por 365 dias e não renova sozinho.</li>
+          <li>
+            Você pode desistir em até 7 dias depois do pagamento e receber o valor de volta (Código de Defesa do Consumidor, art.
+            49), pelo contato do rodapé.
+          </li>
+          <li>Correção de redação com IA: até 8 por mês. Análise de erros com IA: até 60 por mês. O limite renova no dia 1º.</li>
+          <li>Enquanto a assinatura não estiver aberta, nada é cobrado.</li>
         </ul>
       </section>
       <section>
         <h2>Uso do app</h2>
         <p>
-          O app é oferecido como está, durante uma fase de teste. Podemos mudar recursos para melhorar o produto, sempre
-          preservando os dados já salvos no seu navegador.
+          Podemos mudar recursos para melhorar o produto, sempre preservando os dados já salvos. Mudanças de preço valem só a
+          partir da renovação seguinte e são avisadas antes.
         </p>
       </section>
     </LegalPage>

@@ -11,7 +11,7 @@ export function siteUrl(): URL {
 
 export const SITE_TITLE = "Flow · Sua preparação para o ENEM, no ritmo certo.";
 export const SITE_DESCRIPTION =
-  "Organize as matérias da semana e do dia, use o timer e lembre das revisões. Grátis, sem cadastro.";
+  "Organize as matérias da semana e do dia, use o timer e lembre das revisões. Grátis, com uma conta.";
 
 export const APP_ROUTES = [
   "/painel",

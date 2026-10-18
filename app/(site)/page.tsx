@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   title: { absolute: SITE_TITLE },
   alternates: { canonical: "/" },
   description:
-    "Organize as matérias do ENEM, descubra o que estudar hoje, use o timer e faça revisões espaçadas. Grátis, sem cadastro.",
+    "Organize as matérias do ENEM, descubra o que estudar hoje, use o timer e faça revisões espaçadas. Grátis, com uma conta.",
 };
 
 const BENEFITS = [
@@ -35,12 +35,12 @@ const FAQ = [
   ["É oficial do INEP ou do MEC?", "Não. É uma ferramenta independente, sem vínculo com o INEP ou o MEC."],
   [
     "Preciso criar conta?",
-    "Não. Os dados ficam salvos no seu navegador. Por isso, não há sincronização entre aparelhos; você pode baixar um backup e importar em outro.",
+    "Sim, com e-mail e senha ou com o Google. Seus dados ficam no aparelho, funcionam sem internet e têm uma cópia na conta para você usar no celular e no computador.",
   ],
   ["Funciona no celular?", "Sim, direto no navegador do celular, do tablet ou do computador."],
   [
     "Quanto custa?",
-    "O plano gratuito é gratuito de verdade. O Flow Pro está em validação e ainda não é vendido: durante o teste, os recursos Pro estão liberados.",
+    "O plano gratuito é gratuito de verdade. O Flow Pro, com correção de redação por IA, simulado no app e a semana montada sozinha, abre em breve.",
   ],
   ["E se eu não conseguir seguir o plano?", "Normal. O que não deu para estudar passa sozinho para o próximo dia, e você pode mover qualquer matéria quando quiser."],
   [
@@ -70,7 +70,7 @@ export default function LandingPage() {
             Sua preparação para o ENEM, <em className="text-hero-bright">no ritmo certo.</em>
           </h1>
           <p className="mt-6 max-w-[540px] text-base text-white/85 md:text-lg">
-            Saiba o que estudar hoje, organize a semana sem rigidez e lembre das revisões na hora certa. Grátis e sem cadastro.
+            Saiba o que estudar hoje, organize a semana sem rigidez e lembre das revisões na hora certa. Grátis, é só criar a conta.
           </p>
           <div className="mt-9 flex flex-wrap gap-3">
             {open && (

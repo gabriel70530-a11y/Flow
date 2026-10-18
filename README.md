@@ -1,6 +1,6 @@
 # Flow
 
-Sua preparação para o ENEM, no ritmo certo. Organizador de estudos: matérias prontas e personalizáveis, semana organizada com até 2 matérias por dia (sem limite de horas), "Estudar hoje" no painel, timer Pomodoro ou cronômetro, revisões espaçadas (1, 7, 15 e 30 dias) e estatísticas a partir das sessões registradas.
+Sua preparação para o ENEM, no ritmo certo. Organizador de estudos: matérias personalizáveis, semana organizada com até 2 matérias por dia (sem limite de horas), "Estudar hoje" no painel, timer Pomodoro ou cronômetro, revisões espaçadas (1, 7, 15 e 30 dias) e estatísticas a partir das sessões registradas.
 
 Não é cursinho, não promete nota nem aprovação e não tem vínculo com o INEP ou o MEC.
 
@@ -20,7 +20,7 @@ Abra http://localhost:3000. A página inicial é o site; o app começa em `/pain
 | `npm run dev` | servidor local |
 | `npm run build` e `npm start` | build de produção e servidor |
 | `npm run lint` | ESLint |
-| `npm test` | Vitest: datas, tópicos, revisões, sessões, cronograma, estatísticas, planos, sincronização, migração e store |
+| `npm test` | Vitest: datas, tópicos, revisões, sessões, cronograma, estatísticas, planos, simulado oficial, idade, sincronização, migração e store |
 
 ## Telas
 
@@ -30,24 +30,33 @@ Abra http://localhost:3000. A página inicial é o site; o app começa em `/pain
 - `/materias`: as cinco áreas do ENEM, com Natureza (Química, Física, Biologia) e Humanas (Geografia, História, Filosofia, Sociologia) divididas em matérias. Nenhum tópico vem pronto: o estudante cria os próprios. Ao criar, aparecem sugestões do que mais cai em cada área ou matéria (só preenchem o nome). Busca, filtros, ordenação, editar, ocultar e excluir.
 - `/timer`: Pomodoro e cronômetro, estudo geral, reflexão pós-sessão, sessões de hoje.
 - `/revisoes`: atrasadas, hoje, próximos 7 dias e futuras; concluir com feedback, adiar e reagendar. "Agendar revisões do que já estudei" marca tópicos já estudados e agenda as revisões. `/revisoes/erros`: caderno de erros, com cada erro voltando em 1, 7, 15 e 30 dias.
-- `/simulados`: acertos por área e ritmo dos simulados feitos fora do app (sem nota TRI). `/redacao`: notas por competência e repertório pessoal. `/prova`: checklist do dia da prova.
+- `/simulados`: simulado no app com a prova oficial do Inep (cartão-resposta, cronômetro e correção pelo gabarito oficial, no Pro) e registro dos feitos fora do app; acertos por área e ritmo, sem nota TRI. `/redacao`: correção estimada por IA (Pro), notas por competência e repertório pessoal. `/prova`: checklist do dia da prova.
 - No Painel: reta final (contagem e prioridade para revisões nas 4 semanas antes da prova) e "Dia leve" para dias cansativos. No Timer: modo foco.
-- `/comecar`: configuração inicial opcional. `/ajustes`: preferências, meta, cronograma, conta opcional e backup. `/planos`.
+- `/comecar`: configuração inicial opcional. `/ajustes`: preferências, meta, cronograma, conta e backup. `/planos`: gratuito e Pro, assinatura e cancelamento.
+
+## Gratuito e Pro
+
+O que entra em cada plano está em `lib/plan.ts` (`FREE_FEATURES` e `PRO_FEATURES`). Nada que a pessoa já salvou some sem o Pro: o recurso do Pro aparece com um aviso discreto (`ProNotice`) no lugar.
+
+- **Gratuito:** áreas e tópicos, timer, revisões agendadas pela própria pessoa (uma data por vez, em Revisões), registro de simulados e redações, cronograma à mão e Painel com as últimas 4 semanas.
+- **Pro:** revisões agendadas sozinhas (1, 7, 15 e 30 dias) ao concluir um tópico, sugestões do que mais cai, semana montada sozinha, caderno de erros (no gratuito, os erros já salvos ficam só para leitura), resumo e histórico completos, simulado no app, correção de redação (até 8 por mês) e análise de erros (até 60 por mês) com IA.
+- O acesso vem só do servidor (tabela `entitlements`, gravada pelo webhook do pagamento). O app guarda uma cópia por conta em `enem-flow:pro:<usuário>` para valer sem internet até `pro_until`.
+- `NEXT_PUBLIC_PRO_TRIAL=true` (no app) e `PRO_TRIAL=true` (nas funções) liberam o Pro para todos durante testes com estudantes.
 
 ## Onde ficam os dados
 
-Sem conta, tudo fica no `localStorage` do navegador, na chave `enem-flow:v2`. A conta é opcional (ver abaixo).
+Tudo fica no `localStorage` do navegador, na chave `enem-flow:v2`, e uma cópia vai para a conta (ver abaixo). A conta é obrigatória: sem login, o app mostra a tela de entrar. No desenvolvimento local sem as variáveis do Supabase, o app abre direto, sem conta.
 
 - Na primeira abertura, se existir a chave `enem-flow:v1` (formato do protótipo), os dados são migrados para a v2 e a v1 fica intacta como cópia de segurança.
-- Sem nada salvo, o app carrega dados de exemplo, identificados por um aviso com "Apagar e começar do zero".
+- Conta nova começa vazia, sem dados de exemplo. Dados de exemplo salvos por versões antigas continuam com o aviso "Apagar e começar do zero".
 - Se o JSON salvo estiver corrompido, o texto bruto vai para `enem-flow:v2:corrompido` e o app começa do zero.
 - Se o navegador recusar a gravação, um aviso aparece com "Tentar de novo".
 - Em produção, o app funciona offline depois da primeira visita (service worker em `public/sw.js`).
 - Em Ajustes dá para baixar um backup (JSON) e importar em outro navegador.
 
-### Conta opcional e sincronização
+### Conta e sincronização
 
-Com o Supabase configurado, Ajustes oferece "Entrar ou criar conta" (e-mail e senha, com confirmação do e-mail e "Esqueci minha senha"). O app continua igual sem conta.
+A tela de entrar oferece e-mail e senha (com confirmação do e-mail e "Esqueci minha senha") e "Entrar com Google". Criar conta pede o ano de nascimento (mínimo de 13 anos; menores de 18 confirmam que um responsável sabe) e o aceite de privacidade e termos. Quem entra pelo Google responde o ano e o aceite logo depois do primeiro login. Ajustes mostra a conta, troca de senha, sair e excluir.
 
 - Cada item (tópico, sessão, tarefa, erro, simulado, redação, repertório, progresso de um tópico) vira um registro na tabela `records`, com `updated_at` do aparelho. Algumas preferências também vão (meta, cronograma, onboarding, checklist da prova, sequência); tema, som, consentimento de métricas e o timer ficam em cada aparelho.
 - A lógica de juntar fica em `lib/sync.ts` (funções puras e testadas); `store/cloud.ts` faz login, envia e busca.
@@ -61,7 +70,8 @@ Para ativar (precisa de uma conta no Supabase, feita pelo responsável pelo proj
 
 1. Criar um projeto na região São Paulo (`sa-east-1`).
 2. Rodar `supabase/migrations/20261018000000_records.sql` no SQL Editor (ou `supabase db push`).
-3. Em Authentication: deixar o provedor Email ativo, com "Confirm email" ligado. Em URL Configuration, pôr o endereço do site como Site URL e `<endereço>/ajustes` nas Redirect URLs (também `http://localhost:3000/ajustes` para testar).
+3. Em Authentication: deixar o provedor Email ativo, com "Confirm email" ligado. Em URL Configuration, pôr o endereço do site como Site URL e `<endereço>/painel` e `<endereço>/ajustes` nas Redirect URLs (também os de `http://localhost:3000` para testar).
+   Para "Entrar com Google": criar um cliente OAuth (Aplicativo da Web) no Google Cloud, com `https://<projeto>.supabase.co/auth/v1/callback` como URI de redirecionamento, e colar o ID e a chave secreta em Authentication > Providers > Google.
 4. Preencher `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (a chave pública) no `.env.local` e na hospedagem.
 5. Para produção, configurar um SMTP próprio (ex.: Resend): o envio padrão do Supabase tem limite baixo por hora.
 
@@ -74,13 +84,42 @@ Copie `.env.example` para `.env.local` e preencha o que quiser. Sem as variávei
 | `NEXT_PUBLIC_PRO_INTEREST_URL` | link https para a lista de interesse do Pro (ex.: formulário). Sem ela, a tela diz que a lista ainda não está aberta. |
 | `NEXT_PUBLIC_CONTACT_EMAIL` | e-mail de contato no rodapé do site. |
 | `NEXT_PUBLIC_ANALYTICS_URL` | endpoint https que recebe eventos anônimos. Só envia se o estudante ativar em Ajustes. |
-| `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | ativam a conta opcional com sincronização. Sem elas, Ajustes diz que a conta ainda não está disponível. |
+| `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | ativam a conta e a sincronização. Sem elas, em produção o app diz que a conta não está disponível; no desenvolvimento local, abre sem conta. |
+| `NEXT_PUBLIC_PRO_TRIAL` | `true` libera o Pro para todos (testes com estudantes). Use junto com `PRO_TRIAL=true` nas funções. |
+| `NEXT_PUBLIC_PAYMENTS_OPEN` | `true` mostra os botões de assinar em Planos. Só ligue com o pagamento configurado (ver abaixo). |
 | `NEXT_PUBLIC_SITE_URL` | endereço público do site (ex.: `https://flow.exemplo.com`), usado no sitemap, no robots e nos cartões de compartilhamento. Só é preciso com domínio próprio: na Vercel, sem ela, vale o endereço de produção do projeto (hoje `https://flow-black.vercel.app`); fora da Vercel, `http://localhost:3000`. |
 | `APP_OPEN` | `true` abre o app na produção da Vercel. Sem ela, a produção é só vitrine: página inicial, privacidade e termos, com "Em breve" no lugar dos botões, e as telas do app voltam para a página inicial. Local e prévias da Vercel ficam sempre abertos. Mudar exige publicar de novo. |
 
+## Pagamento e IA (funções do Supabase)
+
+O estudo de custos e a arquitetura estão em `docs/plano-pro.md`. As funções ficam em `supabase/functions` (Deno) e guardam as chaves secretas, que nunca vão para o navegador.
+
+| Função | O que faz |
+|---|---|
+| `checkout` | cria a assinatura mensal (`/preapproval`, no cartão) ou o pagamento anual (`/checkout/preferences`, Pix ou cartão) no Mercado Pago e devolve o link de pagamento |
+| `mercadopago-webhook` | confere a assinatura do aviso, consulta o pagamento na API e grava `entitlements` (mensal: até a próxima cobrança + 3 dias; anual: +365 dias). Cada pagamento é aplicado uma vez só (tabela `payments`) |
+| `cancel-subscription` | cancela a assinatura mensal; o Pro vale até o fim do período pago |
+| `ai-essay` | corrige a redação (texto ou até 2 fotos) com o Claude Sonnet 5.5: nota estimada por competência |
+| `ai-mistake` | analisa uma questão errada (texto ou 1 foto) com o Claude Haiku 5.5 e preenche o formulário do caderno |
+
+As funções de IA conferem login, Pro e o limite do mês (`reserve_ai_use`, tabela `ai_usage`) antes de chamar a IA e devolvem o uso se a chamada falhar.
+
+Para ativar:
+
+1. Rodar `supabase/migrations/20261019000000_pro.sql` (tabelas `entitlements`, `payments` e `ai_usage`).
+2. Configurar os segredos: `supabase secrets set MP_ACCESS_TOKEN=... MP_WEBHOOK_SECRET=... APP_URL=https://<endereço> ANTHROPIC_API_KEY=...` (e `PRO_TRIAL=true` durante testes abertos).
+3. Publicar: `supabase functions deploy checkout cancel-subscription ai-essay ai-mistake` e `supabase functions deploy mercadopago-webhook --no-verify-jwt` (quem chama o webhook é o Mercado Pago, sem login).
+4. No Mercado Pago (Suas integrações > Webhooks), cadastrar `https://<projeto>.supabase.co/functions/v1/mercadopago-webhook` com os eventos de pagamentos e de planos e assinaturas, e copiar a assinatura secreta para `MP_WEBHOOK_SECRET`.
+5. Testar com as credenciais e contas de teste do Mercado Pago antes de usar as de produção.
+6. Só então pôr `NEXT_PUBLIC_PAYMENTS_OPEN=true` na hospedagem: é o que mostra os botões de assinar.
+
+Conferência local: `deno check` e `deno lint` passam dentro de `supabase/functions`. As funções ainda não foram testadas de ponta a ponta contra o Supabase, o Mercado Pago e a API da Anthropic.
+
 ## O que ainda depende de decisão ou serviço externo
 
-- **Cobrança do Flow Pro (R$ 19,90/mês, preço experimental).** Não há provedor de pagamento nem backend. Os recursos Pro (cronograma sugerido, reorganização, resumo detalhado) estão liberados para todos durante o teste e a interface diz isso; nada é vendido nem simulado. Para cobrar, é preciso um backend que valide a assinatura com o provedor e devolva o acesso a `currentEntitlement()` em `lib/plan.ts`, além de textos de cobrança, cancelamento e reembolso.
+- **Cobrança do Flow Pro.** O código de pagamento existe (ver acima), mas falta criar a conta no Mercado Pago, configurar os segredos, testar com contas de teste e abrir com `NEXT_PUBLIC_PAYMENTS_OPEN`. Até lá, Planos diz que ainda não é possível assinar; nada é vendido nem simulado.
+- **IA no Pro.** Falta a chave da API da Anthropic (`ANTHROPIC_API_KEY`), com limite de gasto configurado no console. Sem ela, as funções respondem que a IA ainda não está disponível.
+- **Play Store.** Planejado como app TWA do próprio site, sem venda dentro do app (ver `docs/plano-pro.md`).
 - **Coleta de métricas para a validação com 20 a 30 estudantes.** O app emite `app_aberto`, `onboarding_concluido`, `onboarding_pulado`, `plano_gerado`, `sessao_registrada`, `revisao_concluida` e `pro_interesse`, com o dia e um código aleatório do navegador. Falta um endpoint que receba esses eventos (ver `NEXT_PUBLIC_ANALYTICS_URL`) e uma forma de coletar motivos de abandono (entrevista ou formulário). Intenção declarada na lista de interesse não é compra.
 - **Política de privacidade e termos.** As páginas descrevem o funcionamento real do app, mas são uma versão preliminar: revisar com orientação jurídica antes de abrir ao público, inclusive pelos cuidados com menores de idade (LGPD).
 - **Contato.** Definir um e-mail de suporte e configurar `NEXT_PUBLIC_CONTACT_EMAIL`.
