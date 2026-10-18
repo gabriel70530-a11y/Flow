@@ -98,8 +98,18 @@ describe("generatePlan", () => {
     expect(areasOn(tasks, "2026-10-19")).toEqual(new Set(["lin"]));
   });
 
+  it("never mixes subjects of the same area on a day", () => {
+    const sciences = legacyTopics().filter((topic) => topic.areaId === "nat");
+    const { tasks } = generatePlan(context({ topics: sciences }));
+    for (const date of week) {
+      const subjects = new Set(tasks.filter((item) => item.date === date).map((item) => item.subjectId));
+      expect(subjects.size).toBeLessThanOrEqual(1);
+    }
+    expect(tasks.every((item) => item.subjectId)).toBe(true);
+  });
+
   it("prefers topics that need review, are in progress or have high priority", () => {
-    const topics = updateTopic(legacyTopics(), "lin-5", { name: "Escolas literárias", areaId: "lin", description: "", priority: "alta" });
+    const topics = updateTopic(legacyTopics(), "lin-5", { name: "Escolas literárias", areaId: "lin", subjectId: null, description: "", priority: "alta" });
     const progress: ProgressMap = { "nat-9": { status: "revisar", mastery: 1, reviews: [] } };
     const { added } = generatePlan(context({ topics, progress }));
     expect(added[0]).toMatchObject({ topicId: "nat-9", date: today });
@@ -244,20 +254,32 @@ describe("carryOverMissed", () => {
 describe("moving and validating", () => {
   const tasks = [task({ id: "a" }), task({ id: "b", topicId: "mat-1" })];
 
+  const math = { areaId: "mat" as const };
+  const chemistry = { areaId: "nat" as const, subjectId: "qui" as const };
+  const biology = { areaId: "nat" as const, subjectId: "bio" as const };
+
   it("suggests the first study day of the same area (or empty) with fewer than two topics", () => {
-    expect(suggestDay(tasks, settings, today, "mat")).toBe("2026-10-17");
-    expect(suggestDay(tasks, settings, today, "mat", "a")).toBe(today);
-    expect(suggestDay([task({ id: "c", topicId: "lin-0" })], settings, today, "mat")).toBe("2026-10-17");
-    expect(suggestDay(tasks, { ...settings, studyDays: Array(7).fill(false) }, today, "mat")).toBeNull();
+    expect(suggestDay(tasks, settings, today, math)).toBe("2026-10-17");
+    expect(suggestDay(tasks, settings, today, math, "a")).toBe(today);
+    expect(suggestDay([task({ id: "c", topicId: "lin-0", areaId: "lin" })], settings, today, math)).toBe("2026-10-17");
+    expect(suggestDay(tasks, { ...settings, studyDays: Array(7).fill(false) }, today, math)).toBeNull();
   });
 
   it("explains why a topic does not fit a day", () => {
     const single = [task({ id: "a" })];
-    expect(dayConflict(single, today, "mat")).toBeNull();
-    expect(dayConflict(single, today, "lin")).toMatch(/Esse dia é de Matemática/);
-    expect(dayConflict(single, today, null)).toBeNull();
-    expect(dayConflict(tasks, today, "mat")).toMatch(/já tem 2 matérias/);
-    expect(dayConflict(tasks, today, "mat", "a")).toBeNull();
+    expect(dayConflict(single, today, math)).toBeNull();
+    expect(dayConflict(single, today, { areaId: "lin" })).toMatch(/Esse dia é de Matemática/);
+    expect(dayConflict(single, today, { areaId: null })).toBeNull();
+    expect(dayConflict(tasks, today, math)).toMatch(/já tem 2 matérias/);
+    expect(dayConflict(tasks, today, math, "a")).toBeNull();
+  });
+
+  it("keeps a science day on one subject, but lets the whole area in", () => {
+    const chemistryDay = [task({ id: "q", topicId: "nat-3", ...chemistry })];
+    expect(dayConflict(chemistryDay, today, chemistry)).toBeNull();
+    expect(dayConflict(chemistryDay, today, biology)).toMatch(/Esse dia é de Química/);
+    expect(dayConflict(chemistryDay, today, { areaId: "nat", subjectId: null })).toBeNull();
+    expect(suggestDay(chemistryDay, settings, today, biology)).toBe("2026-10-17");
   });
 
   it("moves a task to a date or to another week", () => {

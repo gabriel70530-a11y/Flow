@@ -59,7 +59,7 @@ components/
   shell/                Sidebar, TabBar, Wordmark, ThemeSelect, avisos globais
   painel/ cronograma/ materias/ timer/ revisoes/ ajustes/ planos/ onboarding/ site/
 lib/
-  syllabus.ts           as cinco áreas do ENEM (sem tópicos prontos)
+  syllabus.ts           as cinco áreas do ENEM e as matérias de Natureza e Humanas (sem tópicos prontos)
   legacy-topics.ts      lista antiga de tópicos, só para migração, dados de exemplo e testes
   topics.ts             tópicos criados pelo estudante: criar, editar, ocultar, excluir, filtrar
   dates.ts              chave YYYY-MM-DD local, addDays, mondayOf, shortDate
@@ -82,12 +82,13 @@ store/
 
 ```ts
 type AreaId = 'mat' | 'lin' | 'nat' | 'hum' | 'red';
+type SubjectId = 'qui' | 'fis' | 'bio' | 'geo' | 'his' | 'fil' | 'soc';  // matérias de 'nat' e 'hum'
 type TopicStatus = 'nao' | 'and' | 'concluido' | 'revisar';
 type Priority = 'alta' | 'media' | 'baixa';
 
 interface TopicRecord {                      // criados pelo estudante, na ordem de criação
-  id: string; areaId: AreaId; name: string; description: string;
-  priority: Priority; hidden: boolean;
+  id: string; areaId: AreaId; subjectId: SubjectId | null;      // matéria em Natureza e Humanas
+  name: string; description: string; priority: Priority; hidden: boolean;
 }
 interface Review {
   stage: 1 | 2 | 3 | 4; due: string; done?: string;            // datas 'YYYY-MM-DD'
@@ -122,7 +123,8 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 ## Regras de negócio
 
 **Matérias**
-- O app não traz tópicos prontos, só as cinco áreas: Matemática, Linguagens, Ciências da Natureza, Ciências Humanas e Redação. O estudante decide o que estuda e quanto estuda.
+- O app não traz tópicos prontos, nem nos dados de exemplo, só as cinco áreas: Matemática, Linguagens, Ciências da Natureza, Ciências Humanas e Redação. O estudante decide o que estuda e quanto estuda.
+- Natureza se divide em Química, Física e Biologia; Humanas em Geografia, História, Filosofia e Sociologia. Todo tópico dessas áreas pertence a uma matéria (`subjectId`), e a tela de Matérias agrupa por ela. Tarefas e sessões guardam a matéria do tópico.
 - O estudante cria, edita, oculta, reexibe e exclui tópicos (excluir pede confirmação e não apaga sessões, que passam a aparecer como "Tópico excluído").
 - Ocultar não apaga sessões, revisões nem progresso; tópicos ocultos saem das listas e do cronograma até serem reexibidos.
 - Busca por nome; filtros por área, status e prioridade; ordenação por nome, prioridade, status ou próxima revisão.
@@ -142,7 +144,7 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 - Fim da pausa: volta para foco, parado, oferecendo o próximo bloco.
 - Finalizar: registra o tempo decorrido se for de pelo menos 1 minuto (no Pomodoro antes do fim do bloco, a sessão fica "interrompida") e zera o timer. Descartar zera sem registrar. Clicar várias vezes nunca duplica a sessão.
 - Pausas nunca contam como estudo.
-- É preciso escolher o que estudar: um tópico, uma área inteira sem tópico (valor `area:<id>`, exibido como "Matemática (geral)") ou "Estudo geral" (sem área).
+- É preciso escolher o que estudar: um tópico, uma área ou matéria inteira sem tópico (valores `area:<id>` e `materia:<id>`, exibidos como "Matemática (geral)" e "Química (geral)") ou "Estudo geral" (sem área).
 - Registrar uma sessão num tópico "Não iniciado" muda o status para "Em andamento". Sessão concluída nunca marca o tópico como concluído.
 - Depois de registrar, ofereça a reflexão opcional (Entendi bem, Entendi parcialmente, Preciso revisar, Tive dificuldade). As duas últimas sugerem marcar o tópico como "Precisa revisar".
 - Não deixa trocar de modo ou de duração com sessão em andamento.
@@ -150,7 +152,7 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 
 **Cronograma**
 - O cronograma organiza, não limita: não existe duração por matéria nem limite de horas. A pessoa escolhe só em quais dias estuda (dias de estudo), as áreas prioritárias e difíceis, a data-alvo opcional e a estratégia (equilibrada ou foco nas prioridades).
-- Cada dia de estudo recebe **no máximo 2 matérias** (revisões contam como matéria), **sempre da mesma área**: dia de Matemática tem até duas de Matemática, nunca Matemática e Linguagens. Estudar as duas não é obrigatório.
+- Cada dia de estudo recebe **no máximo 2 matérias** (revisões contam como matéria), **sempre do mesmo assunto**: dia de Matemática tem até duas de Matemática, nunca Matemática e Linguagens; dia de Química tem até duas de Química, nunca Química e Biologia. A área inteira ("Ciências da Natureza (geral)") cabe com qualquer matéria dela. Estudar as duas não é obrigatório.
 - Ordem de escolha: revisões vencidas ou do dia, tópicos "Precisa revisar", "Em andamento" e "Não iniciado", pesando prioridade do tópico, áreas prioritárias e áreas pouco contempladas na semana. Tópicos ocultos e concluídos ficam de fora. O que não couber na semana aparece como pendente.
 - Regenerar mantém tarefas concluídas, iniciadas, manuais, repetições e transferidas; substitui só as geradas e ainda planejadas a partir de hoje. Antes, mostra quantas serão trocadas.
 - Começar uma matéria abre o Timer no cronômetro, sem limite de tempo. O foco registrado com a tarefa ativa soma em `focusSec` e a tarefa fica "iniciada". O tempo nunca conclui a tarefa.
@@ -168,7 +170,7 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 - Sequência = dias consecutivos com estudo, contando hoje ou, se hoje ainda não teve estudo, a partir de ontem. É opcional (pode ser escondida em Ajustes) e discreta.
 
 **Dados de exemplo**
-- Na primeira visita (sem nada salvo), carregue dados de exemplo e mostre um aviso com "Apagar e começar do zero". A confirmação acontece na própria interface (dois cliques), sem `window.confirm`.
+- Na primeira visita (sem nada salvo), carregue dados de exemplo (só sessões por área e matéria, sem tópicos) e mostre um aviso com "Apagar e começar do zero". A confirmação acontece na própria interface (dois cliques), sem `window.confirm`.
 
 **Gratuito e Pro**
 - Gratuito: áreas e tópicos, status, timer, sessões, revisões, progresso, meta semanal e Painel. Nunca bloqueie isso.

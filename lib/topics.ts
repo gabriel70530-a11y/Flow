@@ -1,5 +1,5 @@
 import { nextReview, progressOf, type ProgressMap, type TopicStatus } from "./reviews";
-import type { AreaId } from "./syllabus";
+import { subjectsOf, type AreaId, type SubjectId } from "./syllabus";
 
 export type Priority = "alta" | "media" | "baixa";
 
@@ -7,6 +7,8 @@ export type Priority = "alta" | "media" | "baixa";
 export interface TopicRecord {
   id: string;
   areaId: AreaId;
+  // Matéria dentro de Natureza ou Humanas (Química, História...); null nas áreas sem matérias.
+  subjectId: SubjectId | null;
   name: string;
   description: string;
   priority: Priority;
@@ -16,6 +18,7 @@ export interface TopicRecord {
 export interface TopicInput {
   name: string;
   areaId: AreaId;
+  subjectId: SubjectId | null;
   description: string;
   priority: Priority;
 }
@@ -37,6 +40,10 @@ export function visibleTopics(topics: readonly TopicRecord[]): TopicRecord[] {
 export function validateTopic(input: TopicInput, topics: readonly TopicRecord[], editingId?: string): string | null {
   const name = input.name.trim();
   if (!name) return "Dê um nome ao tópico.";
+  const subjects = subjectsOf(input.areaId);
+  if (subjects.length > 0 && !subjects.some((subject) => subject.id === input.subjectId)) {
+    return "Escolha a matéria do tópico.";
+  }
   if (name.length > TOPIC_NAME_MAX) return `Use no máximo ${TOPIC_NAME_MAX} caracteres no nome.`;
   if (input.description.length > TOPIC_DESCRIPTION_MAX) {
     return `Use no máximo ${TOPIC_DESCRIPTION_MAX} caracteres na descrição.`;
@@ -50,10 +57,15 @@ export function validateTopic(input: TopicInput, topics: readonly TopicRecord[],
   return duplicate ? "Já existe um tópico com esse nome nesta área." : null;
 }
 
+function subjectFor(input: TopicInput): SubjectId | null {
+  return subjectsOf(input.areaId).some((subject) => subject.id === input.subjectId) ? input.subjectId : null;
+}
+
 export function createTopic(topics: readonly TopicRecord[], input: TopicInput, id: string): TopicRecord[] {
   const topic: TopicRecord = {
     id,
     areaId: input.areaId,
+    subjectId: subjectFor(input),
     name: input.name.trim(),
     description: input.description.trim(),
     priority: input.priority,
@@ -65,7 +77,14 @@ export function createTopic(topics: readonly TopicRecord[], input: TopicInput, i
 export function updateTopic(topics: readonly TopicRecord[], id: string, input: TopicInput): TopicRecord[] {
   return topics.map((topic) =>
     topic.id === id
-      ? { ...topic, areaId: input.areaId, name: input.name.trim(), description: input.description.trim(), priority: input.priority }
+      ? {
+          ...topic,
+          areaId: input.areaId,
+          subjectId: subjectFor(input),
+          name: input.name.trim(),
+          description: input.description.trim(),
+          priority: input.priority,
+        }
       : topic,
   );
 }

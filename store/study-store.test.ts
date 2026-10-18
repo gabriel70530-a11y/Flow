@@ -147,18 +147,18 @@ describe("timer and sessions", () => {
 
 describe("topics", () => {
   it("creates, validates and edits custom topics", () => {
-    expect(state().addTopic({ name: " ", areaId: "mat", description: "", priority: "media" })).toEqual({
+    expect(state().addTopic({ name: " ", areaId: "mat", subjectId: null, description: "", priority: "media" })).toEqual({
       error: "Dê um nome ao tópico.",
     });
-    const result = state().addTopic({ name: "Matrizes", areaId: "mat", description: "", priority: "alta" });
+    const result = state().addTopic({ name: "Matrizes", areaId: "mat", subjectId: null, description: "", priority: "alta" });
     if (!("id" in result)) throw new Error(result.error);
     expect(result.id).toMatch(/^custom-/);
-    expect(state().editTopic(result.id, { name: "Probabilidade", areaId: "mat", description: "", priority: "alta" })).toMatch(/Já existe/);
+    expect(state().editTopic(result.id, { name: "Probabilidade", areaId: "mat", subjectId: null, description: "", priority: "alta" })).toMatch(/Já existe/);
     expect(state().topics).toHaveLength(45);
   });
 
   it("keeps sessions when hiding or deleting a topic", () => {
-    const result = state().addTopic({ name: "Matrizes", areaId: "mat", description: "", priority: "alta" });
+    const result = state().addTopic({ name: "Matrizes", areaId: "mat", subjectId: null, description: "", priority: "alta" });
     if (!("id" in result)) throw new Error(result.error);
     state().setTimerTopic(result.id);
     state().startTimer();

@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { showToast } from "@/components/ui/Toast";
 import { toDateKey } from "@/lib/dates";
 import { STATUS_LABELS, nextReview, progressOf, type TopicStatus } from "@/lib/reviews";
-import { AREAS, type AreaId } from "@/lib/syllabus";
+import { AREAS, subjectsOf, type AreaId, type SubjectId } from "@/lib/syllabus";
 import {
   EMPTY_FILTER,
   PRIORITY_LABELS,
@@ -26,6 +26,7 @@ import {
   visibleTopics,
   type Priority,
   type TopicFilter,
+  type TopicRecord,
   type TopicSort,
 } from "@/lib/topics";
 import { useHydrated, useStudyStore } from "@/store/study-store";
@@ -53,7 +54,7 @@ export function MateriasScreen() {
   const [filter, setFilter] = useState<TopicFilter>(EMPTY_FILTER);
   const [sort, setSort] = useState<TopicSort>("criacao");
   const [openTopicId, setOpenTopicId] = useState<string | null>(null);
-  const [creatingIn, setCreatingIn] = useState<AreaId | null>(null);
+  const [creatingIn, setCreatingIn] = useState<{ areaId: AreaId; subjectId: SubjectId | null } | null>(null);
   const [managing, setManaging] = useState(false);
   const closeDrawer = useCallback(() => setOpenTopicId(null), []);
   const updateFilter = (changes: Partial<TopicFilter>) => setFilter({ ...filter, ...changes });
@@ -79,7 +80,47 @@ export function MateriasScreen() {
   const areaFilters = [{ id: "todas" as const, name: "Todas" }, ...AREAS];
   const summary = visible.length
     ? `${concluded} de ${visible.length} tópicos concluídos${hiddenCount ? ` · ${hiddenCount} ${hiddenCount === 1 ? "oculto" : "ocultos"}` : ""}. ${HINT}`
-    : "As cinco áreas do ENEM. Crie os tópicos que você quer estudar em cada uma.";
+    : "As cinco áreas do ENEM, com Natureza e Humanas divididas em matérias. Crie os tópicos que você quer estudar.";
+
+  const renderTopics = (list: TopicRecord[]) => (
+    <ul>
+      {list.map((topic) => {
+        const topicProgress = progressOf(progress, topic.id);
+        const review = nextReview(topicProgress);
+        const details = [
+          topic.priority !== "media" && `Prioridade ${PRIORITY_LABELS[topic.priority].toLowerCase()}`,
+        ].filter(Boolean);
+        return (
+          <ListRow
+            key={topic.id}
+            onClick={() => setOpenTopicId(topic.id)}
+            title={topic.name}
+            subtitle={
+              (review || details.length > 0) && (
+                <>
+                  {details.join(" · ")}
+                  {review && details.length > 0 && " · "}
+                  {review && (
+                    <>
+                      Revisão {review.stage}: <DueLabel due={review.due} today={today} />
+                    </>
+                  )}
+                </>
+              )
+            }
+            end={
+              <>
+                <span className="hidden w-16 text-right text-[13px] text-muted tabular-nums md:inline">
+                  {topicProgress.mastery > 0 && `Nível ${topicProgress.mastery}`}
+                </span>
+                <Pill status={topicProgress.status} />
+              </>
+            }
+          />
+        );
+      })}
+    </ul>
+  );
 
   return (
     <div className="grid gap-5">
@@ -97,7 +138,7 @@ export function MateriasScreen() {
             className={`${inputStyles} pl-8`}
           />
         </label>
-        <Button variant="primary" onClick={() => setCreatingIn(filter.areaId === "todas" ? "mat" : filter.areaId)}>
+        <Button variant="primary" onClick={() => setCreatingIn({ areaId: filter.areaId === "todas" ? "mat" : filter.areaId, subjectId: null })}>
           <Plus size={16} aria-hidden />
           Novo tópico
         </Button>
@@ -190,6 +231,7 @@ export function MateriasScreen() {
       {AREAS.filter((area) => filter.areaId === "todas" || area.id === filter.areaId).map((area) => {
         const areaTopics = visible.filter((topic) => topic.areaId === area.id);
         const shown = matches.filter((topic) => topic.areaId === area.id);
+        const subjects = subjectsOf(area.id);
         if (narrowing && shown.length === 0) return null;
         const done = areaTopics.filter((topic) => progressOf(progress, topic.id).status === "concluido").length;
         return (
@@ -205,54 +247,52 @@ export function MateriasScreen() {
                     <ProgressBar thin value={done / areaTopics.length} className="hidden w-[120px] md:block" />
                   </>
                 )}
-                <Button onClick={() => setCreatingIn(area.id)} aria-label={`Adicionar tópico em ${area.name}`}>
-                  <Plus size={16} aria-hidden />
-                  Adicionar
-                </Button>
+                {subjects.length === 0 && (
+                  <Button
+                    onClick={() => setCreatingIn({ areaId: area.id, subjectId: null })}
+                    aria-label={`Adicionar tópico em ${area.name}`}
+                  >
+                    <Plus size={16} aria-hidden />
+                    Adicionar
+                  </Button>
+                )}
               </div>
             </CardHeader>
-            {shown.length === 0 && (
+            {subjects.length === 0 && shown.length === 0 && (
               <p className="px-4 py-4 text-[13px] text-muted md:px-5">
                 Nenhum tópico em {area.name} ainda. Adicione o que você vai estudar, do jeito que preferir.
               </p>
             )}
-            <ul>
-              {shown.map((topic) => {
-                const topicProgress = progressOf(progress, topic.id);
-                const review = nextReview(topicProgress);
-                const details = [
-                  topic.priority !== "media" && `Prioridade ${PRIORITY_LABELS[topic.priority].toLowerCase()}`,
-                ].filter(Boolean);
-                return (
-                  <ListRow
-                    key={topic.id}
-                    onClick={() => setOpenTopicId(topic.id)}
-                    title={topic.name}
-                    subtitle={
-                      (review || details.length > 0) && (
-                        <>
-                          {details.join(" · ")}
-                          {review && details.length > 0 && " · "}
-                          {review && (
-                            <>
-                              Revisão {review.stage}: <DueLabel due={review.due} today={today} />
-                            </>
-                          )}
-                        </>
-                      )
-                    }
-                    end={
-                      <>
-                        <span className="hidden w-16 text-right text-[13px] text-muted tabular-nums md:inline">
-                          {topicProgress.mastery > 0 && `Nível ${topicProgress.mastery}`}
-                        </span>
-                        <Pill status={topicProgress.status} />
-                      </>
-                    }
-                  />
-                );
-              })}
-            </ul>
+            {subjects.map((subject) => {
+              const subjectTopics = shown.filter((topic) => topic.subjectId === subject.id);
+              if (narrowing && subjectTopics.length === 0) return null;
+              return (
+                <section key={subject.id} aria-label={subject.name} className="border-b border-line last:border-b-0">
+                  <div className="flex items-center justify-between gap-3 px-4 pt-3 md:px-5">
+                    <h3 className="text-[13px] font-semibold text-muted">{subject.name}</h3>
+                    <Button
+                      onClick={() => setCreatingIn({ areaId: area.id, subjectId: subject.id })}
+                      aria-label={`Adicionar tópico em ${subject.name}`}
+                    >
+                      <Plus size={16} aria-hidden />
+                      Adicionar
+                    </Button>
+                  </div>
+                  {subjectTopics.length === 0 ? (
+                    <p className="px-4 pt-1 pb-4 text-[13px] text-muted md:px-5">Nenhum tópico de {subject.name} ainda.</p>
+                  ) : (
+                    renderTopics(subjectTopics)
+                  )}
+                </section>
+              );
+            })}
+            {subjects.length > 0 && shown.some((topic) => !topic.subjectId) && (
+              <section aria-label="Sem matéria">
+                <h3 className="px-4 pt-3 text-[13px] font-semibold text-muted md:px-5">Sem matéria · edite para escolher</h3>
+                {renderTopics(shown.filter((topic) => !topic.subjectId))}
+              </section>
+            )}
+            {subjects.length === 0 && renderTopics(shown)}
           </Card>
         );
       })}
@@ -262,7 +302,7 @@ export function MateriasScreen() {
       <Drawer open={creatingIn !== null} onClose={() => setCreatingIn(null)} eyebrow="Matérias" title="Novo tópico">
         {creatingIn && (
           <TopicForm
-            initial={{ name: "", areaId: creatingIn, description: "", priority: "media" }}
+            initial={{ name: "", ...creatingIn, description: "", priority: "media" }}
             submitLabel="Criar tópico"
             onCancel={() => setCreatingIn(null)}
             onSubmit={(input) => {

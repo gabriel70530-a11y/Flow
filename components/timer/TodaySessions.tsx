@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ListRow } from "@/components/ui/ListRow";
 import { REFLECTION_LABELS } from "@/lib/sessions";
 import { formatDuration, formatHours, secondsOn } from "@/lib/stats";
-import { findArea } from "@/lib/syllabus";
+import { focusName } from "@/lib/syllabus";
 import { useStudyStore } from "@/store/study-store";
 import { SessionDrawer } from "./SessionDrawer";
 import { sessionTitle, timeFormat } from "./session-format";
@@ -32,7 +32,7 @@ export function TodaySessions({ today }: { today: string }) {
         <ul>
           {todaySessions.map((session) => {
             const details = [
-              session.areaId ? findArea(session.areaId).name : "Sem área",
+              session.areaId ? focusName(session.areaId, session.subjectId) : "Sem área",
               timeFormat.format(session.end),
               session.state === "interrompida" ? "Interrompida" : null,
               session.reflection ? REFLECTION_LABELS[session.reflection] : null,

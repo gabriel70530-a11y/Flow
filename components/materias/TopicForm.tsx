@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { Field, inputStyles } from "@/components/ui/Field";
 import { Segmented } from "@/components/ui/Segmented";
-import { AREAS, type AreaId } from "@/lib/syllabus";
+import { AREAS, subjectsOf, type AreaId, type SubjectId } from "@/lib/syllabus";
 import {
   PRIORITY_LABELS,
   TOPIC_DESCRIPTION_MAX,
@@ -33,6 +33,8 @@ export function TopicForm({ initial, submitLabel, onSubmit, onCancel }: TopicFor
     setError(null);
   };
 
+  const subjects = subjectsOf(input.areaId);
+
   const submit = (event: FormEvent) => {
     event.preventDefault();
     setError(onSubmit(input));
@@ -51,7 +53,11 @@ export function TopicForm({ initial, submitLabel, onSubmit, onCancel }: TopicFor
         />
       </Field>
       <Field label="Área">
-        <select value={input.areaId} onChange={(event) => update({ areaId: event.target.value as AreaId })} className={inputStyles}>
+        <select
+          value={input.areaId}
+          onChange={(event) => update({ areaId: event.target.value as AreaId, subjectId: null })}
+          className={inputStyles}
+        >
           {AREAS.map((area) => (
             <option key={area.id} value={area.id}>
               {area.name}
@@ -59,6 +65,23 @@ export function TopicForm({ initial, submitLabel, onSubmit, onCancel }: TopicFor
           ))}
         </select>
       </Field>
+      {subjects.length > 0 && (
+        <Field label="Matéria">
+          <select
+            value={input.subjectId ?? ""}
+            onChange={(event) => update({ subjectId: (event.target.value || null) as SubjectId | null })}
+            className={inputStyles}
+            required
+          >
+            <option value="">Escolha a matéria</option>
+            {subjects.map((subject) => (
+              <option key={subject.id} value={subject.id}>
+                {subject.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+      )}
       <Field label="Descrição (opcional)" hint={`${input.description.length}/${TOPIC_DESCRIPTION_MAX}`}>
         <textarea
           value={input.description}

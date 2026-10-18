@@ -1,11 +1,11 @@
 import { TASK_STATUS_LABELS, type PlanTask } from "@/lib/planner";
 import { studyTitle } from "@/lib/sessions";
 import { formatDuration } from "@/lib/stats";
-import { findArea } from "@/lib/syllabus";
+import { focusName } from "@/lib/syllabus";
 import { PRIORITY_LABELS, type TopicRecord } from "@/lib/topics";
 
 export function taskTitle(task: PlanTask, topics: readonly TopicRecord[]): string {
-  return studyTitle(task.topicId, task.areaId, topics);
+  return studyTitle(task.topicId, task.areaId, topics, task.subjectId);
 }
 
 const ORIGIN_LABELS: Partial<Record<PlanTask["origin"], string>> = {
@@ -17,7 +17,7 @@ export function taskDetails(task: PlanTask): string {
   return [
     task.kind === "revisao" ? "Revisão" : null,
     ORIGIN_LABELS[task.origin] ?? null,
-    task.areaId ? findArea(task.areaId).name : "Sem área",
+    task.areaId ? focusName(task.areaId, task.subjectId) : "Sem área",
     task.priority !== "media" ? `Prioridade ${PRIORITY_LABELS[task.priority].toLowerCase()}` : null,
     task.focusSec > 0 ? `${formatDuration(task.focusSec)} estudados` : null,
   ]

@@ -14,7 +14,7 @@ import {
   type TopicInput,
 } from "./topics";
 
-const input: TopicInput = { name: "Matrizes", areaId: "mat", description: "Determinantes também", priority: "alta" };
+const input: TopicInput = { name: "Matrizes", areaId: "mat", subjectId: null, description: "Determinantes também", priority: "alta" };
 
 describe("validateTopic", () => {
   const topics = legacyTopics();
@@ -25,11 +25,18 @@ describe("validateTopic", () => {
 
   it("refuses a duplicate name in the same area, ignoring case", () => {
     expect(validateTopic({ ...input, name: "probabilidade" }, topics)).toMatch(/Já existe/);
-    expect(validateTopic({ ...input, name: "Probabilidade", areaId: "nat" }, topics)).toBeNull();
+    expect(validateTopic({ ...input, name: "Probabilidade", areaId: "nat", subjectId: "fis" }, topics)).toBeNull();
   });
 
   it("allows keeping the same name while editing", () => {
     expect(validateTopic({ ...input, name: "Probabilidade" }, topics, "mat-3")).toBeNull();
+  });
+
+  it("requires a subject in Natureza and Humanas and ignores it elsewhere", () => {
+    expect(validateTopic({ ...input, areaId: "nat" }, topics)).toBe("Escolha a matéria do tópico.");
+    expect(validateTopic({ ...input, areaId: "nat", subjectId: "his" }, topics)).toBe("Escolha a matéria do tópico.");
+    expect(validateTopic({ ...input, areaId: "nat", subjectId: "qui" }, topics)).toBeNull();
+    expect(createTopic([], { ...input, subjectId: "qui" }, "custom-2")[0].subjectId).toBeNull();
   });
 
   it("limits name and description length", () => {
@@ -42,7 +49,7 @@ describe("create, edit, hide and delete", () => {
   it("starts from an empty list and adds a topic with a trimmed name", () => {
     const created = createTopic([], { ...input, name: "  Matrizes " }, "custom-1");
     expect(created).toEqual([
-      { id: "custom-1", areaId: "mat", name: "Matrizes", description: "Determinantes também", priority: "alta", hidden: false },
+      { id: "custom-1", areaId: "mat", subjectId: null, name: "Matrizes", description: "Determinantes também", priority: "alta", hidden: false },
     ]);
   });
 

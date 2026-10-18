@@ -44,7 +44,7 @@ const FAQ = [
   ["E se eu não conseguir seguir o plano?", "Normal. O que não deu para estudar passa sozinho para o próximo dia, e você pode mover qualquer matéria quando quiser."],
   [
     "O app já vem com as matérias do ENEM?",
-    "Vem só com as cinco áreas: Matemática, Linguagens, Ciências da Natureza, Ciências Humanas e Redação. Você cria os tópicos que quer estudar e decide quanto estudar.",
+    "Vem só com as cinco áreas: Matemática, Linguagens, Natureza (Química, Física e Biologia), Humanas (Geografia, História, Filosofia e Sociologia) e Redação. Nenhum tópico vem pronto: você cria os seus e decide quanto estudar.",
   ],
 ];
 

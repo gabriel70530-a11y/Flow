@@ -8,12 +8,12 @@ import { NumberInput } from "@/components/ui/NumberInput";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Segmented } from "@/components/ui/Segmented";
 import { showToast } from "@/components/ui/Toast";
-import { GENERAL_STUDY, areaStudyValue, parseStudyChoice } from "@/lib/sessions";
+import { GENERAL_STUDY, parseStudyChoice } from "@/lib/sessions";
 import { formatDuration } from "@/lib/stats";
-import { AREAS } from "@/lib/syllabus";
 import { clockText, displaySeconds, elapsed, isIdle, phaseSeconds, type TimerMode } from "@/lib/timer";
 import { findTopic, visibleTopics } from "@/lib/topics";
 import { useStudyStore } from "@/store/study-store";
+import { StudyOptions } from "./StudyOptions";
 import { unlockAudio } from "./chime";
 import { useNow } from "./use-now";
 
@@ -109,18 +109,7 @@ export function TimerCard() {
           {timer.topicId && parseStudyChoice(timer.topicId, topics).topicId && !selected && (
             <option value={timer.topicId}>Tópico excluído</option>
           )}
-          {AREAS.map((area) => (
-            <optgroup key={area.id} label={area.name}>
-              <option value={areaStudyValue(area.id)}>{area.name} (geral)</option>
-              {selectable
-                .filter((topic) => topic.areaId === area.id)
-                .map((topic) => (
-                  <option key={topic.id} value={topic.id}>
-                    {topic.name}
-                  </option>
-                ))}
-            </optgroup>
-          ))}
+          <StudyOptions topics={selectable} />
         </select>
         {task && (
           <span className="font-normal">

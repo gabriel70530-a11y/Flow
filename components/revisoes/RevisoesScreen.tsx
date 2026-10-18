@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { showToast } from "@/components/ui/Toast";
 import { toDateKey } from "@/lib/dates";
 import { groupReviews, nextReview, pendingReviews, progressOf, type PendingReview } from "@/lib/reviews";
-import { findArea } from "@/lib/syllabus";
+import { focusName } from "@/lib/syllabus";
 import { findTopic } from "@/lib/topics";
 import { useHydrated, useStudyStore } from "@/store/study-store";
 import { ReviewDrawer } from "./ReviewDrawer";
@@ -109,7 +109,7 @@ export function RevisoesScreen() {
                     title={topic?.name}
                     subtitle={
                       <span className="tabular-nums">
-                        {topic && findArea(topic.areaId).name} · Revisão {review.stage} de 4 ·{" "}
+                        {topic && focusName(topic.areaId, topic.subjectId)} · Revisão {review.stage} de 4 ·{" "}
                         <DueLabel due={review.due} today={today} />
                         {review.reschedules?.length ? " · Reagendada" : ""}
                       </span>

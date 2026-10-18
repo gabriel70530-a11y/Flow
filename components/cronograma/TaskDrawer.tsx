@@ -36,7 +36,7 @@ export function TaskDrawer({ task, today, onClose }: TaskDrawerProps) {
     onClose();
   };
   const done = task.status === "concluida";
-  const suggestion = done ? null : suggestDay(tasks, planner, today, task.areaId, task.id);
+  const suggestion = done ? null : suggestDay(tasks, planner, today, task, task.id);
   const act = (message: string, action: () => void) => {
     action();
     showToast(message);

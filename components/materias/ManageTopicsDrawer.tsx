@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/Button";
 import { Drawer, DrawerSection } from "@/components/ui/Drawer";
 import { showToast } from "@/components/ui/Toast";
-import { findArea } from "@/lib/syllabus";
+import { focusName } from "@/lib/syllabus";
 import { useStudyStore } from "@/store/study-store";
 
 export function ManageTopicsDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -25,7 +25,7 @@ export function ManageTopicsDrawer({ open, onClose }: { open: boolean; onClose: 
               <li key={topic.id} className="flex items-center justify-between gap-3 text-sm">
                 <span className="min-w-0">
                   <span className="block font-medium wrap-anywhere">{topic.name}</span>
-                  <span className="text-[13px] text-muted">{findArea(topic.areaId).name}</span>
+                  <span className="text-[13px] text-muted">{focusName(topic.areaId, topic.subjectId)}</span>
                 </span>
                 <Button
                   onClick={() => {

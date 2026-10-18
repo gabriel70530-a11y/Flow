@@ -17,7 +17,7 @@ import {
   type Mastery,
   type TopicStatus,
 } from "@/lib/reviews";
-import { findArea } from "@/lib/syllabus";
+import { focusName } from "@/lib/syllabus";
 import type { Priority, TopicRecord } from "@/lib/topics";
 import { useStudyStore } from "@/store/study-store";
 import { TopicForm, priorityOptions } from "./TopicForm";
@@ -62,7 +62,13 @@ export function TopicDrawer({ topic, today, onClose }: TopicDrawerProps) {
     onClose();
   };
 
-  const input = { name: topic.name, areaId: topic.areaId, description: topic.description, priority: topic.priority };
+  const input = {
+    name: topic.name,
+    areaId: topic.areaId,
+    subjectId: topic.subjectId,
+    description: topic.description,
+    priority: topic.priority,
+  };
 
   const saveChanges = () => {
     if (priority !== topic.priority) editTopic(topic.id, { ...input, priority });
@@ -115,7 +121,7 @@ export function TopicDrawer({ topic, today, onClose }: TopicDrawerProps) {
     <Drawer
       open
       onClose={close}
-      eyebrow={`${findArea(topic.areaId).name}${topic.hidden ? " · Oculto" : ""}`}
+      eyebrow={`${focusName(topic.areaId, topic.subjectId)}${topic.hidden ? " · Oculto" : ""}`}
       title={topic.name}
     >
       {topic.description && <p className="-mt-3 mb-4 text-sm text-muted whitespace-pre-line">{topic.description}</p>}

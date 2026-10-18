@@ -26,8 +26,8 @@ Abra http://localhost:3000. A página inicial é o site; o app começa em `/pain
 
 - `/` landing, `/privacidade`, `/termos`: site público.
 - `/painel`: "Estudar hoje", semana com meta (horas, sessões ou tópicos), resumo, por área e próximas revisões.
-- `/cronograma`: matérias dos próximos 7 dias, até 2 por dia de estudo, sempre da mesma área. O que não foi estudado passa sozinho para o próximo dia; o que não foi dominado se repete no dia seguinte.
-- `/materias`: as cinco áreas do ENEM; o estudante cria os próprios tópicos em cada uma. Busca, filtros, ordenação, editar, ocultar e excluir.
+- `/cronograma`: matérias dos próximos 7 dias, até 2 por dia de estudo, sempre do mesmo assunto (mesma área ou, em Natureza e Humanas, mesma matéria). O que não foi estudado passa sozinho para o próximo dia; o que não foi dominado se repete no dia seguinte.
+- `/materias`: as cinco áreas do ENEM, com Natureza (Química, Física, Biologia) e Humanas (Geografia, História, Filosofia, Sociologia) divididas em matérias. Nenhum tópico vem pronto: o estudante cria os próprios. Busca, filtros, ordenação, editar, ocultar e excluir.
 - `/timer`: Pomodoro e cronômetro, estudo geral, reflexão pós-sessão, sessões de hoje.
 - `/revisoes`: atrasadas, hoje, próximos 7 dias e futuras; concluir com feedback, adiar e reagendar.
 - `/comecar`: configuração inicial opcional. `/ajustes`: preferências, meta, cronograma, backup. `/planos`.

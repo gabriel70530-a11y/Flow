@@ -54,6 +54,7 @@ import {
 import {
   createTopic,
   deleteTopic,
+  findTopic,
   setTopicHidden,
   updateTopic,
   validateTopic,
@@ -243,8 +244,12 @@ export const useStudyStore = create<StudyStore>()(
 
         editTopic: (id, input) => {
           const error = validateTopic(input, get().topics, id);
-          if (!error) set({ topics: updateTopic(get().topics, id, input) });
-          return error;
+          if (error) return error;
+          const topics = updateTopic(get().topics, id, input);
+          const { areaId, subjectId } = findTopic(topics, id) ?? input;
+          // As tarefas do tópico acompanham a troca de área ou matéria.
+          set({ topics, tasks: get().tasks.map((task) => (task.topicId === id ? { ...task, areaId, subjectId } : task)) });
+          return null;
         },
 
         setTopicHidden: (id, hidden) => set({ topics: setTopicHidden(get().topics, id, hidden) }),
@@ -388,13 +393,12 @@ export const useStudyStore = create<StudyStore>()(
         addTask: (input) => {
           const error = validateTask(input, today());
           if (error) return error;
-          const { topicId, areaId } = parseStudyChoice(input.topicId ?? GENERAL_STUDY, get().topics);
-          const conflict = dayConflict(get().tasks, input.date, areaId);
+          const choice = parseStudyChoice(input.topicId ?? GENERAL_STUDY, get().topics);
+          const conflict = dayConflict(get().tasks, input.date, choice);
           if (conflict) return conflict;
           const task: PlanTask = {
             id: newId("task-"),
-            topicId,
-            areaId,
+            ...choice,
             kind: "estudo",
             date: input.date,
             priority: input.priority,
@@ -411,7 +415,7 @@ export const useStudyStore = create<StudyStore>()(
           if (!task) return "Tarefa não encontrada.";
           if (date !== null) {
             if (!isDateKey(date) || date < today()) return "Escolha hoje ou uma data futura.";
-            const conflict = dayConflict(get().tasks, date, task.areaId, taskId);
+            const conflict = dayConflict(get().tasks, date, task, taskId);
             if (conflict) return conflict;
           }
           set({ tasks: rescheduleTask(get().tasks, taskId, date) });

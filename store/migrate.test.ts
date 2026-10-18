@@ -24,9 +24,10 @@ describe("loadData", () => {
     const { data, corrupt } = loadData({ current: null, legacy: null }, today);
     expect(corrupt).toBe(false);
     expect(data.demo).toBe(true);
-    expect(data.topics.length).toBeGreaterThan(0);
-    expect(data.topics.every((topic) => !("origin" in topic))).toBe(true);
-    expect(data.sessions.every((session) => data.topics.some((topic) => topic.id === session.topicId))).toBe(true);
+    expect(data.topics).toEqual([]);
+    expect(data.progress).toEqual({});
+    expect(data.sessions.every((session) => session.topicId === null)).toBe(true);
+    expect(data.sessions.some((session) => session.subjectId === "qui")).toBe(true);
     expect(data.sessions.every((session) => session.state === "concluida" && session.areaId)).toBe(true);
   });
 
@@ -38,8 +39,8 @@ describe("loadData", () => {
     expect(data.theme).toBe("dark");
     expect(data.progress["mat-3"].status).toBe("and");
     expect(data.sessions).toEqual([
-      { id: "a1", topicId: "mat-3", areaId: "mat", date: "2026-10-15", start: 1_000_000 - 1_500_000, end: 1_000_000, sec: 1500, mode: "pomodoro", state: "concluida" },
-      { id: "a2", topicId: "lin-0", areaId: "lin", date: "2026-10-16", start: 2_000_000 - 600_000, end: 2_000_000, sec: 600, mode: "cronometro", state: "concluida" },
+      { id: "a1", topicId: "mat-3", areaId: "mat", subjectId: null, date: "2026-10-15", start: 1_000_000 - 1_500_000, end: 1_000_000, sec: 1500, mode: "pomodoro", state: "concluida" },
+      { id: "a2", topicId: "lin-0", areaId: "lin", subjectId: null, date: "2026-10-16", start: 2_000_000 - 600_000, end: 2_000_000, sec: 600, mode: "cronometro", state: "concluida" },
     ]);
     expect(data.timer).toMatchObject({ focus: 50, brk: 10, banked: 120, topicId: "mat-3", sessionStart: 0, taskId: "" });
     expect(data.topics.map((topic) => [topic.id, topic.name])).toEqual([
@@ -57,6 +58,7 @@ describe("loadData", () => {
     });
     const { data } = loadData({ current, legacy: null }, today);
     expect(data.topics.map((kept) => kept.id)).toEqual(["mat-1", "custom-1"]);
+    expect(data.topics.every((kept) => kept.subjectId === null)).toBe(true);
     expect(data.topics.every((kept) => !("origin" in kept))).toBe(true);
   });
 
@@ -77,6 +79,18 @@ describe("loadData", () => {
     expect(data.topics).toEqual(topics);
     expect(data.planner.strategy).toBe("prioridades");
     expect(data.planner.studyDays).toHaveLength(7);
+  });
+
+  it("gives old science and humanities topics their subject, also on their tasks", () => {
+    const topic = { id: "nat-3", areaId: "nat", name: "Estequiometria", description: "", priority: "media", hidden: false, origin: "padrao" };
+    const oldTask = {
+      id: "t", topicId: "nat-3", areaId: "nat", kind: "estudo", date: today,
+      priority: "media", status: "planejada", origin: "gerada", focusSec: 0,
+    };
+    const current = JSON.stringify({ ...emptyData(), topics: [topic], tasks: [oldTask] });
+    const { data } = loadData({ current, legacy: null }, today);
+    expect(data.topics[0].subjectId).toBe("qui");
+    expect(data.tasks[0].subjectId).toBe("qui");
   });
 
   it("turns old minutes per day into study days and drops task durations", () => {

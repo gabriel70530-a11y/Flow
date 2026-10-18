@@ -5,9 +5,8 @@ import { Button } from "@/components/ui/Button";
 import { Field, inputStyles } from "@/components/ui/Field";
 import { Segmented } from "@/components/ui/Segmented";
 import { priorityOptions } from "@/components/materias/TopicForm";
+import { StudyOptions } from "@/components/timer/StudyOptions";
 import type { TaskInput } from "@/lib/planner";
-import { areaStudyValue } from "@/lib/sessions";
-import { AREAS } from "@/lib/syllabus";
 import { visibleTopics } from "@/lib/topics";
 import { useStudyStore } from "@/store/study-store";
 
@@ -43,21 +42,10 @@ export function TaskForm({ today, initialDate, onDone }: TaskFormProps) {
           className={inputStyles}
         >
           <option value="">Estudo geral (sem área)</option>
-          {AREAS.map((area) => (
-            <optgroup key={area.id} label={area.name}>
-              <option value={areaStudyValue(area.id)}>{area.name} (geral)</option>
-              {visibleTopics(topics)
-                .filter((topic) => topic.areaId === area.id)
-                .map((topic) => (
-                  <option key={topic.id} value={topic.id}>
-                    {topic.name}
-                  </option>
-                ))}
-            </optgroup>
-          ))}
+          <StudyOptions topics={visibleTopics(topics)} />
         </select>
       </Field>
-      <Field label="Dia" hint="Cada dia tem no máximo 2 matérias.">
+      <Field label="Dia" hint="Cada dia tem no máximo 2 matérias, do mesmo assunto.">
         <input
           type="date"
           min={today}

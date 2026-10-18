@@ -1,6 +1,6 @@
 import { addDays, isDateKey, weekdayIndex } from "./dates";
 import { pendingReviews, progressOf, type ProgressMap, type TopicStatus } from "./reviews";
-import { findArea, type AreaId } from "./syllabus";
+import { focusName, type AreaId, type SubjectId } from "./syllabus";
 import { PRIORITY_WEIGHT, findTopic, visibleTopics, type Priority, type TopicRecord } from "./topics";
 
 export type TaskStatus = "planejada" | "iniciada" | "concluida" | "adiada";
@@ -11,6 +11,7 @@ export interface PlanTask {
   id: string;
   topicId: string | null;
   areaId: AreaId | null;
+  subjectId?: SubjectId | null;
   kind: "estudo" | "revisao";
   date: string | null;
   priority: Priority;
@@ -51,6 +52,9 @@ export interface PlanResult {
   removed: PlanTask[];
   leftovers: PlanLeftover[];
 }
+
+// O assunto de uma tarefa: a área e, em Natureza e Humanas, a matéria.
+export type StudyFocus = Pick<PlanTask, "areaId" | "subjectId">;
 
 export interface TaskInput {
   topicId: string | null;
@@ -118,33 +122,47 @@ function topicScore(topic: TopicRecord, status: TopicStatus, settings: PlannerSe
   return (STATUS_SCORE[status] ?? 0) + PRIORITY_WEIGHT[topic.priority] * 6 + areaBonus - strongPenalty;
 }
 
-// Cada dia é de uma área só (ex.: duas de Matemática, nunca Matemática e Linguagens). Estudo geral, sem área, cabe em qualquer dia.
-export function fitsDay(onDay: readonly PlanTask[], areaId: AreaId | null): boolean {
-  return areaId === null || onDay.every((task) => task.areaId === null || task.areaId === areaId);
+/*
+ * Cada dia é de um assunto só: duas de Matemática, nunca Matemática e Linguagens; duas de Química, nunca
+ * Química e Biologia. Estudo geral cabe em qualquer dia, e a área inteira cabe com qualquer matéria dela.
+ */
+function compatible(first: StudyFocus, second: StudyFocus): boolean {
+  if (first.areaId === null || second.areaId === null) return true;
+  if (first.areaId !== second.areaId) return false;
+  return !first.subjectId || !second.subjectId || first.subjectId === second.subjectId;
 }
 
-export function dayArea(tasks: readonly PlanTask[], date: string): AreaId | null {
-  return dayTasks(tasks, date).find((task) => task.areaId !== null)?.areaId ?? null;
+export function fitsDay(onDay: readonly PlanTask[], focus: StudyFocus): boolean {
+  return onDay.every((task) => compatible(task, focus));
+}
+
+// O assunto que o dia já tem, preferindo a matéria quando houver.
+export function dayFocus(tasks: readonly PlanTask[], date: string): StudyFocus | null {
+  const onDay = dayTasks(tasks, date);
+  const specific = onDay.find((task) => task.subjectId) ?? onDay.find((task) => task.areaId !== null);
+  return specific ? { areaId: specific.areaId, subjectId: specific.subjectId ?? null } : null;
 }
 
 // Motivo para uma matéria não entrar num dia ao ser adicionada ou movida à mão; null quando cabe.
 export function dayConflict(
   tasks: readonly PlanTask[],
   date: string,
-  areaId: AreaId | null,
+  focus: StudyFocus,
   ignoreTaskId?: string,
 ): string | null {
   const others = tasks.filter((task) => task.id !== ignoreTaskId);
   if (topicsOn(others, date) >= MAX_TOPICS_PER_DAY) return "Esse dia já tem 2 matérias. Escolha outro dia.";
-  if (!fitsDay(dayTasks(others, date), areaId)) {
-    return `Esse dia é de ${findArea(dayArea(others, date)!).name}. Escolha outro dia ou uma matéria dessa área.`;
+  const current = dayFocus(others, date);
+  if (current?.areaId && !fitsDay(dayTasks(others, date), focus)) {
+    const name = focusName(current.areaId, current.subjectId);
+    return `Esse dia é de ${name}. Escolha outro dia ou algo de ${name}.`;
   }
   return null;
 }
 
 /*
- * Organiza os próximos 7 dias: em cada dia de estudo, até duas matérias da mesma área.
- * Primeiro entram as revisões vencidas ou do dia, depois os tópicos por pontuação; a primeira matéria define a área do dia.
+ * Organiza os próximos 7 dias: em cada dia de estudo, até duas matérias do mesmo assunto.
+ * Primeiro entram as revisões vencidas ou do dia, depois os tópicos por pontuação; a primeira matéria define o assunto do dia.
  * Na estratégia equilibrada, áreas que já aparecem muito na semana perdem pontos, então os dias alternam entre as áreas.
  * Tarefas concluídas, iniciadas, manuais, repetições, transferidas ou de dias passados nunca são trocadas.
  */
@@ -176,11 +194,11 @@ export function generatePlan({ today, topics, progress, tasks, settings, newId }
     .map((candidate) => ({ ...candidate, score: topicScore(candidate.topic, candidate.status, settings) }));
   const loadPenalty = settings.strategy === "equilibrada" ? 4 : 1.5;
 
-  const pickTopic = (area: AreaId | null): TopicRecord | null => {
+  const pickTopic = (focus: StudyFocus | null): TopicRecord | null => {
     let bestIndex = -1;
     let bestScore = -Infinity;
     candidates.forEach((candidate, index) => {
-      if (area && candidate.topic.areaId !== area) return;
+      if (focus && !compatible(focus, candidate.topic)) return;
       const adjusted = candidate.score - (areaTasks.get(candidate.topic.areaId) ?? 0) * loadPenalty;
       if (adjusted > bestScore) {
         bestScore = adjusted;
@@ -195,6 +213,7 @@ export function generatePlan({ today, topics, progress, tasks, settings, newId }
       id: newId(),
       topicId: topic.id,
       areaId: topic.areaId,
+      subjectId: topic.subjectId,
       kind,
       date,
       priority: topic.priority,
@@ -207,17 +226,18 @@ export function generatePlan({ today, topics, progress, tasks, settings, newId }
 
   for (const date of days) {
     if (!isStudyDay(settings, date)) continue;
-    let area = dayArea(kept, date);
+    let focus = dayFocus(kept, date);
     let slots = MAX_TOPICS_PER_DAY - topicsOn(kept, date);
     while (slots > 0) {
-      const reviewIndex = reviews.findIndex(
-        ({ topicId, review }) => review.due <= date && (!area || findTopic(visible, topicId)?.areaId === area),
-      );
+      const reviewIndex = reviews.findIndex(({ topicId, review }) => {
+        const topic = findTopic(visible, topicId);
+        return review.due <= date && topic !== undefined && (!focus || compatible(focus, topic));
+      });
       const reviewTopic = reviewIndex >= 0 ? findTopic(visible, reviews.splice(reviewIndex, 1)[0].topicId) : undefined;
-      const topic = reviewTopic ?? pickTopic(area);
+      const topic = reviewTopic ?? pickTopic(focus);
       if (!topic) break;
       place(topic, reviewTopic ? "revisao" : "estudo", date);
-      area = topic.areaId;
+      focus = { areaId: topic.areaId, subjectId: focus?.subjectId ?? topic.subjectId };
       slots--;
     }
   }
@@ -238,19 +258,19 @@ export function missedTasks(tasks: readonly PlanTask[], today: string): PlanTask
   );
 }
 
-// Primeiro dia de estudo, a partir de hoje, da mesma área (ou vazio) e com menos de duas matérias. Sem espaço, devolve null.
+// Primeiro dia de estudo, a partir de hoje, do mesmo assunto (ou vazio) e com menos de duas matérias. Sem espaço, devolve null.
 export function suggestDay(
   tasks: readonly PlanTask[],
   settings: PlannerSettings,
   today: string,
-  areaId: AreaId | null,
+  focus: StudyFocus,
   ignoreTaskId?: string,
 ): string | null {
   const others = tasks.filter((task) => task.id !== ignoreTaskId);
   return (
     planDays(today, SUGGESTION_DAYS).find((date) => {
       const onDay = dayTasks(others, date);
-      return isStudyDay(settings, date) && onDay.length < MAX_TOPICS_PER_DAY && fitsDay(onDay, areaId);
+      return isStudyDay(settings, date) && onDay.length < MAX_TOPICS_PER_DAY && fitsDay(onDay, focus);
     }) ?? null
   );
 }
@@ -261,10 +281,10 @@ interface Slot {
 }
 
 /*
- * Primeiro dia de estudo, a partir de `from`, que recebe mais uma matéria da área da tarefa:
- * - dia vazio ou da mesma área, com vaga: entra direto;
- * - dia da mesma área já cheio: sai uma tarefa gerada e não começada, de preferência um estudo e não uma revisão;
- * - dia de outra área em que tudo é gerado e não começado: o dia passa a ser desta área e essas tarefas saem.
+ * Primeiro dia de estudo, a partir de `from`, que recebe mais uma matéria do assunto da tarefa:
+ * - dia vazio ou do mesmo assunto, com vaga: entra direto;
+ * - dia do mesmo assunto já cheio: sai uma tarefa gerada e não começada, de preferência um estudo e não uma revisão;
+ * - dia de outro assunto em que tudo é gerado e não começado: o dia passa a ser deste assunto e essas tarefas saem.
  * Manuais, repetições, transferidas, iniciadas e concluídas nunca saem.
  */
 function findSlot(
@@ -272,13 +292,13 @@ function findSlot(
   settings: PlannerSettings,
   today: string,
   from: string,
-  areaId: AreaId | null,
+  focus: StudyFocus,
 ): Slot | null {
   for (const date of planDays(from, SUGGESTION_DAYS)) {
     if (!isStudyDay(settings, date)) continue;
     const onDay = dayTasks(tasks, date);
     const flexible = onDay.filter((item) => isRegenerable(item, today));
-    if (fitsDay(onDay, areaId)) {
+    if (fitsDay(onDay, focus)) {
       if (onDay.length < MAX_TOPICS_PER_DAY) return { date, displaced: [] };
       const displaced = flexible.filter((item) => item.kind === "estudo").at(-1) ?? flexible.at(-1);
       if (displaced) return { date, displaced: [displaced] };
@@ -306,7 +326,7 @@ function placeInPlan(
   let first: { placed: PlanTask; displaced: PlanTask[] } | null = null;
   while (queue.length > 0) {
     const { task: pending, from: searchFrom } = queue.shift()!;
-    const slot = findSlot(current, settings, today, searchFrom, pending.areaId);
+    const slot = findSlot(current, settings, today, searchFrom, pending);
     const placed: PlanTask = slot ? { ...pending, date: slot.date } : { ...pending, date: null, status: "adiada" };
     const displaced = slot?.displaced ?? [];
     current = [...current.filter((item) => !displaced.includes(item)), placed];
@@ -330,6 +350,7 @@ export function repeatNextDay(
     id: newId(),
     topicId: task.topicId,
     areaId: task.areaId,
+    subjectId: task.subjectId,
     kind: task.kind,
     date: null,
     priority: task.priority,

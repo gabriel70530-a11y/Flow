@@ -6,7 +6,7 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { DueLabel } from "@/components/ui/DueLabel";
 import { ListRow } from "@/components/ui/ListRow";
 import { pendingReviews } from "@/lib/reviews";
-import { findArea } from "@/lib/syllabus";
+import { focusName } from "@/lib/syllabus";
 import { findTopic } from "@/lib/topics";
 import { useStudyStore } from "@/store/study-store";
 
@@ -33,7 +33,7 @@ export function UpcomingReviews({ today }: { today: string }) {
                 key={topicId}
                 compact
                 title={topic?.name}
-                subtitle={topic && findArea(topic.areaId).name}
+                subtitle={topic && focusName(topic.areaId, topic.subjectId)}
                 end={
                   <span className="text-[13px] text-muted tabular-nums">
                     <DueLabel due={review.due} today={today} />

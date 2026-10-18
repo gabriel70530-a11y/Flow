@@ -2,7 +2,8 @@ import { DEFAULT_PLANNER, type PlanTask, type PlannerSettings } from "@/lib/plan
 import type { StudySession } from "@/lib/sessions";
 import type { GoalType } from "@/lib/stats";
 import { DEFAULT_TIMER, type TimerState } from "@/lib/timer";
-import { legacyTopics } from "@/lib/legacy-topics";
+import { legacySubject, legacyTopics } from "@/lib/legacy-topics";
+import { subjectsOf } from "@/lib/syllabus";
 import { findTopic, type TopicRecord } from "@/lib/topics";
 import { createDemoData } from "./demo-data";
 import { emptyData, type StudyData } from "./state";
@@ -79,14 +80,33 @@ function keepUsedTopics(data: StudyData, savedTopics: unknown): StudyData {
     ? savedTopics
         .filter(isRecord)
         .filter((topic) => topic.origin !== "padrao" || used.has(String(topic.id)))
-        .map((topic) => without(topic, ["origin"]) as unknown as TopicRecord)
+        .map((topic) => withSubject(without(topic, ["origin"]) as unknown as TopicRecord))
     : legacyTopics().filter((topic) => used.has(topic.id));
   return { ...data, topics };
 }
 
+// Tópicos salvos antes das matérias de Natureza e Humanas: os antigos ganham a matéria original; os demais ficam sem.
+function withSubject(topic: TopicRecord): TopicRecord {
+  const subjects = subjectsOf(topic.areaId).map((subject) => subject.id);
+  const subjectId = [topic.subjectId, legacySubject(topic.id)].find((id) => id && subjects.includes(id)) ?? null;
+  return { ...topic, subjectId };
+}
+
+// Tarefas e sessões guardam a matéria do tópico para o cronograma manter um assunto por dia.
+function linkSubjects(data: StudyData): StudyData {
+  const subjectOf = (topicId: string | null) => findTopic(data.topics, topicId)?.subjectId ?? null;
+  return {
+    ...data,
+    tasks: data.tasks.map((task) => (task.topicId && task.subjectId === undefined ? { ...task, subjectId: subjectOf(task.topicId) } : task)),
+    sessions: data.sessions.map((session) =>
+      session.topicId && session.subjectId === undefined ? { ...session, subjectId: subjectOf(session.topicId) } : session,
+    ),
+  };
+}
+
 // Completa campos ausentes com os padrões, para dados salvos por versões anteriores da v2 continuarem abrindo.
 function normalize(saved: Record<string, unknown>): StudyData {
-  return keepUsedTopics(fillDefaults(saved), saved.topics);
+  return linkSubjects(keepUsedTopics(fillDefaults(saved), saved.topics));
 }
 
 function fillDefaults(saved: Record<string, unknown>): StudyData {

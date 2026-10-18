@@ -1,4 +1,4 @@
-import type { AreaId } from "./syllabus";
+import type { AreaId, SubjectId } from "./syllabus";
 import type { TopicRecord } from "./topics";
 
 /*
@@ -62,11 +62,23 @@ const LEGACY_NAMES: Record<AreaId, string[]> = {
   ],
 };
 
+// Matéria de cada tópico antigo de Natureza e Humanas, na mesma ordem dos nomes.
+const LEGACY_SUBJECTS: Partial<Record<AreaId, SubjectId[]>> = {
+  nat: ["bio", "bio", "bio", "qui", "qui", "qui", "fis", "fis", "fis", "fis"],
+  hum: ["his", "his", "his", "his", "fil", "soc", "geo", "geo", "geo"],
+};
+
+export function legacySubject(topicId: string): SubjectId | null {
+  const [areaId, index] = topicId.split("-");
+  return LEGACY_SUBJECTS[areaId as AreaId]?.[Number(index)] ?? null;
+}
+
 export function legacyTopics(): TopicRecord[] {
   return (Object.keys(LEGACY_NAMES) as AreaId[]).flatMap((areaId) =>
     LEGACY_NAMES[areaId].map((name, index) => ({
       id: `${areaId}-${index}`,
       areaId,
+      subjectId: LEGACY_SUBJECTS[areaId]?.[index] ?? null,
       name,
       description: "",
       priority: "media" as const,
