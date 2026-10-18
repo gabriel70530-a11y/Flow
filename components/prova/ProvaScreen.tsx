@@ -1,9 +1,9 @@
 "use client";
 
-import { Check } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { CheckRow } from "@/components/ui/CheckRow";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Segmented } from "@/components/ui/Segmented";
@@ -78,26 +78,13 @@ export function ProvaScreen() {
                 const isChecked = checked.includes(item.id);
                 return (
                   <li key={item.id}>
-                    <button
-                      type="button"
-                      role="checkbox"
-                      aria-checked={isChecked}
-                      onClick={() => toggleChecklistItem(item.id)}
-                      className="-mx-2 flex w-[calc(100%+16px)] items-start gap-3 rounded-[12px] px-2 py-2.5 text-left hover:bg-hover"
-                    >
-                      <span
-                        aria-hidden
-                        className={`mt-0.5 grid size-[22px] shrink-0 place-items-center rounded-[7px] border-2 border-edge ${
-                          isChecked ? "bg-action text-on-action" : "bg-surface"
-                        }`}
-                      >
-                        {isChecked && <Check size={14} strokeWidth={3} />}
-                      </span>
-                      <span className="grid gap-0.5">
-                        <span className={isChecked ? "text-muted line-through" : "font-medium"}>{item.label}</span>
-                        {item.hint && <span className="text-[13px] text-muted">{item.hint}</span>}
-                      </span>
-                    </button>
+                    <CheckRow
+                      checked={isChecked}
+                      onToggle={() => toggleChecklistItem(item.id)}
+                      label={item.label}
+                      hint={item.hint}
+                      strike
+                    />
                   </li>
                 );
               })}
