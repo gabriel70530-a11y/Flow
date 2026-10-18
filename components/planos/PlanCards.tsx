@@ -1,11 +1,9 @@
-"use client";
-
 import { Check } from "lucide-react";
 import Link from "next/link";
 import { buttonStyles } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { FREE_FEATURES, PRO_FEATURES, PRO_PRICE, interestListUrl } from "@/lib/plan";
-import { useStudyStore } from "@/store/study-store";
+import { InterestLink } from "./InterestLink";
 
 function FeatureList({ items }: { items: string[] }) {
   return (
@@ -22,7 +20,6 @@ function FeatureList({ items }: { items: string[] }) {
 
 export function PlanCards({ inApp = false }: { inApp?: boolean }) {
   const interestUrl = interestListUrl();
-  const trackEvent = useStudyStore((state) => state.trackEvent);
 
   return (
     <div className="grid items-start gap-5 md:grid-cols-2">
@@ -63,15 +60,7 @@ export function PlanCards({ inApp = false }: { inApp?: boolean }) {
           </p>
         </div>
         {interestUrl ? (
-          <a
-            href={interestUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => trackEvent("pro_interesse")}
-            className={buttonStyles("secondary", "lg")}
-          >
-            Entrar na lista de interesse
-          </a>
+          <InterestLink href={interestUrl} />
         ) : (
           <p className="text-[13px] text-muted">A lista de interesse ainda não está aberta.</p>
         )}

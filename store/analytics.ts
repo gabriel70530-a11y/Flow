@@ -1,4 +1,5 @@
 import { toDateKey } from "@/lib/dates";
+import { STORAGE_KEY } from "./storage-key";
 
 export type AnalyticsEvent =
   | "app_aberto"
@@ -36,4 +37,13 @@ export function track(event: AnalyticsEvent, consent: boolean) {
   try {
     navigator.sendBeacon(url, JSON.stringify({ event, day: toDateKey(new Date()), install: installId() }));
   } catch {}
+}
+
+// Consentimento salvo, lido direto do navegador por páginas que não carregam a store (como a landing).
+export function savedConsent(): boolean {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}").analyticsConsent === true;
+  } catch {
+    return false;
+  }
 }
