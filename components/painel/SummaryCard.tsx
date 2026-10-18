@@ -40,6 +40,8 @@ export function SummaryCard({ today, monday }: { today: string; monday: string }
   const { taskCount, tasksDone, taskFocusSeconds, doneSeconds } = plannedVersusDone(tasks, sessions, monday, sunday);
   const weekSessions = sessions.filter((session) => session.date >= monday && session.date <= sunday);
   const interrupted = weekSessions.filter((session) => session.state === "interrompida").length;
+  const focusAnswers = weekSessions.filter((session) => session.distracted !== undefined);
+  const focused = focusAnswers.filter((session) => !session.distracted).length;
   const previousSeconds = secondsBetween(sessions, addDays(monday, -7), addDays(monday, -1));
   const difference = doneSeconds - previousSeconds;
   const windowStart = addDays(today, -(CONSISTENCY_DAYS - 1));
@@ -74,6 +76,11 @@ export function SummaryCard({ today, monday }: { today: string; monday: string }
           {weekSessions.length === 0
             ? "Nenhuma ainda."
             : `${weekSessions.length} ${weekSessions.length === 1 ? "sessão" : "sessões"}${interrupted ? `, ${interrupted} finalizada${interrupted === 1 ? "" : "s"} antes do fim do bloco` : ""}.`}
+          {focusAnswers.length > 0 && (
+            <span className="mt-1 block text-[13px] text-muted">
+              {focused} de {focusAnswers.length} sem distração, pelas suas respostas.
+            </span>
+          )}
         </Row>
         <Row label="Tópicos">
           {counts.concluded} concluídos, {counts.inProgress} em andamento e {counts.needsReview} para revisar, de {counts.total}.

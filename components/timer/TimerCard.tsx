@@ -1,6 +1,6 @@
 "use client";
 
-import { Volume2, VolumeX } from "lucide-react";
+import { Maximize2, Volume2, VolumeX } from "lucide-react";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -13,6 +13,7 @@ import { formatDuration } from "@/lib/stats";
 import { clockText, displaySeconds, elapsed, isIdle, phaseSeconds, type TimerMode } from "@/lib/timer";
 import { findTopic, visibleTopics } from "@/lib/topics";
 import { useStudyStore } from "@/store/study-store";
+import { FocusMode } from "./FocusMode";
 import { StudyOptions } from "./StudyOptions";
 import { unlockAudio } from "./chime";
 import { useNow } from "./use-now";
@@ -31,6 +32,7 @@ export function TimerCard() {
   const now = useNow(timer.running) || timer.startedAt;
   const topicSelect = useRef<HTMLSelectElement>(null);
   const [confirmingDiscard, setConfirmingDiscard] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
 
   const idle = isIdle(timer);
   const pomodoro = timer.mode === "pomodoro";
@@ -171,6 +173,12 @@ export function TimerCard() {
             {sound ? <Volume2 size={16} aria-hidden /> : <VolumeX size={16} aria-hidden />}
             Aviso sonoro {sound ? "ligado" : "desligado"}
           </button>
+          {timer.topicId && (
+            <button type="button" onClick={() => setFocusMode(true)} className="inline-flex min-h-9 items-center gap-1.5">
+              <Maximize2 size={16} aria-hidden />
+              Modo foco
+            </button>
+          )}
           {!idle && !onBreak && (
             <button type="button" onClick={discard} className="min-h-9 underline underline-offset-3">
               {confirmingDiscard ? "Clique de novo para descartar sem registrar" : "Descartar este tempo"}
@@ -178,6 +186,7 @@ export function TimerCard() {
           )}
         </div>
       </div>
+      {focusMode && <FocusMode onClose={() => setFocusMode(false)} />}
     </Card>
   );
 }

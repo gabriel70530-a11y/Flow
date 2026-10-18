@@ -23,6 +23,7 @@ export function ReflectionPrompt() {
   const tasks = useStudyStore((state) => state.tasks);
   const answerMastery = useAnswerMastery();
   const setSessionReflection = useStudyStore((state) => state.setSessionReflection);
+  const setSessionDistracted = useStudyStore((state) => state.setSessionDistracted);
   const [dismissedId, setDismissedId] = useState<string | null>(null);
   const [answeredId, setAnsweredId] = useState<string | null>(null);
 
@@ -93,6 +94,20 @@ export function ReflectionPrompt() {
           >
             {REFLECTION_LABELS[reflection]}
           </Button>
+        ))}
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-2 text-[13px] text-muted">
+        <span>O celular ou outra coisa tirou seu foco?</span>
+        {([false, true] as const).map((distracted) => (
+          <button
+            key={String(distracted)}
+            type="button"
+            aria-pressed={latest.distracted === distracted}
+            onClick={() => setSessionDistracted(latest.id, distracted)}
+            className="min-h-9 rounded-full bg-hover px-3.5 font-semibold text-muted aria-pressed:bg-action aria-pressed:text-on-action"
+          >
+            {distracted ? "Sim, me distraí" : "Não"}
+          </button>
         ))}
       </div>
       {topic && (
