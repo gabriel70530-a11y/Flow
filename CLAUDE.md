@@ -73,6 +73,7 @@ lib/
   mistakes.ts           caderno de erros com revisão espaçada própria
   mock-exams.ts         simulados registrados: acertos por área e ritmo
   essays.ts             redações registradas (notas por competência) e repertório
+  suggestions.ts        sugestões de nome de tópico pelo que mais cai, por área e matéria
   plan.ts               gratuito x Pro (acesso liberado durante o teste), lista de interesse, contato
   site.ts               endereço público, título e descrição (sitemap, robots, manifest, cartão social)
   *.test.ts
@@ -130,6 +131,7 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 
 **Matérias**
 - O app não traz tópicos prontos, nem nos dados de exemplo, só as cinco áreas: Matemática, Linguagens, Ciências da Natureza, Ciências Humanas e Redação. O estudante decide o que estuda e quanto estuda.
+- Ao **criar** um tópico, o formulário mostra até 10 sugestões do que mais cai na área ou matéria escolhida (`lib/suggestions.ts`, a partir da análise de incidência 2014–2024 "ENEM's Anatomy" e de levantamentos públicos). Tocar só preenche o nome; nada é criado sozinho. Sugestões que já existem na área (sem diferenciar acento) aparecem com ✓ e desativadas. Em Natureza e Humanas, aparecem depois de escolher a matéria.
 - Natureza se divide em Química, Física e Biologia; Humanas em Geografia, História, Filosofia e Sociologia. Todo tópico dessas áreas pertence a uma matéria (`subjectId`), e a tela de Matérias agrupa por ela. Tarefas e sessões guardam a matéria do tópico.
 - O estudante cria, edita, oculta, reexibe e exclui tópicos (excluir pede confirmação e não apaga sessões, que passam a aparecer como "Tópico excluído").
 - Ocultar não apaga sessões, revisões nem progresso; tópicos ocultos saem das listas e do cronograma até serem reexibidos.
