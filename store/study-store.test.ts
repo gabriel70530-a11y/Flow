@@ -351,12 +351,10 @@ describe("final stretch tools", () => {
     expect(state().mockExams).toHaveLength(1);
   });
 
-  it("checks exam checklist items per day and sets the exam date", () => {
+  it("checks exam checklist items per day", () => {
     state().toggleChecklistItem("d1-caneta");
     state().toggleChecklistItem("d2-caneta");
     state().resetChecklist(1);
     expect(state().examChecklist).toEqual(["d2-caneta"]);
-    state().setTargetDate("2026-11-08");
-    expect(state().planner.targetDate).toBe("2026-11-08");
   });
 });

@@ -227,7 +227,6 @@ function Settings() {
             </CardHeader>
             <PlannerSettingsForm
               initial={planner}
-              today={today}
               submitLabel="Salvar preferências"
               onSubmit={(settings) => {
                 const error = savePlanner(settings);

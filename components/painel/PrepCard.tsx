@@ -2,11 +2,9 @@
 
 import { ChevronRight, ClipboardCheck, NotebookPen, PenLine, TimerReset, type LucideIcon } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
-import { showToast } from "@/components/ui/Toast";
 import { shortDate } from "@/lib/dates";
-import { daysUntil, isFinalStretch, suggestedExamDate } from "@/lib/exam";
+import { daysUntil, isFinalStretch, nextExamDay, secondExamDay } from "@/lib/exam";
 import { dueMistakes } from "@/lib/mistakes";
 import { useStudyStore } from "@/store/study-store";
 
@@ -29,23 +27,26 @@ export function PrepCard({ today, className = "" }: { today: string; className?:
   const mistakes = useStudyStore((state) => state.mistakes);
   const mockCount = useStudyStore((state) => state.mockExams.length);
   const essayCount = useStudyStore((state) => state.essays.length);
-  const setTargetDate = useStudyStore((state) => state.setTargetDate);
-  const upcoming = targetDate && targetDate >= today ? targetDate : null;
-  const finalStretch = isFinalStretch(upcoming, today);
-  const suggestion = upcoming ? null : suggestedExamDate(today);
-  const remaining = upcoming ? daysUntil(upcoming, today) : null;
+  const upcoming = nextExamDay(targetDate, today);
+  const finalStretch = upcoming !== null && isFinalStretch(upcoming.date, today);
+  const remaining = upcoming ? daysUntil(upcoming.date, today) : null;
   const dueCount = dueMistakes(mistakes, today).length;
 
   return (
     <Card className={className}>
       <CardHeader title={finalStretch ? "Reta final" : "Preparação"} />
-      {remaining !== null && upcoming && (
+      {remaining !== null && upcoming && targetDate && (
         <div className="mb-4">
           <p className="font-heading text-[44px] leading-none font-extrabold tabular-nums font-stretch-115%">
             {remaining === 0 ? "Hoje" : remaining}
           </p>
           <p className="mt-1.5 text-sm text-muted tabular-nums">
-            {remaining === 0 ? "é o dia da prova. Boa prova!" : `${remaining === 1 ? "dia" : "dias"} para a prova, em ${shortDate(upcoming)}`}
+            {remaining === 0
+              ? `é o ${upcoming.day}º dia do Enem. Boa prova!`
+              : `${remaining === 1 ? "dia" : "dias"} para o ${upcoming.day}º dia do Enem`}
+            <span className="block text-[13px]">
+              Enem: {shortDate(targetDate)} e {shortDate(secondExamDay(targetDate))}
+            </span>
           </p>
           {finalStretch && (
             <p className="mt-3 text-[13px] text-muted">
@@ -54,22 +55,8 @@ export function PrepCard({ today, className = "" }: { today: string; className?:
           )}
         </div>
       )}
-      {suggestion && (
-        <div className="mb-4 grid gap-3">
-          <p className="text-sm text-muted">Informe a data da prova para o Flow organizar a reta final.</p>
-          <Button
-            className="justify-self-start"
-            onClick={() => {
-              setTargetDate(suggestion);
-              showToast("Data da prova salva. Dá para mudar no Cronograma.");
-            }}
-          >
-            Usar {shortDate(suggestion)}, 1º dia do Enem 2026
-          </Button>
-        </div>
-      )}
       <ul>
-        {(finalStretch || suggestion) && <ToolLink href="/prova" icon={ClipboardCheck} label="Checklist do dia da prova" />}
+        {finalStretch && <ToolLink href="/prova" icon={ClipboardCheck} label="Checklist do dia da prova" />}
         <ToolLink
           href="/revisoes/erros"
           icon={NotebookPen}

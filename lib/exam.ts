@@ -1,6 +1,7 @@
 import { addDays, fromDateKey } from "./dates";
 
-// Datas divulgadas pelo Inep para o Enem 2026. Servem só de sugestão quando a pessoa ainda não informou a data da prova.
+// Datas oficiais do Enem 2026, divulgadas pelo Inep. O Enem tem data fixa: a pessoa não precisa informar.
+// Atualize aqui a cada edição.
 export const ENEM_DATES = { first: "2026-11-08", second: "2026-11-15" } as const;
 
 // Nas últimas 4 semanas antes da prova, o plano prioriza revisar o que já foi estudado em vez de abrir conteúdo novo.
@@ -21,8 +22,12 @@ export function secondExamDay(targetDate: string): string {
   return targetDate === ENEM_DATES.first ? ENEM_DATES.second : addDays(targetDate, 7);
 }
 
-export function suggestedExamDate(today: string): string | null {
-  return today <= ENEM_DATES.first ? ENEM_DATES.first : null;
+// O próximo dia de prova a partir de hoje: o primeiro, o segundo (entre os dois domingos) ou nenhum, depois do fim.
+export function nextExamDay(targetDate: string | null, today: string): { date: string; day: ExamDay } | null {
+  if (!targetDate) return null;
+  if (today <= targetDate) return { date: targetDate, day: 1 };
+  const second = secondExamDay(targetDate);
+  return today <= second ? { date: second, day: 2 } : null;
 }
 
 export function countdownLabel(targetDate: string, today: string): string {

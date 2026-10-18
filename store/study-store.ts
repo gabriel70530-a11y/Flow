@@ -132,7 +132,6 @@ interface StudyActions {
 
   toggleChecklistItem: (itemId: string) => void;
   resetChecklist: (day: ExamDay) => void;
-  setTargetDate: (date: string | null) => void;
 
   savePlanner: (settings: PlannerSettings) => string | null;
   finishOnboarding: (settings: PlannerSettings, planMode: OnboardingState["planMode"]) => string | null;
@@ -451,10 +450,6 @@ export const useStudyStore = create<StudyStore>()(
         resetChecklist: (day) => {
           const ids = checklistIds(day);
           set({ examChecklist: get().examChecklist.filter((id) => !ids.includes(id)) });
-        },
-        setTargetDate: (date) => {
-          if (date !== null && !isDateKey(date)) return;
-          set({ planner: { ...get().planner, targetDate: date } });
         },
 
         savePlanner: (settings) => {

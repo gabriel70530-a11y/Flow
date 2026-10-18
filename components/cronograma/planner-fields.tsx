@@ -2,8 +2,9 @@
 
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
-import { Field, inputStyles } from "@/components/ui/Field";
 import { Segmented } from "@/components/ui/Segmented";
+import { fromDateKey, shortDate } from "@/lib/dates";
+import { ENEM_DATES } from "@/lib/exam";
 import type { PlanStrategy, PlannerSettings } from "@/lib/planner";
 import { AREAS, type AreaId } from "@/lib/syllabus";
 
@@ -73,6 +74,34 @@ export function LightDaysField({
   );
 }
 
+const weekday = new Intl.DateTimeFormat("pt-BR", { weekday: "long" });
+
+// O Enem tem data oficial: o Flow mostra os dois dias em vez de pedir uma data.
+export function ExamDates() {
+  const days = [
+    { date: ENEM_DATES.first, label: "1º dia", content: "Linguagens, Humanas e Redação" },
+    { date: ENEM_DATES.second, label: "2º dia", content: "Natureza e Matemática" },
+  ];
+  return (
+    <div className="grid gap-1.5">
+      <span className="text-[13px] font-semibold text-muted">Data da prova</span>
+      <ul className="grid gap-2 rounded-[12px] bg-hover p-3.5 text-sm">
+        {days.map((day) => (
+          <li key={day.date} className="flex flex-wrap items-baseline justify-between gap-x-3">
+            <span className="font-semibold tabular-nums">
+              {day.label} · {weekday.format(fromDateKey(day.date))}, {shortDate(day.date)}
+            </span>
+            <span className="text-muted">{day.content}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="text-[13px] text-muted">
+        Datas oficiais do Enem {ENEM_DATES.first.slice(0, 4)}. O Flow usa para a reta final e o checklist do dia da prova.
+      </p>
+    </div>
+  );
+}
+
 interface AreaChipsProps {
   label: string;
   hint?: string;
@@ -106,12 +135,11 @@ export function AreaChips({ label, hint, value, onChange }: AreaChipsProps) {
 
 interface PlannerSettingsFormProps {
   initial: PlannerSettings;
-  today: string;
   submitLabel: string;
   onSubmit: (settings: PlannerSettings) => string | null;
 }
 
-export function PlannerSettingsForm({ initial, today, submitLabel, onSubmit }: PlannerSettingsFormProps) {
+export function PlannerSettingsForm({ initial, submitLabel, onSubmit }: PlannerSettingsFormProps) {
   const [settings, setSettings] = useState(initial);
   const [error, setError] = useState<string | null>(null);
   const update = (changes: Partial<PlannerSettings>) => {
@@ -149,15 +177,7 @@ export function PlannerSettingsForm({ initial, today, submitLabel, onSubmit }: P
         value={settings.strongAreas}
         onChange={(strongAreas) => update({ strongAreas })}
       />
-      <Field label="Data da sua prova (opcional)" hint="Só para referência. Você pode mudar quando quiser.">
-        <input
-          type="date"
-          min={today}
-          value={settings.targetDate ?? ""}
-          onChange={(event) => update({ targetDate: event.target.value || null })}
-          className={inputStyles}
-        />
-      </Field>
+      <ExamDates />
       {error && (
         <p role="alert" className="text-[13px] text-danger">
           {error}

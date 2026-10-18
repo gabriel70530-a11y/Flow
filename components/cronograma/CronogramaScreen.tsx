@@ -257,7 +257,6 @@ export function CronogramaScreen() {
       <Drawer open={editingSettings} onClose={() => setEditingSettings(false)} eyebrow="Cronograma" title="Dias de estudo e preferências">
         <PlannerSettingsForm
           initial={planner}
-          today={today}
           submitLabel="Salvar"
           onSubmit={(settings) => {
             const error = savePlanner(settings);

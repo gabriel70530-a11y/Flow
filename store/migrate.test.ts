@@ -80,6 +80,7 @@ describe("loadData", () => {
     expect(data.planner.strategy).toBe("prioridades");
     expect(data.planner.studyDays).toHaveLength(7);
     expect(data.planner.lightDays).toEqual(Array(7).fill(false));
+    expect(data.planner.targetDate).toBe("2026-11-08");
     expect({ mistakes, mockExams, essays, repertoire, examChecklist }).toEqual({
       mistakes: data.mistakes,
       mockExams: data.mockExams,

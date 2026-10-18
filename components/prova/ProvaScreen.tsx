@@ -109,11 +109,6 @@ export function ProvaScreen() {
           As regras oficiais (horários, documentos aceitos e objetos permitidos) estão no edital e no cartão de confirmação do
           Inep. Confira lá antes da prova.
         </p>
-        {!targetDate && (
-          <p className="text-[13px] text-muted">
-            Datas do Enem 2026. Se a sua prova for outra, informe a data em Cronograma, em Dias de estudo.
-          </p>
-        )}
         <div>
           <Button onClick={() => window.print()}>Imprimir checklist</Button>
         </div>

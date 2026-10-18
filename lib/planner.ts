@@ -1,5 +1,5 @@
 import { addDays, isDateKey, weekdayIndex } from "./dates";
-import { isFinalStretch } from "./exam";
+import { ENEM_DATES, isFinalStretch } from "./exam";
 import { pendingReviews, progressOf, type ProgressMap, type TopicStatus } from "./reviews";
 import { focusName, type AreaId, type SubjectId } from "./syllabus";
 import { PRIORITY_WEIGHT, findTopic, visibleTopics, type Priority, type TopicRecord } from "./topics";
@@ -76,7 +76,7 @@ export const DEFAULT_PLANNER: PlannerSettings = {
   lightDays: [false, false, false, false, false, false, false],
   difficultAreas: [],
   strongAreas: [],
-  targetDate: null,
+  targetDate: ENEM_DATES.first,
   strategy: "equilibrada",
   course: "",
 };

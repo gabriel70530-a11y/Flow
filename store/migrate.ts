@@ -54,6 +54,8 @@ function normalizePlanner(saved: unknown): PlannerSettings {
     ...DEFAULT_PLANNER,
     ...(without(saved, ["availability", "sessionMinutes", "studyDays"]) as Partial<PlannerSettings>),
     studyDays: days.some(Boolean) ? days : DEFAULT_PLANNER.studyDays,
+    // A data da prova deixou de ser escolhida: é sempre a do Enem.
+    targetDate: DEFAULT_PLANNER.targetDate,
     lightDays:
       Array.isArray(saved.lightDays) && saved.lightDays.length === 7 ? saved.lightDays.map(Boolean) : DEFAULT_PLANNER.lightDays,
   };

@@ -10,8 +10,9 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Segmented } from "@/components/ui/Segmented";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { showToast } from "@/components/ui/Toast";
-import { AreaChips, LightDaysField, StudyDaysFields, strategyOptions } from "@/components/cronograma/planner-fields";
-import { shortDate, toDateKey } from "@/lib/dates";
+import { AreaChips, ExamDates, LightDaysField, StudyDaysFields, strategyOptions } from "@/components/cronograma/planner-fields";
+import { shortDate } from "@/lib/dates";
+import { ENEM_DATES } from "@/lib/exam";
 import type { PlannerSettings } from "@/lib/planner";
 import { findArea, type AreaId } from "@/lib/syllabus";
 import type { OnboardingState } from "@/store/state";
@@ -53,7 +54,6 @@ function OnboardingSteps() {
   const [settings, setSettings] = useState<PlannerSettings>(stored);
   const [planMode, setPlanMode] = useState(storedMode);
   const [error, setError] = useState<string | null>(null);
-  const today = toDateKey(new Date());
   const studyDayNames = WEEKDAY_NAMES.filter((_, index) => settings.studyDays[index]);
   const lightDayNames = WEEKDAY_NAMES.filter((_, index) => settings.studyDays[index] && settings.lightDays[index]);
 
@@ -103,7 +103,7 @@ function OnboardingSteps() {
     ],
     ["Áreas prioritárias ou difíceis", areaNames(settings.difficultAreas), 2],
     ["Áreas em que vai bem", areaNames(settings.strongAreas), 2],
-    ["Data da prova", settings.targetDate ? shortDate(settings.targetDate) + "/" + settings.targetDate.slice(0, 4) : "Não informada", 3],
+    ["Data da prova", `Enem: ${shortDate(ENEM_DATES.first)} e ${shortDate(ENEM_DATES.second)}`, 3],
     [
       "Organização",
       planMode === "sugerido"
@@ -176,17 +176,7 @@ function OnboardingSteps() {
           </div>
         )}
 
-        {step === 3 && (
-          <Field label="Quando é a sua prova? (opcional)" hint="Se ainda não sabe, deixe em branco. Você pode informar depois.">
-            <input
-              type="date"
-              min={today}
-              value={settings.targetDate ?? ""}
-              onChange={(event) => update({ targetDate: event.target.value || null })}
-              className={inputStyles}
-            />
-          </Field>
-        )}
+        {step === 3 && <ExamDates />}
 
         {step === 4 && (
           <div className="grid gap-6">

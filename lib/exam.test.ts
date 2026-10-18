@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checklistIds, countdownLabel, daysUntil, isFinalStretch, secondExamDay, suggestedExamDate } from "./exam";
+import { checklistIds, countdownLabel, daysUntil, isFinalStretch, nextExamDay, secondExamDay } from "./exam";
 
 describe("exam dates", () => {
   it("counts days and detects the last four weeks", () => {
@@ -18,9 +18,12 @@ describe("exam dates", () => {
     expect(secondExamDay("2027-11-07")).toBe("2027-11-14");
   });
 
-  it("suggests the Enem date only before it happens", () => {
-    expect(suggestedExamDate("2026-10-18")).toBe("2026-11-08");
-    expect(suggestedExamDate("2026-12-01")).toBeNull();
+  it("finds the next exam day between the two Sundays", () => {
+    expect(nextExamDay("2026-11-08", "2026-10-18")).toEqual({ date: "2026-11-08", day: 1 });
+    expect(nextExamDay("2026-11-08", "2026-11-08")).toEqual({ date: "2026-11-08", day: 1 });
+    expect(nextExamDay("2026-11-08", "2026-11-10")).toEqual({ date: "2026-11-15", day: 2 });
+    expect(nextExamDay("2026-11-08", "2026-11-16")).toBeNull();
+    expect(nextExamDay(null, "2026-10-18")).toBeNull();
   });
 
   it("has unique checklist items per day", () => {
