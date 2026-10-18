@@ -11,6 +11,7 @@ import { useTimerTicker } from "@/components/timer/use-timer-ticker";
 import { IconButton } from "@/components/ui/IconButton";
 import { SkipLink } from "@/components/ui/SkipLink";
 import { Toast, showToast } from "@/components/ui/Toast";
+import { startCloud } from "@/store/cloud";
 import { useHydrated, useStudyStore, type Theme } from "@/store/study-store";
 import { DemoNotice } from "./DemoNotice";
 import { SaveFailureNotice } from "./SaveFailureNotice";
@@ -46,6 +47,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     const moved = carryOver();
     if (moved.length === 1) showToast("Uma matéria que ficou sem estudo passou para o próximo dia.");
     else if (moved.length > 1) showToast(`${moved.length} matérias que ficaram sem estudo passaram para os próximos dias.`);
+  }, [hydrated]);
+
+  // Só depois de ler o aparelho: a sincronização compara com o que está salvo nele.
+  useEffect(() => {
+    if (hydrated) return startCloud();
   }, [hydrated]);
 
   useEffect(() => {

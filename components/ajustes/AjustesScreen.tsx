@@ -15,7 +15,9 @@ import { THEME_OPTIONS } from "@/components/shell/ThemeSelect";
 import { toDateKey } from "@/lib/dates";
 import { GOAL_LIMITS, GOAL_UNITS, type GoalType } from "@/lib/stats";
 import { analyticsUrl } from "@/store/analytics";
+import { useCloud } from "@/store/cloud";
 import { useHydrated, useStudyStore, type Theme } from "@/store/study-store";
+import { AccountSection, DeleteAccountButton } from "./Account";
 
 const SUBTITLE = "Preferências, metas e os seus dados.";
 
@@ -62,6 +64,7 @@ function Settings() {
   const [pendingImport, setPendingImport] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [confirmingReset, setConfirmingReset] = useState(false);
+  const signedIn = useCloud((state) => state.email !== null);
   const today = toDateKey(new Date());
 
   const download = () => {
@@ -178,20 +181,23 @@ function Settings() {
           </Card>
 
           <Card>
-            <CardHeader title="Seus dados" />
+            <CardHeader title="Conta e dados" />
             <div className="grid gap-4 text-sm">
-              <p className="text-muted">
-                Tudo fica salvo só neste navegador. Não há conta nem sincronização entre aparelhos: para levar seus dados, baixe um
-                backup e importe no outro navegador.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Button onClick={download}>Baixar backup</Button>
-                <Button onClick={() => fileInput.current?.click()}>Importar backup</Button>
-                <input ref={fileInput} type="file" accept="application/json,.json" onChange={chooseFile} className="sr-only" tabIndex={-1} aria-hidden />
+              <AccountSection />
+              <div className="grid gap-1.5 border-t border-line pt-4">
+                <div className="flex flex-wrap gap-2">
+                  <Button onClick={download}>Baixar backup</Button>
+                  <Button onClick={() => fileInput.current?.click()}>Importar backup</Button>
+                  <input ref={fileInput} type="file" accept="application/json,.json" onChange={chooseFile} className="sr-only" tabIndex={-1} aria-hidden />
+                </div>
+                <p className="text-[13px] text-muted">Um arquivo com todos os seus dados, para guardar ou levar a outro navegador.</p>
               </div>
               {pendingImport && (
                 <div className="grid gap-2 rounded-[12px] bg-accent-soft p-3.5">
-                  <p>Importar substitui todos os dados atuais deste navegador pelos do arquivo. Quer continuar?</p>
+                  <p>
+                    Importar substitui todos os dados atuais {signedIn ? "deste navegador e da sua conta" : "deste navegador"} pelos do
+                    arquivo. Quer continuar?
+                  </p>
                   <div className="flex gap-2">
                     <Button variant="primary" onClick={confirmImport}>
                       Substituir dados
@@ -205,14 +211,18 @@ function Settings() {
                   {importError}
                 </p>
               )}
-              <div className="grid gap-1 border-t border-line pt-4">
-                <Button onClick={reset} className="justify-self-start">
-                  {confirmingReset ? "Clique de novo para apagar tudo" : "Apagar todos os dados"}
-                </Button>
-                <p className="text-[13px] text-muted">
-                  Apaga tópicos editados, sessões, revisões e cronograma. Aparência e preferências ficam. Baixe um backup antes, se
-                  quiser guardar.
-                </p>
+              <div className="grid gap-4 border-t border-line pt-4">
+                <div className="grid gap-1">
+                  <Button onClick={reset} className="justify-self-start">
+                    {confirmingReset ? "Clique de novo para apagar tudo" : "Apagar todos os dados"}
+                  </Button>
+                  <p className="text-[13px] text-muted">
+                    {signedIn
+                      ? "Com a conta, apaga também a cópia na nuvem e nos outros aparelhos. Baixe um backup antes, se quiser guardar."
+                      : "Apaga tópicos, sessões, revisões e cronograma deste navegador. Aparência e preferências ficam. Baixe um backup antes, se quiser guardar."}
+                  </p>
+                </div>
+                <DeleteAccountButton />
               </div>
             </div>
           </Card>
