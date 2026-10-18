@@ -76,19 +76,19 @@ export function examChecklist(day: ExamDay): ChecklistGroup[] {
         { id: `d${day}-sono`, label: "Dormir cedo, sem virar a noite estudando" },
       ],
     },
-    {
-      title: "Durante a prova",
-      items: [
-        { id: `d${day}-celular`, label: "Celular desligado e guardado no envelope porta-objetos" },
-        {
-          id: `d${day}-ritmo`,
-          label: day === 1 ? "Reservar cerca de 1h para a redação" : "Cerca de 3 minutos por questão",
-          hint: "Se uma questão travar, pule e volte depois.",
-        },
-        { id: `d${day}-faceis`, label: "Garantir as questões fáceis primeiro", hint: "Na nota do Enem, errar questões fáceis pesa mais." },
-        { id: `d${day}-gabarito`, label: "Passar as respostas para o cartão-resposta com tempo" },
-      ],
-    },
+  ];
+}
+
+// Durante a prova não dá para marcar nada no app: estas ficam só como recomendações.
+export function examTips(day: ExamDay): ChecklistItem[] {
+  return [
+    { id: "celular", label: "Desligue o celular e guarde no envelope porta-objetos." },
+    day === 1
+      ? { id: "ritmo", label: "Reserve cerca de 1h para a redação." }
+      : { id: "ritmo", label: "Conte cerca de 3 minutos por questão." },
+    { id: "pular", label: "Se uma questão travar, pule e volte depois." },
+    { id: "faceis", label: "Faça primeiro as questões fáceis.", hint: "Na nota do Enem, errar questões fáceis pesa mais." },
+    { id: "gabarito", label: "Passe as respostas para o cartão-resposta com tempo de sobra." },
   ];
 }
 

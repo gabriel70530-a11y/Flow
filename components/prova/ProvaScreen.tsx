@@ -9,7 +9,7 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Segmented } from "@/components/ui/Segmented";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { shortDate, toDateKey } from "@/lib/dates";
-import { ENEM_DATES, checklistIds, countdownLabel, examChecklist, secondExamDay, type ExamDay } from "@/lib/exam";
+import { ENEM_DATES, checklistIds, countdownLabel, examChecklist, examTips, secondExamDay, type ExamDay } from "@/lib/exam";
 import { useHydrated, useStudyStore } from "@/store/study-store";
 
 const SUBTITLE = "Marque o que já está pronto. Fica salvo neste aparelho.";
@@ -91,6 +91,22 @@ export function ProvaScreen() {
             </ul>
           </Card>
         ))}
+
+        <Card>
+          <CardHeader title="Durante a prova" />
+          <p className="-mt-2 mb-3 text-sm text-muted">Recomendações para ter em mente na hora.</p>
+          <ul className="grid gap-3">
+            {examTips(day).map((tip) => (
+              <li key={tip.id} className="flex items-start gap-3">
+                <span aria-hidden className="mt-2 size-2 shrink-0 rounded-full bg-mid" />
+                <span className="grid gap-0.5">
+                  <span className="font-medium">{tip.label}</span>
+                  {tip.hint && <span className="text-[13px] text-muted">{tip.hint}</span>}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
 
         <p className="text-[13px] text-muted">
           As regras oficiais (horários, documentos aceitos e objetos permitidos) estão no edital e no cartão de confirmação do

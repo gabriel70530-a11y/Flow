@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checklistIds, countdownLabel, daysUntil, isFinalStretch, nextExamDay, secondExamDay } from "./exam";
+import { checklistIds, countdownLabel, daysUntil, examTips, isFinalStretch, nextExamDay, secondExamDay } from "./exam";
 
 describe("exam dates", () => {
   it("counts days and detects the last four weeks", () => {
@@ -29,5 +29,11 @@ describe("exam dates", () => {
   it("has unique checklist items per day", () => {
     const ids = [...checklistIds(1), ...checklistIds(2)];
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("keeps what happens during the exam as tips, outside the checklist", () => {
+    expect(checklistIds(1).some((id) => id.endsWith("-celular"))).toBe(false);
+    expect(examTips(1).map((tip) => tip.label)).toContain("Reserve cerca de 1h para a redação.");
+    expect(examTips(2).map((tip) => tip.label)).toContain("Conte cerca de 3 minutos por questão.");
   });
 });
