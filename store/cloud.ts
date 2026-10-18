@@ -21,7 +21,8 @@ export type SyncStatus = "ocioso" | "sincronizando" | "offline" | "erro";
 interface CloudState {
   available: boolean;
   email: string | null;
-  provider: string | null;
+  // Aberto pelo link de "Esqueci minha senha": a interface pede a senha nova.
+  recovering: boolean;
   status: SyncStatus;
   lastSyncedAt: number | null;
 }
@@ -29,7 +30,7 @@ interface CloudState {
 export const useCloud = create<CloudState>(() => ({
   available: cloudConfig() !== null,
   email: null,
-  provider: null,
+  recovering: false,
   status: "ocioso",
   lastSyncedAt: null,
 }));
@@ -192,7 +193,6 @@ function applySession(session: Session | null) {
   currentUser = user?.id ?? null;
   useCloud.setState({
     email: user?.email ?? null,
-    provider: (user?.app_metadata.provider as string | undefined) ?? null,
     ...(user ? {} : { status: "ocioso", lastSyncedAt: null }),
   });
   if (!user || user.id === previous) return;
@@ -212,7 +212,10 @@ export function startCloud(): () => void {
   const db = client();
   if (!db || started) return () => {};
   started = true;
-  const { data } = db.auth.onAuthStateChange((_event, session) => applySession(session));
+  const { data } = db.auth.onAuthStateChange((event, session) => {
+    if (event === "PASSWORD_RECOVERY") useCloud.setState({ recovering: true });
+    applySession(session);
+  });
 
   let timeout: ReturnType<typeof setTimeout> | undefined;
   const unsubscribeStore = useStudyStore.subscribe((state, previous) => {
@@ -241,22 +244,75 @@ export function startCloud(): () => void {
   };
 }
 
-export async function signInWithGoogle(): Promise<string | null> {
-  const db = client();
-  if (!db) return "A conta ainda não está disponível.";
-  const { error } = await db.auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectUrl() } });
-  return error ? "Não foi possível abrir o login do Google. Tente de novo." : null;
-}
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const PASSWORD_MIN = 8;
 
-export async function sendMagicLink(email: string): Promise<string | null> {
-  const db = client();
-  if (!db) return "A conta ainda não está disponível.";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return "Confira o e-mail.";
-  const { error } = await db.auth.signInWithOtp({ email: email.trim(), options: { emailRedirectTo: redirectUrl() } });
+type AuthError = { code?: string; status?: number } | null;
+
+function authMessage(error: AuthError, fallback: string): string | null {
   if (!error) return null;
-  return error.status === 429 ? "Muitos pedidos seguidos. Espere um minuto e tente de novo." : "Não foi possível enviar o link. Tente de novo.";
+  if (error.status === 429 || error.code === "over_email_send_rate_limit" || error.code === "over_request_rate_limit") {
+    return "Muitas tentativas seguidas. Espere um minuto e tente de novo.";
+  }
+  if (error.code === "invalid_credentials") return "E-mail ou senha incorretos.";
+  if (error.code === "email_not_confirmed") return "Confirme seu e-mail pelo link que enviamos antes de entrar.";
+  if (error.code === "weak_password") return `Use uma senha mais forte, com pelo menos ${PASSWORD_MIN} caracteres.`;
+  if (error.code === "same_password") return "A senha nova precisa ser diferente da atual.";
+  return fallback;
 }
 
+function checkCredentials(email: string, password: string): string | null {
+  if (!EMAIL_PATTERN.test(email.trim())) return "Confira o e-mail.";
+  if (password.length < PASSWORD_MIN) return `A senha precisa ter pelo menos ${PASSWORD_MIN} caracteres.`;
+  return null;
+}
+
+export async function signIn(email: string, password: string): Promise<string | null> {
+  const db = client();
+  if (!db) return "A conta ainda não está disponível.";
+  if (!EMAIL_PATTERN.test(email.trim())) return "Confira o e-mail.";
+  if (!password) return "Digite a senha.";
+  const { error } = await db.auth.signInWithPassword({ email: email.trim(), password });
+  return authMessage(error, "Não foi possível entrar agora. Tente de novo.");
+}
+
+// Com a confirmação de e-mail ligada, o Supabase não diz se o e-mail já tinha conta: a tela pede para conferir o e-mail nos dois casos.
+export async function signUp(email: string, password: string): Promise<string | null> {
+  const db = client();
+  if (!db) return "A conta ainda não está disponível.";
+  const invalid = checkCredentials(email, password);
+  if (invalid) return invalid;
+  const { error } = await db.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: redirectUrl() } });
+  return authMessage(error, "Não foi possível criar a conta agora. Tente de novo.");
+}
+
+export async function resendConfirmation(email: string): Promise<string | null> {
+  const db = client();
+  if (!db) return "A conta ainda não está disponível.";
+  const { error } = await db.auth.resend({ type: "signup", email: email.trim(), options: { emailRedirectTo: redirectUrl() } });
+  return authMessage(error, "Não foi possível enviar de novo. Tente daqui a pouco.");
+}
+
+export async function sendPasswordReset(email: string): Promise<string | null> {
+  const db = client();
+  if (!db) return "A conta ainda não está disponível.";
+  if (!EMAIL_PATTERN.test(email.trim())) return "Confira o e-mail.";
+  const { error } = await db.auth.resetPasswordForEmail(email.trim(), { redirectTo: redirectUrl() });
+  return authMessage(error, "Não foi possível enviar o link. Tente de novo.");
+}
+
+export async function updatePassword(password: string): Promise<string | null> {
+  const db = client();
+  if (!db) return "A conta ainda não está disponível.";
+  if (password.length < PASSWORD_MIN) return `A senha precisa ter pelo menos ${PASSWORD_MIN} caracteres.`;
+  const { error } = await db.auth.updateUser({ password });
+  if (!error) useCloud.setState({ recovering: false });
+  return authMessage(error, "Não foi possível salvar a senha. Tente de novo.");
+}
+
+export function cancelRecovery() {
+  useCloud.setState({ recovering: false });
+}
 // Envia o que falta antes de sair. Os dados continuam no aparelho.
 export async function signOut() {
   const db = client();

@@ -6,9 +6,23 @@ import { Button, linkStyles } from "@/components/ui/Button";
 import { CheckRow } from "@/components/ui/CheckRow";
 import { Drawer } from "@/components/ui/Drawer";
 import { Field, inputStyles } from "@/components/ui/Field";
+import { Segmented } from "@/components/ui/Segmented";
 import { showToast } from "@/components/ui/Toast";
 import { toDateKey } from "@/lib/dates";
-import { deleteAccount, sendMagicLink, signInWithGoogle, signOut, syncNow, useCloud, type SyncStatus } from "@/store/cloud";
+import {
+  PASSWORD_MIN,
+  cancelRecovery,
+  deleteAccount,
+  resendConfirmation,
+  sendPasswordReset,
+  signIn,
+  signOut,
+  signUp,
+  syncNow,
+  updatePassword,
+  useCloud,
+  type SyncStatus,
+} from "@/store/cloud";
 
 function syncText(status: SyncStatus, lastSyncedAt: number | null): string {
   if (status === "sincronizando") return "Sincronizando…";
@@ -28,9 +42,11 @@ const DOT_COLORS: Record<SyncStatus, string> = {
   erro: "bg-danger",
 };
 
+const PASSWORD_HINT = `Pelo menos ${PASSWORD_MIN} caracteres.`;
+
 // Parte de cima do card "Conta e dados": entrar, estado da sincronização e sair.
 export function AccountSection() {
-  const { available, email, provider, status, lastSyncedAt } = useCloud();
+  const { available, email, recovering, status, lastSyncedAt } = useCloud();
   const [loginOpen, setLoginOpen] = useState(false);
 
   if (!available) {
@@ -66,7 +82,7 @@ export function AccountSection() {
         </span>
         <div className="min-w-0">
           <strong className="block break-all">{email}</strong>
-          <span className="text-[13px] text-muted">{provider === "google" ? "Entrou com Google" : "Entrou com link no e-mail"}</span>
+          <span className="text-[13px] text-muted">Conta com e-mail e senha</span>
         </div>
       </div>
       <p role="status" className="flex items-start gap-2 text-sm">
@@ -89,6 +105,7 @@ export function AccountSection() {
         </Button>
       </div>
       <p className="text-[13px] text-muted">Ao sair, seus dados continuam neste aparelho.</p>
+      <NewPasswordDrawer open={recovering} email={email} />
     </div>
   );
 }
@@ -125,106 +142,226 @@ export function DeleteAccountButton() {
   );
 }
 
+type LoginStep = "entrar" | "criar" | "confirmar" | "esqueci";
+
 function LoginDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [step, setStep] = useState<LoginStep>("entrar");
   const [agreed, setAgreed] = useState(false);
   const [email, setEmail] = useState("");
-  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const run = async (action: () => Promise<string | null>, onSuccess?: () => void) => {
-    if (!agreed) {
-      setError("Marque que leu a política de privacidade e os termos.");
-      return;
-    }
+  const go = (next: LoginStep) => {
+    setStep(next);
+    setError(null);
+  };
+
+  const run = async (action: () => Promise<string | null>, onSuccess: () => void) => {
     setBusy(true);
     const failure = await action();
     setBusy(false);
     setError(failure);
-    if (!failure) onSuccess?.();
+    if (!failure) onSuccess();
   };
 
-  const sendLink = (event: FormEvent) => {
+  const submit = (event: FormEvent) => {
     event.preventDefault();
-    void run(() => sendMagicLink(email), () => setSentTo(email.trim()));
+    if (step === "entrar") {
+      void run(
+        () => signIn(email, password),
+        () => {
+          setPassword("");
+          onClose();
+          showToast("Você entrou. Sincronizando seus dados.");
+        },
+      );
+      return;
+    }
+    if (!agreed) {
+      setError("Marque que leu a política de privacidade e os termos.");
+      return;
+    }
+    void run(
+      () => signUp(email, password),
+      () => {
+        setPassword("");
+        go("confirmar");
+      },
+    );
   };
 
   const close = () => {
-    setSentTo(null);
-    setError(null);
+    go("entrar");
     onClose();
   };
 
+  const emailField = (
+    <Field label="E-mail">
+      <input
+        type="email"
+        autoComplete="email"
+        value={email}
+        onChange={(event) => setEmail(event.target.value)}
+        placeholder="voce@exemplo.com"
+        className={inputStyles}
+      />
+    </Field>
+  );
+
   return (
-    <Drawer open={open} onClose={close} eyebrow="Conta" title="Entrar no Flow">
-      {sentTo ? (
+    <Drawer open={open} onClose={close} eyebrow="Conta" title={step === "esqueci" ? "Recuperar senha" : "Entrar no Flow"}>
+      {step === "confirmar" && (
         <div className="grid gap-4">
           <div className="grid gap-2 rounded-[12px] bg-accent-soft p-3.5">
-            <strong>Confira seu e-mail</strong>
+            <strong>Confirme seu e-mail</strong>
             <p>
-              Enviamos um link para <strong className="break-all">{sentTo}</strong>. Abra neste aparelho para entrar. O link vale por 1
-              hora.
+              Enviamos um link para <strong className="break-all">{email.trim()}</strong>. Abra para ativar a conta e depois entre com
+              seu e-mail e senha.
             </p>
           </div>
           <p className="text-[13px] text-muted">
             Não chegou? Veja a caixa de spam ou{" "}
-            <button type="button" className={linkStyles} disabled={busy} onClick={() => void run(() => sendMagicLink(sentTo))}>
+            <button
+              type="button"
+              className={linkStyles}
+              disabled={busy}
+              onClick={() => void run(() => resendConfirmation(email), () => showToast("Link enviado de novo."))}
+            >
               envie de novo
             </button>
             .
           </p>
           {error && <ErrorText>{error}</ErrorText>}
-          <Button size="lg" onClick={() => setSentTo(null)}>
-            Usar outro e-mail
+          <Button size="lg" onClick={() => go("entrar")}>
+            Voltar para entrar
           </Button>
         </div>
-      ) : (
-        <form onSubmit={sendLink} className="grid gap-4">
-          <p className="text-muted">Sem senha: entre com o Google ou receba um link no e-mail. Se ainda não tem conta, ela é criada agora.</p>
-          <div className="grid gap-1">
-            <CheckRow
-              checked={agreed}
-              onToggle={() => {
-                setAgreed(!agreed);
-                setError(null);
-              }}
-              label="Li a política de privacidade e os termos."
-              hint="Se tenho menos de 18 anos, um responsável sabe que vou criar a conta."
-            />
-            <p className="flex flex-wrap gap-x-4 gap-y-1">
-              <Link href="/privacidade" target="_blank" className={linkStyles}>
-                Política de privacidade
-              </Link>
-              <Link href="/termos" target="_blank" className={linkStyles}>
-                Termos de uso
-              </Link>
-            </p>
-          </div>
-          <Button variant="primary" size="lg" disabled={busy} onClick={() => void run(signInWithGoogle)}>
-            Entrar com Google
+      )}
+
+      {step === "esqueci" && (
+        <form
+          className="grid gap-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void run(
+              () => sendPasswordReset(email),
+              () => {
+                go("entrar");
+                showToast("Se o e-mail tiver conta, o link para criar uma senha nova chega em instantes.");
+              },
+            );
+          }}
+        >
+          <p className="text-muted">Digite o e-mail da conta. Enviamos um link para você criar uma senha nova.</p>
+          {emailField}
+          {error && <ErrorText>{error}</ErrorText>}
+          <Button type="submit" variant="primary" size="lg" disabled={busy}>
+            Enviar link
           </Button>
-          <p className="flex items-center gap-3 text-[13px] text-muted before:flex-1 before:border-t before:border-line after:flex-1 after:border-t after:border-line">
-            ou
-          </p>
-          <Field label="E-mail">
+          <Button size="lg" onClick={() => go("entrar")}>
+            Voltar para entrar
+          </Button>
+        </form>
+      )}
+
+      {(step === "entrar" || step === "criar") && (
+        <form onSubmit={submit} className="grid gap-4">
+          <Segmented
+            options={[
+              { value: "entrar", label: "Entrar" },
+              { value: "criar", label: "Criar conta" },
+            ]}
+            value={step}
+            onChange={go}
+          />
+          {emailField}
+          <Field label="Senha" hint={step === "criar" ? PASSWORD_HINT : undefined}>
             <input
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="voce@exemplo.com"
+              type="password"
+              autoComplete={step === "criar" ? "new-password" : "current-password"}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
               className={inputStyles}
             />
           </Field>
-          <Button type="submit" size="lg" disabled={busy}>
-            Receber link no e-mail
-          </Button>
+          {step === "criar" && (
+            <div className="grid gap-1">
+              <CheckRow
+                checked={agreed}
+                onToggle={() => {
+                  setAgreed(!agreed);
+                  setError(null);
+                }}
+                label="Li a política de privacidade e os termos."
+                hint="Se tenho menos de 18 anos, um responsável sabe que vou criar a conta."
+              />
+              <p className="flex flex-wrap gap-x-4 gap-y-1">
+                <Link href="/privacidade" target="_blank" className={linkStyles}>
+                  Política de privacidade
+                </Link>
+                <Link href="/termos" target="_blank" className={linkStyles}>
+                  Termos de uso
+                </Link>
+              </p>
+            </div>
+          )}
           {error && <ErrorText>{error}</ErrorText>}
+          <Button type="submit" variant="primary" size="lg" disabled={busy}>
+            {step === "criar" ? "Criar conta" : "Entrar"}
+          </Button>
+          {step === "entrar" && (
+            <button type="button" className={`${linkStyles} justify-self-start`} onClick={() => go("esqueci")}>
+              Esqueci minha senha
+            </button>
+          )}
           <p className="text-[13px] text-muted">
             Guardamos só o seu e-mail e os dados de estudo, para sincronizar. Nada é vendido nem usado para anúncios.
           </p>
         </form>
       )}
+    </Drawer>
+  );
+}
+
+// Aberto pelo link de recuperação: a pessoa já está conectada e só escolhe a senha nova.
+function NewPasswordDrawer({ open, email }: { open: boolean; email: string }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const save = async (event: FormEvent) => {
+    event.preventDefault();
+    setBusy(true);
+    const failure = await updatePassword(password);
+    setBusy(false);
+    setError(failure);
+    if (!failure) {
+      setPassword("");
+      showToast("Senha nova salva.");
+    }
+  };
+
+  return (
+    <Drawer open={open} onClose={cancelRecovery} eyebrow="Conta" title="Nova senha">
+      <form onSubmit={save} className="grid gap-4">
+        <p className="text-muted">
+          Você abriu o link de recuperação. Escolha a senha nova da conta <strong className="break-all">{email}</strong>.
+        </p>
+        <Field label="Nova senha" hint={PASSWORD_HINT}>
+          <input
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className={inputStyles}
+          />
+        </Field>
+        {error && <ErrorText>{error}</ErrorText>}
+        <Button type="submit" variant="primary" size="lg" disabled={busy}>
+          Salvar senha
+        </Button>
+      </form>
     </Drawer>
   );
 }
