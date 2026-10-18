@@ -1,9 +1,11 @@
 "use client";
 
+import { CalendarPlus } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { Button, linkStyles } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { Drawer } from "@/components/ui/Drawer";
 import { DueLabel } from "@/components/ui/DueLabel";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ListRow } from "@/components/ui/ListRow";
@@ -19,6 +21,7 @@ import { useHydrated, useStudyStore } from "@/store/study-store";
 import { ReviewDrawer } from "./ReviewDrawer";
 import { ReviewFeedbackPrompt } from "./ReviewFeedbackPrompt";
 import { RevisoesTabs } from "./RevisoesTabs";
+import { ScheduleReviewsForm } from "./ScheduleReviewsForm";
 
 const LATER_PREVIEW = 8;
 
@@ -31,6 +34,7 @@ export function RevisoesScreen() {
   const [openTopicId, setOpenTopicId] = useState<string | null>(null);
   const [completed, setCompleted] = useState<{ topicId: string; stage: number } | null>(null);
   const [showAllLater, setShowAllLater] = useState(false);
+  const [scheduling, setScheduling] = useState(false);
   const closeDrawer = useCallback(() => setOpenTopicId(null), []);
 
   const header = (
@@ -72,6 +76,13 @@ export function RevisoesScreen() {
       {header}
       <RevisoesTabs current="/revisoes" mistakesDue={dueMistakes(mistakes, today).length} />
 
+      <div>
+        <Button variant="primary" size="lg" onClick={() => setScheduling(true)}>
+          <CalendarPlus size={18} aria-hidden />
+          Agendar revisões do que já estudei
+        </Button>
+      </div>
+
       {completed && completedTopic && (
         <ReviewFeedbackPrompt topic={completedTopic} stage={completed.stage} onClose={() => setCompleted(null)} />
       )}
@@ -83,11 +94,11 @@ export function RevisoesScreen() {
               "Nenhuma revisão para hoje. As próximas estão abaixo."
             ) : (
               <>
-                Nenhuma revisão agendada. Ao concluir um tópico em{" "}
+                Nenhuma revisão agendada. Já estudou algo? Use o botão acima. Ao concluir um tópico em{" "}
                 <Link href="/materias" className={linkStyles}>
                   Matérias
                 </Link>
-                , as revisões aparecem aqui.
+                , as revisões também aparecem aqui.
               </>
             )}
           </EmptyState>
@@ -143,6 +154,17 @@ export function RevisoesScreen() {
             )}
           </Card>
         ))}
+
+      <Drawer open={scheduling} onClose={() => setScheduling(false)} eyebrow="Revisões" title="Agendar revisões">
+        {scheduling && (
+          <ScheduleReviewsForm
+            onDone={(count) => {
+              setScheduling(false);
+              showToast(count === 1 ? "Revisões agendadas para 1 tópico." : `Revisões agendadas para ${count} tópicos.`);
+            }}
+          />
+        )}
+      </Drawer>
 
       <ReviewDrawer
         topic={findTopic(topics, openTopicId)}

@@ -358,3 +358,17 @@ describe("final stretch tools", () => {
     expect(state().examChecklist).toEqual(["d2-caneta"]);
   });
 });
+
+describe("scheduling reviews for topics already studied", () => {
+  it("concludes the chosen topics with four reviews from today and skips concluded or missing ones", () => {
+    state().setStatus("mat-1", "concluido");
+    expect(state().markStudied(["mat-0", "mat-1", "inexistente"])).toBe(1);
+    expect(state().progress["mat-0"]).toMatchObject({ status: "concluido", completedAt: today });
+    expect(state().progress["mat-0"].reviews.map((review) => review.due)).toEqual([
+      "2026-10-17",
+      "2026-10-23",
+      "2026-10-31",
+      "2026-11-15",
+    ]);
+  });
+});

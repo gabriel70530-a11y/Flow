@@ -89,6 +89,7 @@ interface StudyActions {
 
   setStatus: (topicId: string, status: TopicStatus) => TopicProgress;
   setMastery: (topicId: string, level: Mastery) => void;
+  markStudied: (topicIds: string[]) => number;
 
   completeReview: (topicId: string, feedback?: ReviewFeedback) => TopicProgress;
   setReviewFeedback: (topicId: string, stage: number, feedback: ReviewFeedback) => void;
@@ -300,6 +301,16 @@ export const useStudyStore = create<StudyStore>()(
         },
 
         setStatus: (topicId, status) => updateProgress(topicId, (current) => changeStatus(current, status, today())),
+
+        // Para o que já foi estudado antes: marca como Concluído e agenda as revisões de 1, 7, 15 e 30 dias a partir de hoje.
+        markStudied: (topicIds) => {
+          const { progress, topics } = get();
+          const pending = topicIds.filter(
+            (topicId) => findTopic(topics, topicId) && progressOf(progress, topicId).status !== "concluido",
+          );
+          for (const topicId of pending) get().setStatus(topicId, "concluido");
+          return pending.length;
+        },
 
         setMastery: (topicId, level) => updateProgress(topicId, (current) => ({ ...current, mastery: level })),
 
