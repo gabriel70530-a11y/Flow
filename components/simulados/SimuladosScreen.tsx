@@ -20,10 +20,12 @@ import {
   targetMinutesPerQuestion,
   type MockExam,
 } from "@/lib/mock-exams";
+import { findOfficialExam } from "@/lib/official-exams";
 import { findArea } from "@/lib/syllabus";
 import { useProAccess } from "@/store/pro";
 import { useHydrated, useStudyStore } from "@/store/study-store";
 import { MockExamForm } from "./MockExamForm";
+import { ExamRunner, type ExamResult } from "./ExamRunner";
 import { OfficialExamCard } from "./OfficialExamCard";
 
 const SUBTITLE = "Treine com a prova oficial e no tempo do Enem. Acompanhe acertos e ritmo.";
@@ -72,6 +74,8 @@ export function SimuladosScreen() {
   const hydrated = useHydrated();
   const mocks = useStudyStore((state) => state.mockExams);
   const [adding, setAdding] = useState(false);
+  const [result, setResult] = useState<ExamResult | null>(null);
+  const draft = useStudyStore((state) => state.examDraft);
   const pro = useProAccess();
 
   const header = (
@@ -85,6 +89,20 @@ export function SimuladosScreen() {
       )}
     </div>
   );
+
+  const runningExam = draft?.format === "app" && draft.startedAt !== null ? findOfficialExam(draft.examId) : null;
+  if (hydrated && draft && runningExam) {
+    return (
+      <ExamRunner
+        draft={draft}
+        exam={runningExam}
+        onFinish={(finished) => {
+          setResult(finished);
+          window.scrollTo({ top: 0 });
+        }}
+      />
+    );
+  }
 
   if (!hydrated) {
     return (
@@ -103,7 +121,7 @@ export function SimuladosScreen() {
     <div className="grid gap-6">
       {header}
 
-      <OfficialExamCard />
+      <OfficialExamCard result={result} onResult={setResult} onCloseResult={() => setResult(null)} />
 
       {mocks.length === 0 ? (
         <Card flush>

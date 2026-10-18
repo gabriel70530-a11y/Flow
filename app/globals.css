@@ -18,6 +18,7 @@
   --success: #2e7d4f;
   --success-soft: #e3f1e8;
   --danger: #c42b3f;
+  --danger-soft: #fbe6e9;
   --bar: #b0e1f1;
   --track: #dcebf2;
   /* Contorno de 2px e sombra de carimbo (deslocada, sem desfoque) dos cards e botões. */
@@ -49,6 +50,7 @@
     --success: #6fcf97;
     --success-soft: #16291d;
     --danger: #ff7a8a;
+    --danger-soft: #3d1b26;
     --bar: #1d4a6b;
     --track: #15344f;
     --edge: #eef7fb;
@@ -77,6 +79,7 @@
   --success: #6fcf97;
   --success-soft: #16291d;
   --danger: #ff7a8a;
+  --danger-soft: #3d1b26;
   --bar: #1d4a6b;
   --track: #15344f;
   --edge: #eef7fb;
@@ -101,6 +104,7 @@
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
   --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
   --color-bar: var(--bar);
   --color-track: var(--track);
   --color-mid: var(--mid);
