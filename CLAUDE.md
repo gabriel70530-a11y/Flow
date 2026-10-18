@@ -74,7 +74,7 @@ lib/
   exam.ts               data da prova, reta final e checklist do dia da prova
   mistakes.ts           caderno de erros com revisão espaçada própria
   mock-exams.ts         simulados registrados: acertos por área e ritmo
-  official-exams.ts     provas oficiais do Inep (gabarito transcrito), correção e rascunho do simulado no app
+  official-exams.ts     provas oficiais do Inep (gabarito transcrito), correção, rascunho e texto das questões do simulado no app
   age.ts                idade mínima (13) e menor de idade pelo ano de nascimento
   essays.ts             redações registradas (notas por competência) e repertório
   suggestions.ts        sugestões de nome de tópico pelo que mais cai, por área e matéria
@@ -91,6 +91,7 @@ store/
   pro.ts                registro do Pro confirmado pelo servidor (proAccessNow, useProAccess)
 supabase/migrations/    records com RLS, push_records, delete_account; entitlements, payments e ai_usage
 supabase/functions/     checkout, mercadopago-webhook, cancel-subscription, ai-essay, ai-mistake
+public/provas/          questões das provas no app (JSON por dia, sem gabarito) e imagens
 ```
 
 ## Modelo de dados (v2)
@@ -128,7 +129,7 @@ interface PlanTask {                         // uma matéria do dia, sem duraç�
 }
 ```
 
-O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `sessions`, `tasks`, `timer`, a meta (`goal: { type: 'horas' | 'sessoes' | 'topicos'; value }`), as preferências de cronograma (dias de estudo de segunda a domingo, áreas prioritárias e difíceis, data-alvo, estratégia), o onboarding e as preferências de interface (tema, som, sequência visível). Também guarda o caderno de erros (`mistakes`), os simulados (`mockExams`), as redações (`essays`), o repertório (`repertoire`) e os itens marcados no checklist da prova (`examChecklist`). Sessões podem ter `distracted` (resposta opcional "se distraiu?"). O simulado oficial em andamento fica em `examDraft` (respostas, `banked` e `startedAt`), no aparelho, sem sincronizar.
+O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `sessions`, `tasks`, `timer`, a meta (`goal: { type: 'horas' | 'sessoes' | 'topicos'; value }`), as preferências de cronograma (dias de estudo de segunda a domingo, áreas prioritárias e difíceis, data-alvo, estratégia), o onboarding e as preferências de interface (tema, som, sequência visível). Também guarda o caderno de erros (`mistakes`), os simulados (`mockExams`), as redações (`essays`), o repertório (`repertoire`) e os itens marcados no checklist da prova (`examChecklist`). Sessões podem ter `distracted` (resposta opcional "se distraiu?"). O simulado oficial em andamento fica em `examDraft` (formato `app` ou `pdf`, dia inteiro ou área, respostas, questão aberta, marcadas para rever, `banked` e `startedAt`), no aparelho, sem sincronizar.
 
 - IDs estáveis. Tópicos novos usam `custom-…`; os que vieram da lista antiga mantêm `${areaId}-${índice}` (`mat-3`). Nunca use o nome como chave.
 - Ao carregar dados antigos, os tópicos padrão que nunca foram usados (sem progresso, sessão nem tarefa) são descartados; os usados ficam.
@@ -186,7 +187,7 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 
 **Preparação** (tudo opcional, nada bloqueia o resto do app)
 - **Caderno de erros** (`/revisoes/erros`, Pro; no gratuito os erros já salvos ficam só para leitura): "Analisar com IA" (foto ou texto da questão e a letra marcada) preenche questão, o que aprendeu e motivo para a pessoa conferir. Cada erro guarda o assunto (tópico, matéria, área ou nenhum), o motivo (conteúdo, comando, pressa, chute), a questão, o que aprendeu e a origem. Volta em +1, +7, +15 e +30 dias; "Lembrei" avança, "Não lembrei" recomeça amanhã; depois da 4ª lembrança sai da fila. Dois erros em aberto no mesmo tópico sugerem "Precisa revisar" (a pessoa confirma). Com 3 ou mais erros, mostra o motivo mais frequente e uma dica. O contador de Revisões soma os erros do dia.
-- **Simulados** (`/simulados`): no Pro, simulado no app com a prova oficial do Inep (caderno azul, PDF oficial em link): cartão-resposta, cronômetro com a regra do timer, correção pelo gabarito oficial (anulada sai do total, em branco é erro), registro como simulado e opção de mandar os erros para o caderno. Nunca invente gabarito: só transcreva o publicado pelo Inep e cubra com teste. Em qualquer plano, a pessoa registra acertos por área (45 questões cada), o tempo e uma observação. O Flow mostra acertos, a comparação com o simulado anterior e o ritmo em minutos por questão contra o tempo oficial (no 1º dia desconta 1h de redação). **Nunca calcula nota TRI**; a tela explica por quê.
+- **Simulados** (`/simulados`): no Pro, simulado no app com a prova oficial do Inep (caderno azul; prévia aprovada em `docs/previa-simulado.html`). Nas provas com `questionsUrl` (hoje Enem 2023), as questões aparecem na tela: uma por vez, com o mapa das questões (ao lado no computador, num botão no celular), "Rever depois", anterior e próxima, e o resultado deixa revisar cada erro com a resposta certa. Nas outras, ou se a pessoa preferir, PDF oficial e cartão-resposta. Dá para fazer o dia inteiro ou uma área (45 questões). Pausar ou sair guarda tudo e mostra onde parou. Cronômetro com a regra do timer, correção pelo gabarito oficial (anulada sai do total, em branco é erro), registro como simulado e opção de mandar os erros para o caderno. Nunca invente gabarito: só transcreva o publicado pelo Inep e cubra com teste. Em qualquer plano, a pessoa registra acertos por área (45 questões cada), o tempo e uma observação. O Flow mostra acertos, a comparação com o simulado anterior e o ritmo em minutos por questão contra o tempo oficial (no 1º dia desconta 1h de redação). **Nunca calcula nota TRI**; a tela explica por quê.
 - **Redação** (`/redacao`): no Pro, "Corrigir com IA" (tema e até 2 fotos ou o texto) mostra a nota estimada por competência, com o aviso de que não é a oficial, e pode salvar como redação (corretor "IA (estimativa)"). A pessoa também registra tema, data e as notas por competência (0 a 200, de 40 em 40) que recebeu fora; o app mostra a última nota, as anteriores e a competência mais fraca nas últimas 3 corrigidas. Banco de repertório pessoal com busca sem acento.
 - **Dia da prova** (`/prova`): checklist por dia (semana e véspera), marcado e salvo no aparelho. "Durante a prova" são só recomendações, sem marcar (ritmo de tempo, pular a questão que travar, fáceis primeiro). Remete ao edital e ao cartão de confirmação para as regras oficiais.
 - **Modo foco** no Timer: tela cheia só com o relógio. Depois da sessão, a pergunta opcional "se distraiu?" vira uma linha no resumo da semana.

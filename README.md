@@ -30,9 +30,18 @@ Abra http://localhost:3000. A página inicial é o site; o app começa em `/pain
 - `/materias`: as cinco áreas do ENEM, com Natureza (Química, Física, Biologia) e Humanas (Geografia, História, Filosofia, Sociologia) divididas em matérias. Nenhum tópico vem pronto: o estudante cria os próprios. Ao criar, aparecem sugestões do que mais cai em cada área ou matéria (só preenchem o nome). Busca, filtros, ordenação, editar, ocultar e excluir.
 - `/timer`: Pomodoro e cronômetro, estudo geral, reflexão pós-sessão, sessões de hoje.
 - `/revisoes`: atrasadas, hoje, próximos 7 dias e futuras; concluir com feedback, adiar e reagendar. "Agendar revisões do que já estudei" marca tópicos já estudados e agenda as revisões. `/revisoes/erros`: caderno de erros, com cada erro voltando em 1, 7, 15 e 30 dias.
-- `/simulados`: simulado no app com a prova oficial do Inep (cartão-resposta, cronômetro e correção pelo gabarito oficial, no Pro) e registro dos feitos fora do app; acertos por área e ritmo, sem nota TRI. `/redacao`: correção estimada por IA (Pro), notas por competência e repertório pessoal. `/prova`: checklist do dia da prova.
+- `/simulados`: simulado no app (Pro) com a prova oficial do Inep: as questões aparecem na tela (Enem 2023) ou, nas provas que ainda não estão no app, o PDF oficial com cartão-resposta; dia inteiro ou uma área, cronômetro, mapa das questões, "Rever depois" e correção pelo gabarito oficial. Também registra os simulados feitos fora do app; acertos por área e ritmo, sem nota TRI. `/redacao`: correção estimada por IA (Pro), notas por competência e repertório pessoal. `/prova`: checklist do dia da prova.
 - No Painel: reta final (contagem e prioridade para revisões nas 4 semanas antes da prova) e "Dia leve" para dias cansativos. No Timer: modo foco.
 - `/comecar`: configuração inicial opcional. `/ajustes`: preferências, meta, cronograma, conta e backup. `/planos`: gratuito e Pro, assinatura e cancelamento.
+
+## Questões do simulado
+
+As provas que aparecem dentro do app ficam em `public/provas/<ano>/<dia>.json`, com as imagens em `public/provas/<ano>/img`. O gabarito não vai nesses arquivos: a correção usa sempre o gabarito oficial transcrito em `lib/official-exams.ts`.
+
+- **Enem 2023 (caderno azul):** texto e imagens vieram da base pública [enem.dev](https://enem.dev) (projeto `yunger7/enem-api`, licença GPL-2.0) e foram conferidos contra o gabarito oficial do Inep: todas as respostas batem, exceto a 164, que o Inep anulou. As questões 34 e 174, que faltam na base, e a 132, que veio sem os gráficos das alternativas, foram transcritas e recortadas da prova oficial em PDF.
+- O teste `lib/exam-files.test.ts` confere as 90 questões de cada dia, as cinco alternativas e se toda imagem existe.
+- **Direito autoral:** os textos de apoio das questões (reportagens, poemas, charges, fotos) têm autores próprios. Mostrar as questões dentro de um app pago foi uma decisão consciente, com risco; vale um parecer jurídico antes de abrir a assinatura.
+- Ao começar a prova, o app pede todas as imagens; o service worker guarda e a prova continua sem internet.
 
 ## Gratuito e Pro
 
