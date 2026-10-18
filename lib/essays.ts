@@ -68,7 +68,7 @@ export function essayTotal(scores: readonly number[]): number {
   return scores.reduce((sum, score) => sum + score, 0);
 }
 
-// Competência mais fraca nas últimas 3 redações corrigidas; null sem nenhuma corrigida.
+// Competência mais fraca nas últimas 3 redações corrigidas; null sem nenhuma corrigida ou com todas empatadas.
 export function weakestCompetency(essays: readonly Essay[]): { index: number; average: number } | null {
   const recent = [...essays]
     .filter((essay) => essay.scores !== null)
@@ -79,6 +79,7 @@ export function weakestCompetency(essays: readonly Essay[]): { index: number; av
     (_, index) => recent.reduce((sum, essay) => sum + (essay.scores?.[index] ?? 0), 0) / recent.length,
   );
   const lowest = Math.min(...averages);
+  if (lowest === Math.max(...averages)) return null;
   return { index: averages.indexOf(lowest), average: lowest };
 }
 

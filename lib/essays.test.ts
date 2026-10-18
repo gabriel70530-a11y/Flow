@@ -29,6 +29,7 @@ describe("essays", () => {
     ];
     expect(weakestCompetency(essays)).toEqual({ index: 2, average: (120 + 120 + 80) / 3 });
     expect(weakestCompetency([essay({ scores: null })])).toBeNull();
+    expect(weakestCompetency([essay({ scores: [120, 120, 120, 120, 120] })])).toBeNull();
   });
 
   it("searches repertoire ignoring accents and case", () => {
