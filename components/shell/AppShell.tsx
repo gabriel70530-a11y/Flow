@@ -8,6 +8,7 @@ import { toDateKey } from "@/lib/dates";
 import { groupReviews, pendingReviews } from "@/lib/reviews";
 import { useTimerTicker } from "@/components/timer/use-timer-ticker";
 import { IconButton } from "@/components/ui/IconButton";
+import { SkipLink } from "@/components/ui/SkipLink";
 import { Toast, showToast } from "@/components/ui/Toast";
 import { useHydrated, useStudyStore, type Theme } from "@/store/study-store";
 import { DemoNotice } from "./DemoNotice";
@@ -57,6 +58,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <>
+      <SkipLink />
       <Sidebar
         pathname={pathname}
         dueReviews={dueReviews}
@@ -82,7 +84,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="max-w-[1180px] pt-5 pr-[max(16px,env(safe-area-inset-right,0px))] pb-[calc(84px+env(safe-area-inset-bottom,0px))] pl-[max(16px,env(safe-area-inset-left,0px))] md:ml-60 md:pt-[calc(28px+env(safe-area-inset-top,0px))] md:pr-[max(32px,env(safe-area-inset-right,0px))] md:pb-12 md:pl-[max(32px,env(safe-area-inset-left,0px))]">
+      <main id="conteudo" tabIndex={-1} className="max-w-[1180px] outline-none pt-5 pr-[max(16px,env(safe-area-inset-right,0px))] pb-[calc(84px+env(safe-area-inset-bottom,0px))] pl-[max(16px,env(safe-area-inset-left,0px))] md:ml-60 md:pt-[calc(28px+env(safe-area-inset-top,0px))] md:pr-[max(32px,env(safe-area-inset-right,0px))] md:pb-12 md:pl-[max(32px,env(safe-area-inset-left,0px))]">
         <SaveFailureNotice />
         {hydrated && demo && <DemoNotice />}
         {children}
