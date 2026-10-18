@@ -75,7 +75,7 @@ interface StudyActions {
   removeTopic: (id: string) => void;
 
   setStatus: (topicId: string, status: TopicStatus) => TopicProgress;
-  toggleMastery: (topicId: string, level: Mastery) => void;
+  setMastery: (topicId: string, level: Mastery) => void;
 
   completeReview: (topicId: string, feedback?: ReviewFeedback) => TopicProgress;
   setReviewFeedback: (topicId: string, stage: number, feedback: ReviewFeedback) => void;
@@ -263,8 +263,7 @@ export const useStudyStore = create<StudyStore>()(
 
         setStatus: (topicId, status) => updateProgress(topicId, (current) => changeStatus(current, status, today())),
 
-        toggleMastery: (topicId, level) =>
-          updateProgress(topicId, (current) => ({ ...current, mastery: current.mastery === level ? 0 : level })),
+        setMastery: (topicId, level) => updateProgress(topicId, (current) => ({ ...current, mastery: level })),
 
         completeReview: (topicId, feedback) => {
           get().trackEvent("revisao_concluida");

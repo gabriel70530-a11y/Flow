@@ -18,7 +18,7 @@ import {
   type TopicStatus,
 } from "@/lib/reviews";
 import { findArea } from "@/lib/syllabus";
-import type { TopicRecord } from "@/lib/topics";
+import type { Priority, TopicRecord } from "@/lib/topics";
 import { useStudyStore } from "@/store/study-store";
 import { TopicForm, priorityOptions } from "./TopicForm";
 
@@ -41,23 +41,38 @@ interface TopicDrawerProps {
 
 export function TopicDrawer({ topic, today, onClose }: TopicDrawerProps) {
   const progress = useStudyStore((state) => (topic ? progressOf(state.progress, topic.id) : undefined));
-  const { setStatus, toggleMastery, editTopic, setTopicHidden, removeTopic } = useStudyStore.getState();
+  const { setStatus, setMastery, editTopic, setTopicHidden, removeTopic } = useStudyStore.getState();
   const studyTopic = useStudyTopic();
   const [editing, setEditing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // Status, prioridade e domínio só mudam de verdade ao salvar.
+  const [draft, setDraft] = useState<{ status?: TopicStatus; priority?: Priority; mastery?: Mastery }>({});
 
   if (!topic || !progress) return null;
+
+  const status = draft.status ?? progress.status;
+  const priority = draft.priority ?? topic.priority;
+  const mastery = draft.mastery ?? progress.mastery;
+  const unsaved = status !== progress.status || priority !== topic.priority || mastery !== progress.mastery;
 
   const close = () => {
     setEditing(false);
     setConfirmingDelete(false);
+    setDraft({});
     onClose();
   };
 
-  const handleStatus = (status: TopicStatus) => {
-    if (status === progress.status) return;
-    const updated = setStatus(topic.id, status);
-    if (status === "concluido" && nextReview(updated)) showToast("Revisões agendadas para 1, 7, 15 e 30 dias.");
+  const input = { name: topic.name, areaId: topic.areaId, description: topic.description, priority: topic.priority };
+
+  const saveChanges = () => {
+    if (priority !== topic.priority) editTopic(topic.id, { ...input, priority });
+    if (mastery !== progress.mastery) setMastery(topic.id, mastery);
+    setDraft({});
+    if (status !== progress.status) {
+      const updated = setStatus(topic.id, status);
+      if (status === "concluido" && nextReview(updated)) return "Alterações salvas. Revisões agendadas para 1, 7, 15 e 30 dias.";
+    }
+    return "Alterações salvas.";
   };
 
   const toggleHidden = () => {
@@ -75,8 +90,6 @@ export function TopicDrawer({ topic, today, onClose }: TopicDrawerProps) {
     showToast("Tópico excluído. As sessões dele continuam no histórico.");
     close();
   };
-
-  const input = { name: topic.name, areaId: topic.areaId, description: topic.description, priority: topic.priority };
 
   if (editing) {
     return (
@@ -108,8 +121,13 @@ export function TopicDrawer({ topic, today, onClose }: TopicDrawerProps) {
       {topic.description && <p className="-mt-3 mb-4 text-sm text-muted whitespace-pre-line">{topic.description}</p>}
 
       <DrawerSection title="Status">
-        <Segmented options={statusOptions} value={progress.status} onChange={handleStatus} wrap />
-        {progress.status !== "concluido" && (
+        <Segmented
+          options={statusOptions}
+          value={status}
+          onChange={(status) => setDraft((current) => ({ ...current, status }))}
+          wrap
+        />
+        {status !== "concluido" && (
           <p className="text-[13px] text-muted">
             Ao concluir, as revisões de 1, 7, 15 e 30 dias são agendadas automaticamente.
           </p>
@@ -119,16 +137,16 @@ export function TopicDrawer({ topic, today, onClose }: TopicDrawerProps) {
       <DrawerSection title="Prioridade">
         <Segmented
           options={priorityOptions}
-          value={topic.priority}
-          onChange={(priority) => editTopic(topic.id, { ...input, priority })}
+          value={priority}
+          onChange={(priority) => setDraft((current) => ({ ...current, priority }))}
         />
       </DrawerSection>
 
-      <DrawerSection title={`Nível de domínio · ${MASTERY_LABELS[progress.mastery]}`}>
+      <DrawerSection title={`Nível de domínio · ${MASTERY_LABELS[mastery]}`}>
         <Segmented
           options={masteryOptions}
-          value={progress.mastery}
-          onChange={(level: Mastery) => toggleMastery(topic.id, level)}
+          value={mastery}
+          onChange={(level: Mastery) => setDraft((current) => ({ ...current, mastery: mastery === level ? 0 : level }))}
         />
       </DrawerSection>
 
@@ -173,8 +191,12 @@ export function TopicDrawer({ topic, today, onClose }: TopicDrawerProps) {
           <Button onClick={remove} className={confirmingDelete ? "text-danger" : ""}>
             {confirmingDelete ? "Clique de novo para excluir" : "Excluir"}
           </Button>
+          <Button variant="primary" className="ml-auto" onClick={() => showToast(saveChanges())} disabled={!unsaved}>
+            Salvar
+          </Button>
         </div>
         <p className="text-[13px] text-muted">
+          {unsaved && "Você tem alterações não salvas. "}
           {confirmingDelete
             ? "Excluir apaga o tópico, o progresso e as revisões dele. As sessões já registradas continuam no histórico."
             : "Ocultar tira o tópico das listas e do cronograma sem apagar nada."}
@@ -186,6 +208,7 @@ export function TopicDrawer({ topic, today, onClose }: TopicDrawerProps) {
         size="lg"
         className="mt-auto w-full"
         onClick={() => {
+          if (unsaved) saveChanges();
           if (studyTopic(topic.id)) close();
         }}
       >

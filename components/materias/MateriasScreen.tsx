@@ -257,7 +257,7 @@ export function MateriasScreen() {
         );
       })}
 
-      <TopicDrawer topic={findTopic(allTopics, openTopicId)} today={today} onClose={closeDrawer} />
+      <TopicDrawer key={openTopicId} topic={findTopic(allTopics, openTopicId)} today={today} onClose={closeDrawer} />
       <ManageTopicsDrawer open={managing} onClose={() => setManaging(false)} />
       <Drawer open={creatingIn !== null} onClose={() => setCreatingIn(null)} eyebrow="Matérias" title="Novo tópico">
         {creatingIn && (

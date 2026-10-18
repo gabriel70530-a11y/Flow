@@ -197,10 +197,10 @@ describe("reviews and settings", () => {
     expect(state().timer).toMatchObject({ focus: 25, brk: 60 });
   });
 
-  it("toggles mastery off when the same level is picked again", () => {
-    state().toggleMastery("nat-1", 3);
+  it("sets and clears the mastery level", () => {
+    state().setMastery("nat-1", 3);
     expect(state().progress["nat-1"].mastery).toBe(3);
-    state().toggleMastery("nat-1", 3);
+    state().setMastery("nat-1", 0);
     expect(state().progress["nat-1"].mastery).toBe(0);
   });
 
