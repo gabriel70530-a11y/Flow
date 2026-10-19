@@ -1,4 +1,4 @@
-import { createClient, type Session, type SupabaseClient } from "@supabase/supabase-js";
+import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import { create } from "zustand";
 import {
   collectChanges,
@@ -65,14 +65,17 @@ function cloudConfig(): { url: string; key: string } | null {
   return url && key && /^https:\/\//.test(url) ? { url, key } : null;
 }
 
-let supabase: SupabaseClient | null = null;
+let supabase: Promise<SupabaseClient> | null = null;
 
-function client(): SupabaseClient | null {
+// A biblioteca do Supabase é a maior parte do JavaScript do app: só baixa quando a conta é usada, depois da tela aparecer.
+function client(): Promise<SupabaseClient | null> {
   const config = cloudConfig();
-  if (!config || typeof window === "undefined") return null;
-  supabase ??= createClient(config.url, config.key, {
-    auth: { flowType: "pkce", detectSessionInUrl: true, persistSession: true, storageKey: "enem-flow:sessao" },
-  });
+  if (!config || typeof window === "undefined") return Promise.resolve(null);
+  supabase ??= import("@supabase/supabase-js").then(({ createClient }) =>
+    createClient(config.url, config.key, {
+      auth: { flowType: "pkce", detectSessionInUrl: true, persistSession: true, storageKey: "enem-flow:sessao" },
+    }),
+  );
   return supabase;
 }
 
@@ -181,16 +184,19 @@ async function runSync(db: SupabaseClient, userId: string) {
 
 // Uma sincronização por vez; pedidos feitos durante ela viram uma nova rodada no fim.
 export function syncNow(): Promise<void> {
-  const db = client();
   const userId = currentUser;
-  if (!db || !userId) return Promise.resolve();
+  if (!userId || !cloudConfig()) return Promise.resolve();
   if (running) {
     again = true;
     return running;
   }
   useCloud.setState({ status: "sincronizando" });
-  running = runSync(db, userId)
-    .then(() => refreshPro(db, userId))
+  running = client()
+    .then(async (db) => {
+      if (!db) return;
+      await runSync(db, userId);
+      await refreshPro(db, userId);
+    })
     .then(() => useCloud.setState({ status: "ocioso", lastSyncedAt: Date.now() }))
     .catch(() => useCloud.setState({ status: navigator.onLine ? "erro" : "offline" }))
     .finally(() => {
@@ -247,12 +253,16 @@ let started = false;
 
 // Chamado uma vez pelo AppShell: escuta o login, sincroniza ao mudar algo, ao voltar a internet e de tempos em tempos.
 export function startCloud(): () => void {
-  const db = client();
-  if (!db || started) return () => {};
+  if (!cloudConfig() || typeof window === "undefined" || started) return () => {};
   started = true;
-  const { data } = db.auth.onAuthStateChange((event, session) => {
-    if (event === "PASSWORD_RECOVERY") useCloud.setState({ recovering: true });
-    applySession(session);
+  let stopAuth = () => {};
+  void client().then((db) => {
+    if (!db || !started) return;
+    const { data } = db.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") useCloud.setState({ recovering: true });
+      applySession(session);
+    });
+    stopAuth = () => data.subscription.unsubscribe();
   });
 
   let timeout: ReturnType<typeof setTimeout> | undefined;
@@ -273,7 +283,7 @@ export function startCloud(): () => void {
 
   return () => {
     started = false;
-    data.subscription.unsubscribe();
+    stopAuth();
     unsubscribeStore();
     clearTimeout(timeout);
     clearInterval(interval);
@@ -307,7 +317,7 @@ function checkCredentials(email: string, password: string): string | null {
 }
 
 export async function signIn(email: string, password: string): Promise<string | null> {
-  const db = client();
+  const db = await client();
   if (!db) return "A conta ainda não está disponível.";
   if (!EMAIL_PATTERN.test(email.trim())) return "Confira o e-mail.";
   if (!password) return "Digite a senha.";
@@ -317,7 +327,7 @@ export async function signIn(email: string, password: string): Promise<string | 
 
 // Com a confirmação de e-mail ligada, o Supabase não diz se o e-mail já tinha conta: a tela pede para conferir o e-mail nos dois casos.
 export async function signUp(email: string, password: string, birthYear: number): Promise<string | null> {
-  const db = client();
+  const db = await client();
   if (!db) return "A conta ainda não está disponível.";
   const invalid = checkCredentials(email, password);
   if (invalid) return invalid;
@@ -331,14 +341,14 @@ export async function signUp(email: string, password: string, birthYear: number)
 
 // Volta para o app pelo Google; a sessão é lida da URL ao carregar a página.
 export async function signInWithGoogle(): Promise<string | null> {
-  const db = client();
+  const db = await client();
   if (!db) return "A conta ainda não está disponível.";
   const { error } = await db.auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectUrl() } });
   return error ? "Não foi possível abrir o login do Google. Tente de novo." : null;
 }
 
 export async function saveBirthYear(birthYear: number): Promise<string | null> {
-  const db = client();
+  const db = await client();
   if (!db) return "A conta ainda não está disponível.";
   const { error } = await db.auth.updateUser({ data: { birth_year: birthYear } });
   if (error) return "Não foi possível salvar agora. Tente de novo.";
@@ -347,14 +357,14 @@ export async function saveBirthYear(birthYear: number): Promise<string | null> {
 }
 
 export async function resendConfirmation(email: string): Promise<string | null> {
-  const db = client();
+  const db = await client();
   if (!db) return "A conta ainda não está disponível.";
   const { error } = await db.auth.resend({ type: "signup", email: email.trim(), options: { emailRedirectTo: redirectUrl() } });
   return authMessage(error, "Não foi possível enviar de novo. Tente daqui a pouco.");
 }
 
 export async function sendPasswordReset(email: string): Promise<string | null> {
-  const db = client();
+  const db = await client();
   if (!db) return "A conta ainda não está disponível.";
   if (!EMAIL_PATTERN.test(email.trim())) return "Confira o e-mail.";
   const { error } = await db.auth.resetPasswordForEmail(email.trim(), { redirectTo: redirectUrl("/ajustes") });
@@ -362,7 +372,7 @@ export async function sendPasswordReset(email: string): Promise<string | null> {
 }
 
 export async function updatePassword(password: string): Promise<string | null> {
-  const db = client();
+  const db = await client();
   if (!db) return "A conta ainda não está disponível.";
   if (password.length < PASSWORD_MIN) return `A senha precisa ter pelo menos ${PASSWORD_MIN} caracteres.`;
   const { error } = await db.auth.updateUser({ password });
@@ -375,7 +385,7 @@ export function cancelRecovery() {
 }
 // Envia o que falta antes de sair. Os dados continuam no aparelho.
 export async function signOut() {
-  const db = client();
+  const db = await client();
   if (!db) return;
   await syncNow();
   // Os lembretes deste navegador eram da conta que está saindo.
@@ -384,7 +394,7 @@ export async function signOut() {
 }
 
 export async function deleteAccount(): Promise<string | null> {
-  const db = client();
+  const db = await client();
   const userId = currentUser;
   if (!db || !userId) return "Entre na conta para excluí-la.";
   const { error } = await db.rpc("delete_account");
@@ -399,7 +409,7 @@ export async function deleteAccount(): Promise<string | null> {
 
 // Chama uma função do servidor (pagamento ou IA). Os erros dela já vêm escritos para a pessoa.
 async function callFunction<T>(name: string, body: Record<string, unknown>): Promise<{ data: T } | { error: string }> {
-  const db = client();
+  const db = await client();
   if (!db) return { error: "A conta ainda não está disponível." };
   if (!currentUser) return { error: "Entre na sua conta." };
   if (!navigator.onLine) return { error: "Sem internet agora. Tente quando a conexão voltar." };
@@ -482,7 +492,7 @@ async function currentPushSubscription(): Promise<PushSubscription | null> {
 
 // Liga, atualiza ou desliga os avisos do servidor para este navegador. null = desligar.
 export async function updatePushReminder(settings: { time: string; studyDays: readonly boolean[] } | null): Promise<boolean> {
-  const db = client();
+  const db = await client();
   if (!db || !currentUser || !pushAvailable()) return false;
   try {
     const registration = await navigator.serviceWorker.getRegistration();

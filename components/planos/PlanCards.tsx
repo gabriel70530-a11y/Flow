@@ -1,11 +1,11 @@
 import { Check } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { buttonStyles } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { FREE_FEATURES, PRICES, PRO_FEATURES, interestListUrl } from "@/lib/plan";
 import { appOpen } from "@/lib/site";
 import { InterestLink } from "./InterestLink";
-import { ProActions } from "./ProActions";
 
 function FeatureList({ items }: { items: string[] }) {
   return (
@@ -20,7 +20,9 @@ function FeatureList({ items }: { items: string[] }) {
   );
 }
 
-export function PlanCards({ inApp = false }: { inApp?: boolean }) {
+// Dentro do app, Planos passa os botões de assinar (que falam com o servidor); a landing não carrega nada disso.
+export function PlanCards({ proActions }: { proActions?: ReactNode }) {
+  const inApp = proActions !== undefined;
   const interestUrl = interestListUrl();
 
   return (
@@ -61,7 +63,7 @@ export function PlanCards({ inApp = false }: { inApp?: boolean }) {
         <p className="text-sm text-muted">Organiza a semana por você, analisa seus erros e corrige redação com IA.</p>
         <FeatureList items={PRO_FEATURES} />
         {inApp ? (
-          <ProActions interestUrl={interestUrl} />
+          proActions
         ) : interestUrl ? (
           <InterestLink href={interestUrl} />
         ) : (
