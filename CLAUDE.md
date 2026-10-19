@@ -55,7 +55,7 @@ app/
   (site)/               landing (/), /ajuda, /privacidade, /termos: sem a navegação do app
   (app)/layout.tsx      AppShell
   (app)/painel, cronograma, materias, timer, revisoes (+ revisoes/erros), ajustes, planos, comecar (onboarding)
-  (app)/questoes, simulados, redacao, prova   ferramentas de preparação (fora das abas do celular)
+  (app)/questoes, simulados, redacao, tabuada, prova   ferramentas de preparação (fora das abas do celular)
   globals.css           tokens de cor e tipografia
 components/
   ui/                   componentes genéricos (Button, Card, Drawer, Toast, Segmented...)
@@ -75,7 +75,8 @@ lib/
   mistakes.ts           caderno de erros com revisão espaçada própria
   mock-exams.ts         simulados registrados: acertos por área e ritmo
   question-blocks.ts    blocos de 5 questões oficiais por área e tema
-  flashcards.ts         cartões de memorização com intervalos no estilo do Anki
+  flashcards.ts         cartões de memorização com intervalos no estilo do Anki e importação do Anki
+  times-table.ts        treino da tabuada: rodadas pelas contas menos decoradas
   official-exams.ts     provas oficiais do Inep (gabarito transcrito), correção, rascunho e texto das questões do simulado no app
   age.ts                idade mínima (13) e menor de idade pelo ano de nascimento
   essays.ts             redações registradas (notas por competência) e repertório
@@ -189,6 +190,7 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 
 **Preparação** (tudo opcional, nada bloqueia o resto do app)
 - **Cartões** (`/revisoes/cartoes`, gratuito): o Flow não traz cartões prontos; quem monta é o estudante. O máximo que o app oferece é importar o que ele já fez no Anki, pelo texto que o Anki exporta ("Notas em texto simples": cabeçalhos `#`, separador, aspas, HTML, colunas de guid/tipo/baralho/etiquetas), sem repetir cartões iguais. Frente e verso, com o assunto opcional. Ao estudar, "Mostrar resposta" (espaço) e as notas Errei, Difícil, Bom e Fácil (teclas 1 a 4), cada uma mostrando quando o cartão volta. O intervalo segue o SM-2 do Anki (`lib/flashcards.ts`): facilidade inicial 2,5, mínimo 1,3; "Errei" volta para o fim da fila da mesma sessão e recomeça o cartão. Os vencidos entram no contador de Revisões.
+- **Tabuada** (`/tabuada`, gratuito): a pessoa escolhe as tabuadas (1 a 10) e faz rodadas de até 20 contas, digitando o resultado. As menos decoradas vêm primeiro; a errada mostra a resposta e volta uma vez no fim da rodada. Uma conta está decorada com 3 acertos seguidos em até 5 segundos; 7 × 8 e 8 × 7 contam juntas. O progresso (`timesTable`) sincroniza como ajuste.
 - **Blocos de questões** (`/questoes`, Pro): a pessoa escolhe a área e, se quiser, um tema (texto livre ou sugestões: os tópicos dela e o que mais cai). O Flow busca o tema no texto das questões das provas que estão no app (radical simples, sem acento) e escolhe 5, primeiro as que ela ainda não fez. Corrige pelo gabarito oficial, mostra a revisão de cada questão e manda os erros para o caderno. Os blocos sincronizam (`questionBlocks`); só um fica aberto por vez.
 - **Caderno de erros** (`/revisoes/erros`, Pro; no gratuito os erros já salvos ficam só para leitura): "Analisar com IA" (foto ou texto da questão e a letra marcada) preenche questão, o que aprendeu e motivo para a pessoa conferir. Cada erro guarda o assunto (tópico, matéria, área ou nenhum), o motivo (conteúdo, comando, pressa, chute), a questão, o que aprendeu e a origem. Volta em +1, +7, +15 e +30 dias; "Lembrei" avança, "Não lembrei" recomeça amanhã; depois da 4ª lembrança sai da fila. Dois erros em aberto no mesmo tópico sugerem "Precisa revisar" (a pessoa confirma). Com 3 ou mais erros, mostra o motivo mais frequente e uma dica. O contador de Revisões soma os erros do dia.
 - **Simulados** (`/simulados`): no Pro, simulado no app com a prova oficial do Inep (caderno azul; prévia aprovada em `docs/previa-simulado.html`). Nas provas com `questionsUrl` (hoje Enem 2023), as questões aparecem na tela: uma por vez, com o mapa das questões (ao lado no computador, num botão no celular), "Rever depois", anterior e próxima, e o resultado deixa revisar cada erro com a resposta certa. Nas outras, ou se a pessoa preferir, PDF oficial e cartão-resposta. Dá para fazer o dia inteiro ou uma área (45 questões). Pausar ou sair guarda tudo e mostra onde parou. Cronômetro com a regra do timer, correção pelo gabarito oficial (anulada sai do total, em branco é erro), registro como simulado e opção de mandar os erros para o caderno. Nunca invente gabarito: só transcreva o publicado pelo Inep e cubra com teste. Em qualquer plano, a pessoa registra acertos por área (45 questões cada), o tempo e uma observação. O Flow mostra acertos, a comparação com o simulado anterior e o ritmo em minutos por questão contra o tempo oficial (no 1º dia desconta 1h de redação). **Nunca calcula nota TRI**; a tela explica por quê.
@@ -284,7 +286,7 @@ Recriado em texto, nunca como imagem: o símbolo (quadrado azul `action` com o F
 
 - **Desktop (> 760px):** barra lateral fixa de 240px, sem fundo próprio, com o logo, os itens de navegação (ícone + texto) e, no rodapé, Ajustes e o seletor de aparência. Item ativo: fundo `surface`, contorno e carimbo. Conteúdo com até 1180px, 40px no topo e 48px à direita.
 - **Celular (≤ 760px):** barra superior com o logo, Ajustes e o botão de tema (botões redondos com contorno) e um traço de 2px `edge` embaixo, mais uma barra inferior fixa com as abas (ícone + rótulo). Respeite as `safe-area-inset`.
-- Navegação: Painel, Cronograma, Matérias, Timer, Revisões. Revisões mostra um contador vermelho com as pendentes de hoje + atrasadas (tópicos, erros e cartões) e tem três abas: Tópicos, Erros e Cartões. Simulados, Redação e Dia da prova ficam num grupo discreto "Preparação" na barra lateral e, no celular, no card de Preparação do Painel, logo depois de "Estudar hoje". Timer mostra o tempo enquanto há uma sessão em andamento.
+- Navegação: Painel, Cronograma, Matérias, Timer, Revisões. Revisões mostra um contador vermelho com as pendentes de hoje + atrasadas (tópicos, erros e cartões) e tem três abas: Tópicos, Erros e Cartões. Questões, Simulados, Redação, Tabuada e Dia da prova ficam num grupo discreto "Preparação" na barra lateral e, no celular, no card de Preparação do Painel, logo depois de "Estudar hoje". Timer mostra o tempo enquanto há uma sessão em andamento.
 - Cada página abre com h1 + uma linha de subtítulo em `muted`.
 - Formulários e listas longas usam o Drawer (folha inferior no celular).
 

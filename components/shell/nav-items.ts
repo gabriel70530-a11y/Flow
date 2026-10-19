@@ -3,6 +3,7 @@ import {
   CalendarCheck,
   CalendarDays,
   ClipboardCheck,
+  Grid3x3,
   LayoutDashboard,
   ListChecks,
   PenLine,
@@ -30,5 +31,6 @@ export const PREP_ITEMS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/questoes", label: "Questões", icon: ListChecks },
   { href: "/simulados", label: "Simulados", icon: TimerReset },
   { href: "/redacao", label: "Redação", icon: PenLine },
+  { href: "/tabuada", label: "Tabuada", icon: Grid3x3 },
   { href: "/prova", label: "Dia da prova", icon: ClipboardCheck },
 ];

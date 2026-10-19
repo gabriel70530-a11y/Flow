@@ -4,6 +4,7 @@ import type { GoalType } from "@/lib/stats";
 import { MOCK_DAY_AREAS } from "@/lib/mock-exams";
 import { LETTERS, QUESTIONS_PER_DAY, findOfficialExam, type ExamDraft, type ExamScope } from "@/lib/official-exams";
 import { DEFAULT_TIMER, type TimerState } from "@/lib/timer";
+import { normalizeTimesTable } from "@/lib/times-table";
 import { legacySubject, legacyTopics } from "@/lib/legacy-topics";
 import { subjectsOf, type AreaId } from "@/lib/syllabus";
 import { findTopic, type TopicRecord } from "@/lib/topics";
@@ -157,6 +158,7 @@ function fillDefaults(saved: Record<string, unknown>): StudyData {
     repertoire: records(saved.repertoire) as unknown as StudyData["repertoire"],
     questionBlocks: records(saved.questionBlocks) as unknown as StudyData["questionBlocks"],
     flashcards: records(saved.flashcards) as unknown as StudyData["flashcards"],
+    timesTable: normalizeTimesTable(saved.timesTable),
     examChecklist: Array.isArray(saved.examChecklist) ? saved.examChecklist.filter((id) => typeof id === "string") : [],
     goal: {
       type: GOAL_TYPES.includes(goal.type as GoalType) ? (goal.type as GoalType) : base.goal.type,

@@ -9,6 +9,7 @@ import type { ProgressMap } from "@/lib/reviews";
 import type { StudySession } from "@/lib/sessions";
 import { DEFAULT_GOAL, type WeeklyGoal } from "@/lib/stats";
 import { DEFAULT_TIMER, type TimerState } from "@/lib/timer";
+import type { TimesTableStats } from "@/lib/times-table";
 import type { TopicRecord } from "@/lib/topics";
 
 export type Theme = "system" | "light" | "dark";
@@ -33,6 +34,8 @@ export interface StudyData {
   flashcards: Flashcard[];
   // Itens já conferidos no checklist do dia da prova.
   examChecklist: string[];
+  // Contas da tabuada: acertos, erros e acertos rápidos seguidos.
+  timesTable: TimesTableStats;
   goal: WeeklyGoal;
   planner: PlannerSettings;
   onboarding: OnboardingState;
@@ -60,6 +63,7 @@ export function emptyData(): StudyData {
     questionBlocks: [],
     flashcards: [],
     examChecklist: [],
+    timesTable: {},
     goal: DEFAULT_GOAL,
     planner: DEFAULT_PLANNER,
     onboarding: { status: "pendente", planMode: "sugerido" },

@@ -7,6 +7,7 @@ import type { QuestionBlock } from "./question-blocks";
 import type { ProgressMap } from "./reviews";
 import type { StudySession } from "./sessions";
 import type { WeeklyGoal } from "./stats";
+import type { TimesTableStats } from "./times-table";
 import type { TopicRecord } from "./topics";
 
 // O que vai para a nuvem. Tema, som, consentimento de métricas e o timer são de cada aparelho.
@@ -22,6 +23,7 @@ export interface SyncedData {
   questionBlocks: QuestionBlock[];
   flashcards: Flashcard[];
   examChecklist: string[];
+  timesTable: TimesTableStats;
   goal: WeeklyGoal;
   planner: PlannerSettings;
   onboarding: { status: "pendente" | "concluido" | "pulado"; planMode: "sugerido" | "manual" };
@@ -29,7 +31,7 @@ export interface SyncedData {
 }
 
 const LIST_COLLECTIONS = ["topics", "sessions", "tasks", "mistakes", "mockExams", "essays", "repertoire", "questionBlocks", "flashcards"] as const;
-const SETTINGS = ["examChecklist", "goal", "planner", "onboarding", "showStreak"] as const;
+const SETTINGS = ["examChecklist", "timesTable", "goal", "planner", "onboarding", "showStreak"] as const;
 
 type ListCollection = (typeof LIST_COLLECTIONS)[number];
 type Setting = (typeof SETTINGS)[number];

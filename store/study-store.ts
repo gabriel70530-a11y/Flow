@@ -80,6 +80,7 @@ import {
   type StudySession,
 } from "@/lib/sessions";
 import { GOAL_LIMITS, type WeeklyGoal } from "@/lib/stats";
+import { recordAnswer, type Fact } from "@/lib/times-table";
 import {
   elapsed,
   isIdle,
@@ -192,6 +193,7 @@ interface StudyActions {
   importCards: (cards: readonly { front: string; back: string }[], subject: Omit<CardInput, "front" | "back">) => number;
 
   toggleChecklistItem: (itemId: string) => void;
+  answerFact: (fact: Fact, correct: boolean, milliseconds: number) => void;
   resetChecklist: (day: ExamDay) => void;
 
   savePlanner: (settings: PlannerSettings) => string | null;
@@ -300,6 +302,7 @@ function toStudyData(state: StudyData): StudyData {
     questionBlocks: state.questionBlocks,
     flashcards: state.flashcards,
     examChecklist: state.examChecklist,
+    timesTable: state.timesTable,
     goal: state.goal,
     planner: state.planner,
     onboarding: state.onboarding,
@@ -597,6 +600,8 @@ export const useStudyStore = create<StudyStore>()(
           set({ repertoire: [...get().repertoire, { ...item, id: newId("repertorio-") }] });
           return null;
         },
+        answerFact: (fact, correct, milliseconds) =>
+          set({ timesTable: recordAnswer(get().timesTable, fact, correct, milliseconds) }),
         removeRepertoire: (itemId) => set({ repertoire: get().repertoire.filter((item) => item.id !== itemId) }),
 
         startBlock: ({ areaId, theme, language, picked }) => {
