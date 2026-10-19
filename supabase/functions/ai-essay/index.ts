@@ -1,4 +1,4 @@
-// CorreÃ§Ã£o de redaÃ§Ã£o estimada pela IA (Pro, atÃ© 8 por mÃªs). NÃ£o Ã© nota oficial e a interface diz isso.
+// Correção de redação estimada pela IA (Pro, até 8 por mês). Não é nota oficial e a interface diz isso.
 import Anthropic from "npm:@anthropic-ai/sdk@0.135.0";
 import { SAFETY, guard, imageBlocks, parseOutput, validImages } from "../_shared/ai.ts";
 import { adminClient, failure, json, preflight } from "../_shared/server.ts";
@@ -8,18 +8,18 @@ const TEXT_MAX = 6000;
 
 const SYSTEM = `${SAFETY}
 
-VocÃª estima a nota de uma redaÃ§Ã£o dissertativo-argumentativa do Enem pela matriz oficial do Inep.
-Avalie cada competÃªncia de 0 a 200, sÃ³ em mÃºltiplos de 40:
-C1 domÃ­nio da norma culta da lÃ­ngua escrita;
-C2 compreensÃ£o da proposta e aplicaÃ§Ã£o de conceitos de vÃ¡rias Ã¡reas para desenvolver o tema, no tipo dissertativo-argumentativo;
-C3 seleÃ§Ã£o, relaÃ§Ã£o, organizaÃ§Ã£o e interpretaÃ§Ã£o de informaÃ§Ãµes, fatos, opiniÃµes e argumentos em defesa de um ponto de vista;
-C4 conhecimento dos mecanismos linguÃ­sticos necessÃ¡rios para a construÃ§Ã£o da argumentaÃ§Ã£o (coesÃ£o);
-C5 proposta de intervenÃ§Ã£o para o problema, que respeite os direitos humanos, com agente, aÃ§Ã£o, meio, efeito e detalhamento.
-Fuga total ao tema, texto que nÃ£o Ã© dissertativo-argumentativo ou com atÃ© 7 linhas zera a redaÃ§Ã£o: dÃª 0 em todas.
-Seja exigente como um corretor do Enem, sem inflar notas. Em cada competÃªncia, explique em atÃ© 2 frases o que justificou a nota
-e o que fazer para subir, citando trechos curtos da redaÃ§Ã£o quando ajudar.
-No resumo, diga em atÃ© 3 frases o que mais vale a pena treinar na prÃ³xima redaÃ§Ã£o.
-Se nÃ£o conseguir ler a redaÃ§Ã£o na foto, marque legible como false e deixe o resto vazio ou zerado.`;
+Você estima a nota de uma redação dissertativo-argumentativa do Enem pela matriz oficial do Inep.
+Avalie cada competência de 0 a 200, só em múltiplos de 40:
+C1 domínio da norma culta da língua escrita;
+C2 compreensão da proposta e aplicação de conceitos de várias áreas para desenvolver o tema, no tipo dissertativo-argumentativo;
+C3 seleção, relação, organização e interpretação de informações, fatos, opiniões e argumentos em defesa de um ponto de vista;
+C4 conhecimento dos mecanismos linguísticos necessários para a construção da argumentação (coesão);
+C5 proposta de intervenção para o problema, que respeite os direitos humanos, com agente, ação, meio, efeito e detalhamento.
+Fuga total ao tema, texto que não é dissertativo-argumentativo ou com até 7 linhas zera a redação: dê 0 em todas.
+Seja exigente como um corretor do Enem, sem inflar notas. Em cada competência, explique em até 2 frases o que justificou a nota
+e o que fazer para subir, citando trechos curtos da redação quando ajudar.
+No resumo, diga em até 3 frases o que mais vale a pena treinar na próxima redação.
+Se não conseguir ler a redação na foto, marque legible como false e deixe o resto vazio ou zerado.`;
 
 const SCHEMA = {
   type: "object",
@@ -48,9 +48,9 @@ Deno.serve(async (request) => {
   const theme = typeof body.theme === "string" ? body.theme.trim() : "";
   const text = typeof body.text === "string" ? body.text.trim() : "";
   const images = validImages(body.images, 2);
-  if (!theme || theme.length > THEME_MAX) return failure("Escreva o tema da redaÃ§Ã£o.", 400);
-  if (!images || text.length > TEXT_MAX) return failure("Envie atÃ© 2 fotos ou o texto da redaÃ§Ã£o.", 400);
-  if (!text && images.length === 0) return failure("Envie as fotos ou cole o texto da redaÃ§Ã£o.", 400);
+  if (!theme || theme.length > THEME_MAX) return failure("Escreva o tema da redação.", 400);
+  if (!images || text.length > TEXT_MAX) return failure("Envie até 2 fotos ou o texto da redação.", 400);
+  if (!text && images.length === 0) return failure("Envie as fotos ou cole o texto da redação.", 400);
 
   const admin = adminClient();
   const access = await guard(request, admin, "redacao");
@@ -70,7 +70,7 @@ Deno.serve(async (request) => {
           role: "user",
           content: [
             ...imageBlocks(images),
-            { type: "text", text: `Tema: ${theme}\n\n${text ? `Texto da redaÃ§Ã£o:\n${text}` : "A redaÃ§Ã£o estÃ¡ nas fotos acima."}` },
+            { type: "text", text: `Tema: ${theme}\n\n${text ? `Texto da redação:\n${text}` : "A redação está nas fotos acima."}` },
           ],
         },
       ],
@@ -78,15 +78,15 @@ Deno.serve(async (request) => {
     const output = parseOutput<EssayOutput>(message);
     if (!output || output.scores.length !== 5 || output.comments.length !== 5) {
       await access.release();
-      return failure("NÃ£o foi possÃ­vel corrigir agora. Tente de novo.", 502);
+      return failure("Não foi possível corrigir agora. Tente de novo.", 502);
     }
     if (!output.legible) {
       await access.release();
-      return failure("NÃ£o deu para ler a redaÃ§Ã£o. Tire as fotos com boa luz, de cima, ou cole o texto.", 422);
+      return failure("Não deu para ler a redação. Tire as fotos com boa luz, de cima, ou cole o texto.", 422);
     }
     return json({ scores: output.scores, comments: output.comments, summary: output.summary, remaining: access.remaining });
   } catch {
     await access.release();
-    return failure("NÃ£o foi possÃ­vel corrigir agora. Tente de novo.", 502);
+    return failure("Não foi possível corrigir agora. Tente de novo.", 502);
   }
 });
