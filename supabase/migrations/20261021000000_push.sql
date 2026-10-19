@@ -1,5 +1,5 @@
 -- Lembretes de estudo por Web Push: uma inscrição por navegador, com o horário, o fuso e os dias de estudo da pessoa.
--- A função send-reminders roda a cada minuto pelo pg_cron e manda os avisos (1 hora antes, 30 minutos antes e na hora).
+-- A função send-reminders manda os avisos (1 hora antes, 30 minutos antes e na hora).
 
 create table public.push_subscriptions (
   endpoint text primary key check (char_length(endpoint) <= 1000),
@@ -53,23 +53,4 @@ $$;
 revoke all on function public.save_push_subscription from public, anon;
 grant execute on function public.save_push_subscription to authenticated;
 
--- A cada minuto, chama a função de envio. O endereço do projeto e o segredo ficam no Vault, fora do repositório:
---   select vault.create_secret('https://<ref>.supabase.co', 'project_url');
---   select vault.create_secret('<segredo aleatório>', 'reminders_secret');  -- o mesmo valor de REMINDERS_SECRET na função
-create extension if not exists pg_cron;
-create extension if not exists pg_net;
-
-select cron.schedule(
-  'flow-lembretes',
-  '* * * * *',
-  $$
-  select net.http_post(
-    url := (select decrypted_secret from vault.decrypted_secrets where name = 'project_url') || '/functions/v1/send-reminders',
-    headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'x-reminders-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'reminders_secret')
-    ),
-    body := '{}'::jsonb
-  );
-  $$
-);
+-- O agendamento a cada minuto fica em supabase/cron/lembretes.sql: rode depois de publicar a função e criar os segredos.

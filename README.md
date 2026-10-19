@@ -125,7 +125,19 @@ Para ativar:
 
 Conferência local: `deno check` e `deno lint` passam dentro de `supabase/functions`. As funções ainda não foram testadas de ponta a ponta contra o Supabase, o Mercado Pago e a API da Anthropic.
 
+## Lembretes por push
+
+A função `send-reminders` manda os avisos de estudo com o app fechado (Web Push com VAPID, sem dependências: `_shared/webpush.ts`). Sem ela, os avisos aparecem só com o Flow aberto.
+
+1. Rodar `supabase/migrations/20261020000000_study_tools.sql` (blocos e cartões na sincronização) e `20261021000000_push.sql` (tabela `push_subscriptions`).
+2. Gerar as chaves: `deno run supabase/functions/_shared/generate_vapid.ts`. A pública vai em `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (Vercel e `.env.local`).
+3. Segredos da função: `supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=https://<endereço> REMINDERS_SECRET=<aleatório>`.
+4. Publicar: `supabase functions deploy send-reminders --no-verify-jwt`.
+5. Criar no Vault `project_url` e `reminders_secret` (o mesmo valor de `REMINDERS_SECRET`) e rodar `supabase/cron/lembretes.sql`.
+
 ## O que ainda depende de decisão ou serviço externo
+
+**Para publicar esta versão, na ordem:** (1) rodar no Supabase as migrações `20261019000000_pro.sql`, `20261020000000_study_tools.sql` e `20261021000000_push.sql` (sem elas, a sincronização de cartões e blocos falha); (2) na Vercel, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` e, se for abrir o app, `APP_OPEN=true` (e `NEXT_PUBLIC_PRO_TRIAL=true` para testar o Pro com estudantes); (3) ativar o login com Google no Supabase ou tirar o botão; (4) dar push na `main`; (5) os lembretes por push, acima.
 
 - **Cobrança do Flow Pro.** O código de pagamento existe (ver acima), mas falta criar a conta no Mercado Pago, configurar os segredos, testar com contas de teste e abrir com `NEXT_PUBLIC_PAYMENTS_OPEN`. Até lá, Planos diz que ainda não é possível assinar; nada é vendido nem simulado.
 - **IA no Pro.** Falta a chave da API da Anthropic (`ANTHROPIC_API_KEY`), com limite de gasto configurado no console. Sem ela, as funções respondem que a IA ainda não está disponível.

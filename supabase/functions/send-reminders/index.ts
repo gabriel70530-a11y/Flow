@@ -1,4 +1,4 @@
-// Chamada a cada minuto pelo pg_cron (ver supabase/migrations/20261021000000_push.sql). Manda os lembretes de estudo
+// Chamada a cada minuto pelo pg_cron (ver supabase/cron/lembretes.sql). Manda os lembretes de estudo
 // 1 hora antes, 30 minutos antes e na hora, no fuso de cada aparelho, só nos dias de estudo.
 import { adminClient, env, failure, json } from "../_shared/server.ts";
 import { sendPush, type VapidKeys } from "../_shared/webpush.ts";
