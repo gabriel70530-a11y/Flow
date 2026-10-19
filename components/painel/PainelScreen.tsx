@@ -1,12 +1,11 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
-import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { mondayOf, shortDate, toDateKey } from "@/lib/dates";
 import { daysUntil, nextExamDay } from "@/lib/exam";
 import { useHydrated, useStudyStore } from "@/store/study-store";
+import { PrepShortcuts } from "./PrepShortcuts";
 import { RankCard } from "./RankCard";
 import { StudyTodayCard } from "./StudyTodayCard";
 import { UpcomingReviews } from "./UpcomingReviews";
@@ -73,20 +72,12 @@ export function PainelScreen() {
         }
       />
       <StudyTodayCard today={today} />
+      <PrepShortcuts />
       <div className="grid items-start gap-4 md:gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <CompactWeekCard today={today} monday={mondayOf(today)} />
         <div className="grid gap-4 md:gap-6">
           <UpcomingReviews today={today} />
           {showStreak && <RankCard />}
-          {/* No computador, a Preparação fica no menu lateral. */}
-          <Link
-            href="/preparacao"
-            className="flex items-center gap-3.5 rounded-[16px] border border-line bg-surface px-[18px] py-3.5 hover:bg-hover md:hidden"
-          >
-            <span className="font-semibold">Preparação</span>
-            <span className="min-w-0 flex-1 truncate text-[13px] text-muted">Questões, simulados, redação…</span>
-            <ChevronRight size={16} className="shrink-0 text-muted" aria-hidden />
-          </Link>
         </div>
       </div>
     </div>

@@ -206,7 +206,7 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 - **Offline**: em produção, um service worker (`public/sw.js`) guarda as páginas e os arquivos do app; os dados já são locais.
 
 **Painel** (prévia aprovada em `docs/previa-simplificada.html`)
-- Só três blocos: "Estudar hoje", "Esta semana" e "Revisões" (as 3 próximas), mais uma linha com o ritmo e, no celular, uma linha que abre `/preparacao`. O subtítulo traz o dia e a contagem para o Enem.
+- Só três blocos: "Estudar hoje", "Esta semana" e "Revisões" (as 3 próximas), mais uma linha com o ritmo. No celular, logo depois de "Estudar hoje", vêm os atalhos da Preparação (grade 3×2 com ícone e "Ver tudo" para `/preparacao`). O subtítulo traz o dia e a contagem para o Enem.
 - "Estudar hoje": as matérias do dia (uma por linha, com "Dominei?" à direita), quantas foram dominadas e o tempo estudado hoje (sem meta), "Começar a estudar", "Dia leve" e uma linha com a revisão de hoje e os erros para rever. Sem plano, oferece organizar a semana ou estudar sem plano.
 - "Esta semana" no Painel mostra só o total e as barras da semana atual; "Ver resumo" abre `/painel/resumo` ("Sua semana"), com as setas para semanas anteriores, a meta editável, o resumo e as horas por área.
 - A semana vai de segunda a domingo, no fuso local. Setas para semanas anteriores; não há navegação para semanas futuras.
@@ -296,7 +296,7 @@ Recriado em texto, nunca como imagem: o símbolo (quadrado azul `action` com o F
 
 - **Desktop (> 760px):** barra lateral fixa de 240px, sem fundo próprio, com o logo, os itens de navegação (ícone + texto) e, no rodapé, Ajustes e o seletor de aparência. Item ativo: fundo `surface`, contorno e carimbo. Conteúdo com até 1180px, 40px no topo e 48px à direita.
 - **Celular (≤ 760px):** barra superior com o logo, Ajustes e o botão de tema (botões redondos com contorno) e um traço de 2px `edge` embaixo, mais uma barra inferior fixa com as abas (ícone + rótulo). Respeite as `safe-area-inset`.
-- Navegação: Painel, Cronograma, Matérias, Timer, Revisões. Revisões mostra um contador vermelho com as pendentes de hoje + atrasadas (tópicos, erros e cartões) e tem três abas: Tópicos, Erros e Cartões. Questões, Simulados, Redação, Cartões, Tabuada e Dia da prova ficam num grupo discreto "Preparação" na barra lateral e, no celular, na tela `/preparacao` (com Conquistas), aberta por uma linha no Painel. A barra superior do celular tem borda fina e botões sem contorno; a aba ativa fica em `accent`. Timer mostra o tempo enquanto há uma sessão em andamento.
+- Navegação: Painel, Cronograma, Matérias, Timer, Revisões. Revisões mostra um contador vermelho com as pendentes de hoje + atrasadas (tópicos, erros e cartões) e tem três abas: Tópicos, Erros e Cartões. Questões, Simulados, Redação, Cartões, Tabuada e Dia da prova ficam num grupo discreto "Preparação" na barra lateral e, no celular, nos atalhos logo depois de "Estudar hoje" no Painel e na tela `/preparacao` (com Conquistas). A barra superior do celular tem borda fina e botões sem contorno; a aba ativa fica em `accent`. Timer mostra o tempo enquanto há uma sessão em andamento.
 - Cada página abre com h1 + uma linha de subtítulo em `muted`.
 - Formulários e listas longas usam o Drawer (folha inferior no celular).
 
