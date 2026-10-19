@@ -159,8 +159,7 @@ function OnboardingSteps() {
               onChange={(lightDays) => update({ lightDays })}
             />
             <p className="text-[13px] text-muted">
-              Cada dia de estudo recebe até 2 matérias. Não precisa fazer as duas: o que não der passa para o dia seguinte. Não há
-              limite de tempo: estude cada matéria até sentir que dominou.
+              Até 2 matérias por dia, sem limite de tempo. O que não der passa para o dia seguinte.
             </p>
           </div>
         )}
@@ -187,8 +186,7 @@ function OnboardingSteps() {
           <div className="grid gap-6">
             {!pro && (
               <ProNotice title="O plano sugerido faz parte do Pro">
-                No Pro, o Flow escolhe as matérias de cada dia pelas suas prioridades. No gratuito, você adiciona as matérias no
-                Cronograma, e o que ficar sem estudar passa sozinho para o próximo dia.
+                No Pro, o Flow escolhe as matérias de cada dia. No gratuito, você adiciona no Cronograma.
               </ProNotice>
             )}
             <div className="grid gap-1.5">

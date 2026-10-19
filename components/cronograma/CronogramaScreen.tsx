@@ -145,8 +145,7 @@ export function CronogramaScreen() {
 
       {!proAccess && showProNotice && (
         <ProNotice title="O Flow monta a semana por você no Pro" className="max-w-2xl">
-          Ele escolhe as matérias de cada dia pelas suas prioridades, revisões e áreas difíceis. No gratuito, você adiciona as
-          matérias à mão, e o que ficar sem estudar continua passando sozinho para o próximo dia.
+          O Flow escolhe as matérias de cada dia. No gratuito, você adiciona à mão.
         </ProNotice>
       )}
 
@@ -160,8 +159,7 @@ export function CronogramaScreen() {
         <Card>
           <CardHeader title="Monte sua semana em 2 minutos" />
           <p className="mb-4 text-sm text-muted">
-            Escolha seus dias de estudo e as áreas que pesam mais. O Flow organiza até 2 matérias por dia, sem limitar horas.
-            Você pode mudar tudo depois, ou montar sozinho.
+            Escolha seus dias de estudo e as áreas prioritárias. O Flow monta até 2 matérias por dia.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link href="/comecar" className={buttonStyles("primary")}>
@@ -197,8 +195,7 @@ export function CronogramaScreen() {
             </button>
           </CardHeader>
           <p className="mb-2 text-sm text-muted">
-            Cada dia recebe no máximo 2 matérias. Estes entram nos próximos dias, conforme as matérias atuais forem dominadas,
-            ou você pode incluir mais dias de estudo.
+            Entram nos próximos dias, conforme você dominar as atuais.
           </p>
           <ul className="grid gap-1 text-sm">
             {leftovers.slice(0, 6).map((leftover) => (

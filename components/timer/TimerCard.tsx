@@ -116,8 +116,7 @@ export function TimerCard() {
         </select>
         {task && (
           <span className="font-normal">
-            Matéria do dia{task.focusSec > 0 && ` · ${formatDuration(task.focusSec)} já estudados`}. Sem limite de tempo:
-            estude o quanto quiser, até sentir que dominou o conteúdo.
+            Matéria do dia{task.focusSec > 0 && ` · ${formatDuration(task.focusSec)} já estudados`}. Sem limite de tempo.
           </span>
         )}
       </label>

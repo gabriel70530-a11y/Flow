@@ -31,7 +31,7 @@ import { visibleTopics, type TopicRecord } from "@/lib/topics";
 import { useHydrated, useStudyStore } from "@/store/study-store";
 import { RevisoesTabs } from "./RevisoesTabs";
 
-const SUBTITLE = "Frente e verso para memorizar fórmulas, datas e conceitos. Cada cartão volta na hora certa.";
+const SUBTITLE = "Cada cartão volta na hora certa.";
 
 function cardSubject(card: Flashcard, topics: readonly TopicRecord[]): string {
   return card.areaId || card.topicId ? studyTitle(card.topicId, card.areaId, topics, card.subjectId) : "Sem assunto";
@@ -159,8 +159,7 @@ function ImportForm({ onDone }: { onDone: (message: string) => void }) {
   return (
     <form onSubmit={submit} className="grid gap-5">
       <p className="text-sm text-muted">
-        No Anki, abra o baralho e use Arquivo › Exportar › Notas em texto simples (.txt). O Flow lê a frente e o verso de cada
-        nota; imagens e áudios ficam de fora.
+        No Anki: Arquivo › Exportar › Notas em texto simples (.txt). Imagens e áudios ficam de fora.
       </p>
       <Field label="Arquivo exportado do Anki" error={error}>
         <input
@@ -341,8 +340,7 @@ export function CardsScreen() {
       {flashcards.length === 0 ? (
         <Card flush>
           <EmptyState title="Nenhum cartão ainda">
-            Monte seus cartões: uma pergunta na frente e a resposta no verso. Se já usa o Anki, importe seus baralhos. Ao estudar, diga se errou, achou difícil, bom ou fácil: o Flow
-            traz o cartão de volta na mesma sessão, em dias ou em meses, como no Anki.
+            Pergunta na frente, resposta no verso. Já usa o Anki? Importe seus baralhos.
           </EmptyState>
         </Card>
       ) : (

@@ -159,8 +159,7 @@ export function MistakesScreen() {
       {mistakes.length === 0 ? (
         <Card flush>
           <EmptyState title="Seu caderno de erros está vazio">
-            Errou uma questão no simulado, no livro ou no app do MEC? Registre aqui o que ela pedia e o que você aprendeu. O
-            Flow traz o erro de volta para você revisar até superar.
+            Registre as questões que errou. Cada uma volta até você acertar.
           </EmptyState>
         </Card>
       ) : (

@@ -167,8 +167,7 @@ export function RedacaoScreen() {
               </ul>
             ) : (
               <EmptyState title="Nenhuma redação registrada">
-                Escreva uma por semana, à mão e no tempo da prova (cerca de 1h). Depois de corrigir, registre aqui as notas por
-                competência.
+                Uma por semana, à mão e em cerca de 1 hora.
               </EmptyState>
             )}
           </Card>

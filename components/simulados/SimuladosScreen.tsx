@@ -27,7 +27,7 @@ import { MockExamForm } from "./MockExamForm";
 import { ExamRunner, type ExamResult } from "./ExamRunner";
 import { OfficialExamCard } from "./OfficialExamCard";
 
-const SUBTITLE = "Treine com a prova oficial e no tempo do Enem. Acompanhe acertos e ritmo.";
+const SUBTITLE = "A prova oficial, no tempo do Enem.";
 const minutesFormat = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
 
 function percent(value: number): string {
@@ -130,8 +130,7 @@ export function SimuladosScreen() {
       {mocks.length === 0 ? (
         <Card flush>
           <EmptyState title="Nenhum simulado registrado">
-            Faça uma prova inteira no tempo oficial (5h30 no 1º dia, 5h no 2º). Simulados feitos fora do app (MEC Enem,
-            cursinho) entram em Registrar simulado. Treinar o ritmo ajuda tanto quanto o conteúdo.
+            Faça uma prova no Flow ou registre um simulado feito fora do app.
           </EmptyState>
         </Card>
       ) : (
@@ -183,8 +182,7 @@ export function SimuladosScreen() {
       <Card>
         <CardHeader title="Como sai a nota" />
         <p className="text-sm text-muted">
-          Nas provas feitas no Flow, a nota é estimada pela TRI com os parâmetros oficiais de cada questão: acertar as fáceis vale
-          mais que acertar as difíceis no chute. A oficial só sai pelo Inep.
+          Estimada pela TRI, com os parâmetros oficiais de cada questão. A nota oficial só sai pelo Inep.
         </p>
       </Card>
 

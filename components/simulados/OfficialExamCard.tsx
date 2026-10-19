@@ -110,12 +110,9 @@ function StartForm() {
         </div>
       )}
       <p className="text-sm text-muted">
-        {exam.questionsUrl
-          ? "As questões são as da prova oficial, na mesma ordem do caderno azul."
-          : "Esta prova ainda não está no app: abra o PDF oficial, resolva e marque no cartão-resposta."}{" "}
-        O tempo de referência é {formatDuration(minutes * 60)}
-        {exam.day === 1 && scope === "dia" && ", com a redação"}. Você pode pausar e continuar depois, até em outro dia. Ao terminar,
-        o Flow corrige pelo gabarito oficial do Inep.
+        {exam.questionsUrl ? "" : "Esta prova está só em PDF: resolva e marque no cartão-resposta. "}
+        Tempo de referência: {formatDuration(minutes * 60)}
+        {exam.day === 1 && scope === "dia" && ", com a redação"}. Dá para pausar e continuar depois.
       </p>
       <div className="flex flex-wrap items-center gap-4">
         <Button variant="primary" size="lg" onClick={() => start(exam.questionsUrl ? "app" : "pdf")}>
@@ -393,8 +390,7 @@ export function OfficialExamCard({ result, onResult, onCloseResult }: OfficialEx
       ) : (
         <div className="grid gap-3">
           <ProNotice title="Faça o simulado no Flow com o Pro">
-            As questões da prova oficial na tela, com cronômetro, correção pelo gabarito oficial do Inep, acertos por área e as
-            questões erradas direto para o caderno de erros.
+            A prova oficial na tela, com cronômetro, nota estimada e os erros direto para o caderno.
           </ProNotice>
           <p className="text-[13px] text-muted">Você continua podendo registrar os acertos de um simulado feito fora do app.</p>
         </div>

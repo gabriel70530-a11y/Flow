@@ -20,7 +20,7 @@ import {
 } from "@/lib/times-table";
 import { useHydrated, useStudyStore } from "@/store/study-store";
 
-const SUBTITLE = "Treine as contas até sair de cabeça. As que você mais erra aparecem mais.";
+const SUBTITLE = "Até sair de cabeça.";
 
 interface Round {
   queue: Fact[];

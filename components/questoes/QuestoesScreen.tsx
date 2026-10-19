@@ -39,7 +39,7 @@ import { useProAccess } from "@/store/pro";
 import { useHydrated, useStudyStore } from "@/store/study-store";
 import { prefetchImages, usePracticePool } from "./use-practice-pool";
 
-const SUBTITLE = "Blocos de 5 questões oficiais do Enem por área e tema, para treinar sem fazer a prova inteira.";
+const SUBTITLE = "5 questões oficiais do Enem por área e tema.";
 const THEME_CHIPS = 8;
 
 // Seus tópicos da área primeiro; depois o que mais cai (em Natureza e Humanas, um pouco de cada matéria).
@@ -116,7 +116,7 @@ function StartForm() {
             }}
           />
         </div>
-        <Field label="Tema (opcional)" hint="Uma palavra ou assunto. Sem tema, vêm questões variadas da área." error={error}>
+        <Field label="Tema" hint="Opcional." error={error}>
           <input
             value={theme}
             maxLength={BLOCK_THEME_MAX}
@@ -439,8 +439,7 @@ export function QuestoesScreen() {
       <PageHeader title="Questões" subtitle={SUBTITLE} />
       {!pro ? (
         <ProNotice title="Os blocos de questões fazem parte do Pro" className="max-w-2xl">
-          Escolha a área e o tema e resolva 5 questões oficiais do Enem, corrigidas pelo gabarito do Inep. Os erros vão para o
-          caderno com um toque.
+          5 questões oficiais por área e tema, corrigidas pelo gabarito do Inep.
         </ProNotice>
       ) : (
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
