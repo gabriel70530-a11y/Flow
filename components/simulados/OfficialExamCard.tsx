@@ -49,13 +49,16 @@ function PdfLink({ href, children }: { href: string; children: string }) {
   );
 }
 
+// Abre na prova mais recente que já está no app.
+const DEFAULT_EXAM = [...OFFICIAL_EXAMS].reverse().find((exam) => exam.questionsUrl) ?? OFFICIAL_EXAMS[0];
+
 function StartForm() {
   const startExam = useStudyStore((state) => state.startExam);
-  const [examId, setExamId] = useState(OFFICIAL_EXAMS[0].id);
+  const [examId, setExamId] = useState(DEFAULT_EXAM.id);
   const [language, setLanguage] = useState<ForeignLanguage>("ingles");
   const [scope, setScope] = useState<ExamScope>("dia");
   const [error, setError] = useState<string | null>(null);
-  const exam = findOfficialExam(examId) ?? OFFICIAL_EXAMS[0];
+  const exam = findOfficialExam(examId) ?? DEFAULT_EXAM;
   const areas = MOCK_DAY_AREAS[exam.day];
   const minutes = officialMinutes(exam.day, scope);
 
