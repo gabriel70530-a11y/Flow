@@ -4,6 +4,7 @@ import type { Mistake } from "./mistakes";
 import type { MockExam } from "./mock-exams";
 import type { PlanTask, PlannerSettings } from "./planner";
 import type { QuestionBlock } from "./question-blocks";
+import type { ReminderSettings } from "./reminders";
 import type { ProgressMap } from "./reviews";
 import type { StudySession } from "./sessions";
 import type { WeeklyGoal } from "./stats";
@@ -28,10 +29,11 @@ export interface SyncedData {
   planner: PlannerSettings;
   onboarding: { status: "pendente" | "concluido" | "pulado"; planMode: "sugerido" | "manual" };
   showStreak: boolean;
+  reminder: ReminderSettings;
 }
 
 const LIST_COLLECTIONS = ["topics", "sessions", "tasks", "mistakes", "mockExams", "essays", "repertoire", "questionBlocks", "flashcards"] as const;
-const SETTINGS = ["examChecklist", "timesTable", "goal", "planner", "onboarding", "showStreak"] as const;
+const SETTINGS = ["examChecklist", "timesTable", "goal", "planner", "onboarding", "showStreak", "reminder"] as const;
 
 type ListCollection = (typeof LIST_COLLECTIONS)[number];
 type Setting = (typeof SETTINGS)[number];

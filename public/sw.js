@@ -1,6 +1,7 @@
 // Deixa o Flow abrir sem internet. Os dados já ficam no navegador; aqui só guardamos as páginas e os arquivos do app.
-const CACHE = "flow-v1";
-const PAGES = ["/", "/painel", "/cronograma", "/materias", "/timer", "/revisoes", "/revisoes/erros", "/simulados", "/redacao", "/prova", "/ajustes"];
+const CACHE = "flow-v2";
+const PAGES = ["/", "/painel", "/cronograma", "/materias", "/timer", "/revisoes", "/revisoes/erros", "/revisoes/cartoes", "/questoes",
+  "/simulados", "/redacao", "/tabuada", "/prova", "/ajustes", "/ajuda"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -49,6 +50,32 @@ self.addEventListener("fetch", (event) => {
     caches.match(request).then((cached) => {
       const update = fromNetwork(request).catch(() => cached ?? Response.error());
       return cached ?? update;
+    }),
+  );
+});
+
+// Lembretes de estudo enviados pelo servidor (função send-reminders). A tag é a mesma do aviso local: nunca aparecem dois.
+self.addEventListener("push", (event) => {
+  const message = event.data ? event.data.json() : {};
+  event.waitUntil(
+    self.registration.showNotification(message.title || "Flow", {
+      body: message.body || "",
+      tag: message.tag,
+      icon: "/icon.svg",
+      badge: "/icon.svg",
+      data: { url: message.url || "/painel" },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = new URL(event.notification.data?.url || "/painel", self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
+      const open = windows.find((client) => new URL(client.url).origin === self.location.origin);
+      if (open) return open.focus().then(() => open.navigate(url));
+      return self.clients.openWindow(url);
     }),
   );
 });

@@ -5,6 +5,7 @@ import type { MockExam } from "@/lib/mock-exams";
 import type { ExamDraft } from "@/lib/official-exams";
 import { DEFAULT_PLANNER, type PlanTask, type PlannerSettings } from "@/lib/planner";
 import type { QuestionBlock } from "@/lib/question-blocks";
+import { DEFAULT_REMINDER, type ReminderSettings } from "@/lib/reminders";
 import type { ProgressMap } from "@/lib/reviews";
 import type { StudySession } from "@/lib/sessions";
 import { DEFAULT_GOAL, type WeeklyGoal } from "@/lib/stats";
@@ -42,6 +43,9 @@ export interface StudyData {
   theme: Theme;
   sound: boolean;
   showStreak: boolean;
+  // Horário de estudo para os lembretes (sincroniza); ligar os avisos é de cada aparelho.
+  reminder: ReminderSettings;
+  remindersOn: boolean;
   analyticsConsent: boolean;
   timer: TimerState;
   // Simulado oficial em andamento neste aparelho (não sincroniza, como o timer).
@@ -70,6 +74,8 @@ export function emptyData(): StudyData {
     theme: "system",
     sound: true,
     showStreak: true,
+    reminder: DEFAULT_REMINDER,
+    remindersOn: false,
     analyticsConsent: false,
     timer: DEFAULT_TIMER,
     examDraft: null,

@@ -93,15 +93,15 @@ function writeJson(key: string, value: unknown) {
 
 const SYNCED_FIELDS = [
   "topics", "progress", "sessions", "tasks", "mistakes", "mockExams", "essays", "repertoire", "questionBlocks", "flashcards",
-  "examChecklist", "timesTable", "goal", "planner", "onboarding", "showStreak",
+  "examChecklist", "timesTable", "goal", "planner", "onboarding", "showStreak", "reminder",
 ] as const satisfies readonly (keyof SyncedData)[];
 
 function syncedPart(data: StudyData): SyncedData {
   const { topics, progress, sessions, tasks, mistakes, mockExams, essays, repertoire, questionBlocks, flashcards } = data;
-  const { examChecklist, timesTable, goal, planner, onboarding, showStreak } = data;
+  const { examChecklist, timesTable, goal, planner, onboarding, showStreak, reminder } = data;
   return {
     topics, progress, sessions, tasks, mistakes, mockExams, essays, repertoire, questionBlocks, flashcards,
-    examChecklist, timesTable, goal, planner, onboarding, showStreak,
+    examChecklist, timesTable, goal, planner, onboarding, showStreak, reminder,
   };
 }
 
@@ -378,6 +378,8 @@ export async function signOut() {
   const db = client();
   if (!db) return;
   await syncNow();
+  // Os lembretes deste navegador eram da conta que está saindo.
+  if (pushAvailable() && (await currentPushSubscription().catch(() => null))) await updatePushReminder(null);
   await db.auth.signOut({ scope: "local" });
 }
 
@@ -452,4 +454,62 @@ export interface MistakeAnalysis {
 
 export function analyzeMistake(input: { text: string; images: ImagePayload[]; marked: string | null }) {
   return callFunction<MistakeAnalysis>("ai-mistake", input);
+}
+
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
+
+function base64UrlBytes(text: string): Uint8Array<ArrayBuffer> {
+  const base64 = text.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(text.length / 4) * 4, "=");
+  return Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+}
+
+// Avisos com o app fechado precisam do push do servidor: chave VAPID, conta e service worker (só em produção).
+export function pushAvailable(): boolean {
+  return (
+    Boolean(VAPID_PUBLIC_KEY) &&
+    cloudConfig() !== null &&
+    typeof navigator !== "undefined" &&
+    "serviceWorker" in navigator &&
+    typeof window !== "undefined" &&
+    "PushManager" in window
+  );
+}
+
+async function currentPushSubscription(): Promise<PushSubscription | null> {
+  const registration = await navigator.serviceWorker.getRegistration();
+  return registration ? registration.pushManager.getSubscription() : null;
+}
+
+// Liga, atualiza ou desliga os avisos do servidor para este navegador. null = desligar.
+export async function updatePushReminder(settings: { time: string; studyDays: readonly boolean[] } | null): Promise<boolean> {
+  const db = client();
+  if (!db || !currentUser || !pushAvailable()) return false;
+  try {
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (!registration) return false;
+    const existing = await registration.pushManager.getSubscription();
+    if (!settings) {
+      if (existing) {
+        await db.from("push_subscriptions").delete().eq("endpoint", existing.endpoint);
+        await existing.unsubscribe();
+      }
+      return true;
+    }
+    const subscription =
+      existing ??
+      (await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlBytes(VAPID_PUBLIC_KEY) }));
+    const { keys } = subscription.toJSON();
+    if (!keys?.p256dh || !keys.auth) return false;
+    const { error } = await db.rpc("save_push_subscription", {
+      sub_endpoint: subscription.endpoint,
+      sub_p256dh: keys.p256dh,
+      sub_auth: keys.auth,
+      sub_time: settings.time,
+      sub_time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      sub_study_days: [...settings.studyDays],
+    });
+    return !error;
+  } catch {
+    return false;
+  }
 }

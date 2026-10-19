@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState, type ChangeEvent, type ReactNode } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { Button, buttonStyles, linkStyles } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Field, inputStyles } from "@/components/ui/Field";
@@ -17,25 +17,11 @@ import { GOAL_LIMITS, GOAL_UNITS, type GoalType } from "@/lib/stats";
 import { analyticsUrl } from "@/store/analytics";
 import { useCloud } from "@/store/cloud";
 import { useHydrated, useStudyStore, type Theme } from "@/store/study-store";
+import { Toggle } from "@/components/ui/Toggle";
 import { AccountSection, DeleteAccountButton } from "./Account";
+import { ReminderCard } from "./ReminderCard";
 
 const SUBTITLE = "Preferências, metas e os seus dados.";
-
-function Toggle({ pressed, onChange, children }: { pressed: boolean; onChange: (value: boolean) => void; children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={pressed}
-      onClick={() => onChange(!pressed)}
-      className="flex min-h-11 w-full items-center justify-between gap-3 text-left"
-    >
-      <span>{children}</span>
-      <span className="shrink-0 rounded-full bg-hover px-3 py-1 text-[13px] font-semibold text-muted">
-        {pressed ? "Ligado" : "Desligado"}
-      </span>
-    </button>
-  );
-}
 
 export function AjustesScreen() {
   const hydrated = useHydrated();
@@ -145,6 +131,8 @@ function Settings() {
               )}
             </div>
           </Card>
+
+          <ReminderCard />
 
           <Card>
             <CardHeader title="Meta semanal" />

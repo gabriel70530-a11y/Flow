@@ -4,6 +4,7 @@ import type { GoalType } from "@/lib/stats";
 import { MOCK_DAY_AREAS } from "@/lib/mock-exams";
 import { LETTERS, QUESTIONS_PER_DAY, findOfficialExam, type ExamDraft, type ExamScope } from "@/lib/official-exams";
 import { DEFAULT_TIMER, type TimerState } from "@/lib/timer";
+import { normalizeReminder } from "@/lib/reminders";
 import { normalizeTimesTable } from "@/lib/times-table";
 import { legacySubject, legacyTopics } from "@/lib/legacy-topics";
 import { subjectsOf, type AreaId } from "@/lib/syllabus";
@@ -169,6 +170,8 @@ function fillDefaults(saved: Record<string, unknown>): StudyData {
     theme: saved.theme === "light" || saved.theme === "dark" ? saved.theme : "system",
     sound: saved.sound !== false,
     showStreak: saved.showStreak !== false,
+    reminder: normalizeReminder(saved.reminder),
+    remindersOn: saved.remindersOn === true,
     analyticsConsent: saved.analyticsConsent === true,
     timer: { ...DEFAULT_TIMER, ...(isRecord(saved.timer) ? (saved.timer as Partial<TimerState>) : {}) },
     examDraft: normalizeExamDraft(saved.examDraft),

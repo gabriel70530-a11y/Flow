@@ -79,6 +79,7 @@ import {
   type SessionState,
   type StudySession,
 } from "@/lib/sessions";
+import { isTime } from "@/lib/reminders";
 import { GOAL_LIMITS, type WeeklyGoal } from "@/lib/stats";
 import { recordAnswer, type Fact } from "@/lib/times-table";
 import {
@@ -132,6 +133,8 @@ interface StudyActions {
   setTheme: (theme: Theme) => void;
   setSound: (sound: boolean) => void;
   setShowStreak: (showStreak: boolean) => void;
+  setReminderTime: (time: string | null) => void;
+  setRemindersOn: (on: boolean) => void;
   setAnalyticsConsent: (consent: boolean) => void;
   trackEvent: (event: AnalyticsEvent) => void;
 
@@ -309,6 +312,8 @@ function toStudyData(state: StudyData): StudyData {
     theme: state.theme,
     sound: state.sound,
     showStreak: state.showStreak,
+    reminder: state.reminder,
+    remindersOn: state.remindersOn,
     analyticsConsent: state.analyticsConsent,
     timer: state.timer,
     examDraft: state.examDraft,
@@ -414,6 +419,8 @@ export const useStudyStore = create<StudyStore>()(
         setTheme: (theme) => set({ theme }),
         setSound: (sound) => set({ sound }),
         setShowStreak: (showStreak) => set({ showStreak }),
+        setReminderTime: (time) => set({ reminder: { time: isTime(time) ? time : null } }),
+        setRemindersOn: (remindersOn) => set({ remindersOn }),
         setAnalyticsConsent: (analyticsConsent) => set({ analyticsConsent }),
         trackEvent: (event) => track(event, get().analyticsConsent),
 

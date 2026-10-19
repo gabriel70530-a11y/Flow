@@ -19,6 +19,7 @@ import { SaveFailureNotice } from "./SaveFailureNotice";
 import { Sidebar } from "./Sidebar";
 import { TabBar } from "./TabBar";
 import { THEME_OPTIONS } from "./ThemeSelect";
+import { useReminders } from "./use-reminders";
 import { Wordmark } from "./Wordmark";
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -32,6 +33,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const demo = useStudyStore((state) => state.demo);
   const setTheme = useStudyStore((state) => state.setTheme);
   const timerText = useTimerTicker(hydrated);
+  useReminders(hydrated);
   const pro = useProAccess();
 
   // Até hidratar, o servidor e o primeiro render do cliente precisam mostrar a mesma coisa.

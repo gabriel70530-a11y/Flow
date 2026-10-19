@@ -77,6 +77,7 @@ lib/
   question-blocks.ts    blocos de 5 questões oficiais por área e tema
   flashcards.ts         cartões de memorização com intervalos no estilo do Anki e importação do Anki
   times-table.ts        treino da tabuada: rodadas pelas contas menos decoradas
+  reminders.ts          horário de estudo e os avisos 1 h antes, 30 min antes e na hora
   official-exams.ts     provas oficiais do Inep (gabarito transcrito), correção, rascunho e texto das questões do simulado no app
   age.ts                idade mínima (13) e menor de idade pelo ano de nascimento
   essays.ts             redações registradas (notas por competência) e repertório
@@ -93,7 +94,7 @@ store/
   cloud.ts              login (e-mail e Google), sincronização, Pro do servidor, pagamento e IA, sair e excluir conta
   pro.ts                registro do Pro confirmado pelo servidor (proAccessNow, useProAccess)
 supabase/migrations/    records com RLS, push_records, delete_account; entitlements, payments e ai_usage
-supabase/functions/     checkout, mercadopago-webhook, cancel-subscription, ai-essay, ai-mistake
+supabase/functions/     checkout, mercadopago-webhook, cancel-subscription, ai-essay, ai-mistake, send-reminders (push)
 public/provas/          questões das provas no app (JSON por dia, sem gabarito) e imagens
 ```
 
@@ -196,6 +197,7 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 - **Simulados** (`/simulados`): no Pro, simulado no app com a prova oficial do Inep (caderno azul; prévia aprovada em `docs/previa-simulado.html`). Nas provas com `questionsUrl` (hoje Enem 2023), as questões aparecem na tela: uma por vez, com o mapa das questões (ao lado no computador, num botão no celular), "Rever depois", anterior e próxima, e o resultado deixa revisar cada erro com a resposta certa. Nas outras, ou se a pessoa preferir, PDF oficial e cartão-resposta. Dá para fazer o dia inteiro ou uma área (45 questões). Pausar ou sair guarda tudo e mostra onde parou. Cronômetro com a regra do timer, correção pelo gabarito oficial (anulada sai do total, em branco é erro), registro como simulado e opção de mandar os erros para o caderno. Nunca invente gabarito: só transcreva o publicado pelo Inep e cubra com teste. Em qualquer plano, a pessoa registra acertos por área (45 questões cada), o tempo e uma observação. O Flow mostra acertos, a comparação com o simulado anterior e o ritmo em minutos por questão contra o tempo oficial (no 1º dia desconta 1h de redação). **Nunca calcula nota TRI**; a tela explica por quê.
 - **Redação** (`/redacao`): no Pro, "Corrigir com IA" (tema e até 2 fotos ou o texto) mostra a nota estimada por competência, com o aviso de que não é a oficial, e pode salvar como redação (corretor "IA (estimativa)"). A pessoa também registra tema, data e as notas por competência (0 a 200, de 40 em 40) que recebeu fora; o app mostra a última nota, as anteriores e a competência mais fraca nas últimas 3 corrigidas. Banco de repertório pessoal com busca sem acento.
 - **Dia da prova** (`/prova`): checklist por dia (semana e véspera), marcado e salvo no aparelho. "Durante a prova" são só recomendações, sem marcar (ritmo de tempo, pular a questão que travar, fáceis primeiro). Remete ao edital e ao cartão de confirmação para as regras oficiais.
+- **Lembrete de estudo** (Ajustes, gratuito): a pessoa escolhe o melhor horário (sincroniza) e liga os avisos em cada aparelho (pede a permissão de notificação). Avisa 1 hora antes, 30 minutos antes e na hora, só nos dias de estudo do cronograma, sem cobrança no texto. Com o app aberto, o navegador agenda o aviso (`useReminders`); com ele fechado, a função `send-reminders` (pg_cron a cada minuto, Web Push com VAPID em `_shared/webpush.ts`) manda pelo servidor. Os dois usam a mesma tag, então aparece um aviso só. Sair da conta desliga o push deste navegador.
 - **Modo foco** no Timer: tela cheia só com o relógio. Depois da sessão, a pergunta opcional "se distraiu?" vira uma linha no resumo da semana.
 - **Offline**: em produção, um service worker (`public/sw.js`) guarda as páginas e os arquivos do app; os dados já são locais.
 
