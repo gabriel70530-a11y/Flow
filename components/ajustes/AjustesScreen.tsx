@@ -44,7 +44,7 @@ function Settings() {
   const analyticsConsent = useStudyStore((state) => state.analyticsConsent);
   const goal = useStudyStore((state) => state.goal);
   const planner = useStudyStore((state) => state.planner);
-  const { setTheme, setSound, setShowStreak, setAnalyticsConsent, setGoal, savePlanner, exportBackup, importBackup, resetData } =
+  const { setTheme, setSound, setShowStreak, setGuideSeen, setAnalyticsConsent, setGoal, savePlanner, exportBackup, importBackup, resetData } =
     useStudyStore.getState();
   const fileInput = useRef<HTMLInputElement>(null);
   const [pendingImport, setPendingImport] = useState<string | null>(null);
@@ -245,6 +245,9 @@ function Settings() {
                 <Link href="/planos" className={buttonStyles()}>
                   Planos
                 </Link>
+                <button type="button" onClick={() => setGuideSeen(false)} className={linkStyles}>
+                  Ver o guia
+                </button>
                 <Link href="/ajuda" className={linkStyles}>
                   Ajuda
                 </Link>

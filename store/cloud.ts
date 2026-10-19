@@ -93,15 +93,15 @@ function writeJson(key: string, value: unknown) {
 
 const SYNCED_FIELDS = [
   "topics", "progress", "sessions", "tasks", "mistakes", "mockExams", "essays", "repertoire", "questionBlocks", "flashcards",
-  "examChecklist", "timesTable", "goal", "planner", "onboarding", "showStreak", "reminder",
+  "examChecklist", "timesTable", "goal", "planner", "onboarding", "showStreak", "guideSeen", "reminder",
 ] as const satisfies readonly (keyof SyncedData)[];
 
 function syncedPart(data: StudyData): SyncedData {
   const { topics, progress, sessions, tasks, mistakes, mockExams, essays, repertoire, questionBlocks, flashcards } = data;
-  const { examChecklist, timesTable, goal, planner, onboarding, showStreak, reminder } = data;
+  const { examChecklist, timesTable, goal, planner, onboarding, showStreak, guideSeen, reminder } = data;
   return {
     topics, progress, sessions, tasks, mistakes, mockExams, essays, repertoire, questionBlocks, flashcards,
-    examChecklist, timesTable, goal, planner, onboarding, showStreak, reminder,
+    examChecklist, timesTable, goal, planner, onboarding, showStreak, guideSeen, reminder,
   };
 }
 

@@ -134,6 +134,7 @@ interface StudyActions {
   setTheme: (theme: Theme) => void;
   setSound: (sound: boolean) => void;
   setShowStreak: (showStreak: boolean) => void;
+  setGuideSeen: (guideSeen: boolean) => void;
   setReminderTime: (time: string | null) => void;
   setRemindersOn: (on: boolean) => void;
   setAnalyticsConsent: (consent: boolean) => void;
@@ -313,6 +314,7 @@ function toStudyData(state: StudyData): StudyData {
     theme: state.theme,
     sound: state.sound,
     showStreak: state.showStreak,
+    guideSeen: state.guideSeen,
     reminder: state.reminder,
     remindersOn: state.remindersOn,
     analyticsConsent: state.analyticsConsent,
@@ -420,6 +422,7 @@ export const useStudyStore = create<StudyStore>()(
         setTheme: (theme) => set({ theme }),
         setSound: (sound) => set({ sound }),
         setShowStreak: (showStreak) => set({ showStreak }),
+        setGuideSeen: (guideSeen) => set({ guideSeen }),
         setReminderTime: (time) => set({ reminder: { time: isTime(time) ? time : null } }),
         setRemindersOn: (remindersOn) => set({ remindersOn }),
         setAnalyticsConsent: (analyticsConsent) => set({ analyticsConsent }),

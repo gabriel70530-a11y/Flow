@@ -43,6 +43,8 @@ export interface StudyData {
   theme: Theme;
   sound: boolean;
   showStreak: boolean;
+  // Guia de boas-vindas já visto (sincroniza: não aparece de novo em outro aparelho).
+  guideSeen: boolean;
   // Horário de estudo para os lembretes (sincroniza); ligar os avisos é de cada aparelho.
   reminder: ReminderSettings;
   remindersOn: boolean;
@@ -74,6 +76,7 @@ export function emptyData(): StudyData {
     theme: "system",
     sound: true,
     showStreak: true,
+    guideSeen: false,
     reminder: DEFAULT_REMINDER,
     remindersOn: false,
     analyticsConsent: false,

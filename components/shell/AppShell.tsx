@@ -20,6 +20,7 @@ import { Sidebar } from "./Sidebar";
 import { TabBar } from "./TabBar";
 import { THEME_OPTIONS } from "./ThemeSelect";
 import { useReminders } from "./use-reminders";
+import { WelcomeGuide } from "./WelcomeGuide";
 import { Wordmark } from "./Wordmark";
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -100,6 +101,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </main>
 
       <TabBar pathname={pathname} dueReviews={dueReviews} timerText={timerText} />
+      {hydrated && <WelcomeGuide />}
       <Toast />
     </>
   );

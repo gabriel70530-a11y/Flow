@@ -170,6 +170,7 @@ function fillDefaults(saved: Record<string, unknown>): StudyData {
     theme: saved.theme === "light" || saved.theme === "dark" ? saved.theme : "system",
     sound: saved.sound !== false,
     showStreak: saved.showStreak !== false,
+    guideSeen: saved.guideSeen === true,
     reminder: normalizeReminder(saved.reminder),
     remindersOn: saved.remindersOn === true,
     analyticsConsent: saved.analyticsConsent === true,

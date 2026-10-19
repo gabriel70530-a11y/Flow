@@ -29,11 +29,12 @@ export interface SyncedData {
   planner: PlannerSettings;
   onboarding: { status: "pendente" | "concluido" | "pulado"; planMode: "sugerido" | "manual" };
   showStreak: boolean;
+  guideSeen: boolean;
   reminder: ReminderSettings;
 }
 
 const LIST_COLLECTIONS = ["topics", "sessions", "tasks", "mistakes", "mockExams", "essays", "repertoire", "questionBlocks", "flashcards"] as const;
-const SETTINGS = ["examChecklist", "timesTable", "goal", "planner", "onboarding", "showStreak", "reminder"] as const;
+const SETTINGS = ["examChecklist", "timesTable", "goal", "planner", "onboarding", "showStreak", "guideSeen", "reminder"] as const;
 
 type ListCollection = (typeof LIST_COLLECTIONS)[number];
 type Setting = (typeof SETTINGS)[number];

@@ -297,6 +297,8 @@ Recriado em texto, nunca como imagem: o símbolo (quadrado azul `action` com o F
 
 ### Textos
 
+- Pouco texto explicando cada função: uma frase curta basta. Quem quiser entender o app vê o guia de boas-vindas (`WelcomeGuide`: 6 passos de uma frase, mostrado uma vez depois do onboarding, `guideSeen` sincroniza; "Ver o guia" em Ajustes reabre).
+
 - Frases curtas e diretas. O botão diz o que faz ("Concluir", "Estudar no timer"), e o toast confirma em seguida ("Revisão concluída.").
 - Erros dizem o que fazer: "Escolha o que você vai estudar."
 - Datas como `dd/mm`. Use "Hoje", "Amanhã" e "Atrasada desde dd/mm" quando couber.
