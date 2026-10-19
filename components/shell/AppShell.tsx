@@ -77,19 +77,19 @@ export function AppShell({ children }: { children: ReactNode }) {
         onThemeChange={setTheme}
       />
 
-      <header className="sticky top-[env(safe-area-inset-top,0px)] z-20 flex h-[60px] items-center justify-between border-b-2 border-edge bg-surface pr-[max(16px,env(safe-area-inset-right,0px))] pl-[max(16px,env(safe-area-inset-left,0px))] md:hidden">
+      <header className="sticky top-[env(safe-area-inset-top,0px)] z-20 flex h-[60px] items-center justify-between border-b border-line bg-surface pr-[max(16px,env(safe-area-inset-right,0px))] pl-[max(16px,env(safe-area-inset-left,0px))] md:hidden">
         <Wordmark size="sm" />
         <div className="flex items-center gap-2">
           <Link
             href="/ajustes"
             aria-label="Ajustes"
             aria-current={pathname.startsWith("/ajustes") ? "page" : undefined}
-            className="grid size-9 place-items-center rounded-full border-2 border-edge bg-hover text-text aria-[current=page]:bg-action aria-[current=page]:text-on-action"
+            className="grid size-[38px] place-items-center rounded-full text-muted hover:bg-hover aria-[current=page]:text-accent"
           >
-            <Settings size={18} aria-hidden />
+            <Settings size={20} aria-hidden />
           </Link>
-          <IconButton onClick={cycleTheme} aria-label="Alternar aparência" className="size-9 border-2 border-edge bg-hover text-text">
-            <Contrast size={18} aria-hidden />
+          <IconButton onClick={cycleTheme} aria-label="Alternar aparência" className="size-[38px] text-muted hover:bg-hover">
+            <Contrast size={20} aria-hidden />
           </IconButton>
         </div>
       </header>

@@ -1,20 +1,20 @@
 "use client";
 
-import { CalendarCheck, CalendarPlus } from "lucide-react";
-import Link from "next/link";
+import { Ellipsis } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Button, linkStyles } from "@/components/ui/Button";
-import { Card, CardHeader } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
 import { Drawer } from "@/components/ui/Drawer";
 import { DueLabel } from "@/components/ui/DueLabel";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { ListRow } from "@/components/ui/ListRow";
+import { IconButton } from "@/components/ui/IconButton";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ProNotice } from "@/components/ui/ProNotice";
+import { Segmented } from "@/components/ui/Segmented";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { showToast } from "@/components/ui/Toast";
 import { toDateKey } from "@/lib/dates";
-import { groupReviews, nextReview, pendingReviews, progressOf, reviewLabel, type PendingReview } from "@/lib/reviews";
+import { groupReviews, nextReview, pendingReviews, progressOf, shortReviewLabel, type PendingReview } from "@/lib/reviews";
 import { focusName } from "@/lib/syllabus";
 import { findTopic } from "@/lib/topics";
 import { useProAccess } from "@/store/pro";
@@ -26,6 +26,11 @@ import { RevisoesTabs } from "./RevisoesTabs";
 import { ScheduleReviewsForm } from "./ScheduleReviewsForm";
 
 const LATER_PREVIEW = 8;
+
+const SCHEDULE_OPTIONS: { value: "estudados" | "manual"; label: string }[] = [
+  { value: "estudados", label: "O que já estudei" },
+  { value: "manual", label: "Uma data" },
+];
 
 export function RevisoesScreen() {
   const hydrated = useHydrated();
@@ -39,17 +44,10 @@ export function RevisoesScreen() {
   const pro = useProAccess();
   const closeDrawer = useCallback(() => setOpenTopicId(null), []);
 
-  const header = (
-    <PageHeader
-      title="Revisões"
-      subtitle={pro ? "Agendadas para 1, 7, 15 e 30 dias depois de concluir um tópico." : "Revise os tópicos nas datas que você escolher."}
-    />
-  );
-
   if (!hydrated) {
     return (
       <div className="grid gap-6">
-        {header}
+        <PageHeader title="Revisões" subtitle={" "} />
         <Skeleton className="h-64" />
       </div>
     );
@@ -58,6 +56,13 @@ export function RevisoesScreen() {
   const today = toDateKey(new Date());
   const pending = pendingReviews(progress, topics);
   const groups = groupReviews(pending, today);
+  const dueCount = groups.late.length + groups.today.length;
+  const subtitle =
+    pending.length === 0
+      ? "Nenhuma revisão agendada"
+      : dueCount === 0
+        ? "Tudo em dia"
+        : `${dueCount} para hoje${groups.upcoming.length ? `, ${groups.upcoming.length} nos próximos dias` : ""}`;
   const later = showAllLater ? groups.later : groups.later.slice(0, LATER_PREVIEW);
   const sections: [string, PendingReview[]][] = [
     ["Atrasadas", groups.late],
@@ -65,7 +70,6 @@ export function RevisoesScreen() {
     ["Próximos 7 dias", groups.upcoming],
     ["Futuras", later],
   ];
-  const nothingDue = groups.late.length + groups.today.length === 0;
   const completedTopic = completed && findTopic(topics, completed.topicId);
 
   const complete = (topicId: string) => {
@@ -78,19 +82,12 @@ export function RevisoesScreen() {
 
   return (
     <div className="grid gap-6">
-      {header}
+      <PageHeader title="Revisões" subtitle={subtitle} />
       <RevisoesTabs current="/revisoes" />
 
-      <div className="flex flex-wrap gap-2">
-        {pro && (
-          <Button variant="primary" size="lg" onClick={() => setScheduling("estudados")}>
-            <CalendarCheck size={18} aria-hidden />
-            Agendar revisões do que já estudei
-          </Button>
-        )}
-        <Button variant={pro ? "secondary" : "primary"} size="lg" onClick={() => setScheduling("manual")}>
-          <CalendarPlus size={18} aria-hidden />
-          Agendar revisão
+      <div>
+        <Button variant="primary" size="lg" onClick={() => setScheduling(pro ? "estudados" : "manual")}>
+          {pro ? "Agendar revisões" : "Agendar revisão"}
         </Button>
       </div>
 
@@ -98,81 +95,66 @@ export function RevisoesScreen() {
         <ReviewFeedbackPrompt topic={completedTopic} stage={completed.stage} onClose={() => setCompleted(null)} />
       )}
 
-      {nothingDue && (
+      {pending.length === 0 && (
         <Card flush>
-          <EmptyState title="Tudo em dia">
-            {pending.length > 0 ? (
-              "Nenhuma revisão para hoje. As próximas estão abaixo."
-            ) : (
-              <>
-                Nenhuma revisão agendada. Já estudou algo? Use o botão acima.
-                {pro && (
-                  <>
-                    {" "}
-                    Ao concluir um tópico em{" "}
-                    <Link href="/materias" className={linkStyles}>
-                      Matérias
-                    </Link>
-                    , as revisões também aparecem aqui.
-                  </>
-                )}
-              </>
-            )}
-          </EmptyState>
+          <EmptyState title="Nenhuma revisão agendada">Agende o que você já estudou.</EmptyState>
         </Card>
       )}
 
       {sections
         .filter(([, items]) => items.length > 0)
         .map(([title, items]) => (
-          <Card key={title} flush>
-            <CardHeader flush title={title}>
-              <span className="text-[13px] text-muted tabular-nums">
-                {title === "Futuras" ? groups.later.length : items.length}
-              </span>
-            </CardHeader>
+          <Card key={title}>
+            <p className={`mb-1 text-[13px] font-bold ${title === "Atrasadas" ? "text-danger" : "text-muted"}`}>
+              {title}
+              {title === "Futuras" && groups.later.length > LATER_PREVIEW && ` · ${groups.later.length}`}
+            </p>
             <ul>
               {items.map(({ topicId, review }) => {
                 const topic = findTopic(topics, topicId);
                 const due = review.due <= today;
                 return (
-                  <ListRow
-                    key={topicId}
-                    title={topic?.name}
-                    subtitle={
-                      <span className="tabular-nums">
-                        {topic && focusName(topic.areaId, topic.subjectId)} · {reviewLabel(review)} ·{" "}
-                        <DueLabel due={review.due} today={today} />
-                        {review.reschedules?.length ? " · Reagendada" : ""}
-                      </span>
-                    }
-                    end={
-                      <>
-                        <Button onClick={() => setOpenTopicId(topicId)} aria-label={`Opções da revisão de ${topic?.name}`}>
-                          {due ? "Opções" : "Reagendar"}
-                        </Button>
-                        {due && (
-                          <Button variant="primary" onClick={() => complete(topicId)}>
-                            Concluir
-                          </Button>
+                  <li key={topicId} className="flex items-center gap-3 border-t border-line py-3 first:border-t-0 last:pb-0">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold wrap-anywhere">{topic?.name}</div>
+                      <div className="text-[13px] text-muted tabular-nums">
+                        {topic && focusName(topic.areaId, topic.subjectId)} · {shortReviewLabel(review)}
+                        {review.due < today && (
+                          <span className="text-danger">
+                            {" "}
+                            · <DueLabel due={review.due} today={today} />
+                          </span>
                         )}
-                      </>
-                    }
-                  />
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      {due ? (
+                        <Button onClick={() => complete(topicId)}>Concluir</Button>
+                      ) : (
+                        <span className="text-[13px] text-muted tabular-nums">
+                          <DueLabel due={review.due} today={today} />
+                        </span>
+                      )}
+                      <IconButton onClick={() => setOpenTopicId(topicId)} aria-label={`Opções da revisão de ${topic?.name}`} className="size-9">
+                        <Ellipsis size={18} aria-hidden />
+                      </IconButton>
+                    </div>
+                  </li>
                 );
               })}
             </ul>
             {title === "Futuras" && groups.later.length > LATER_PREVIEW && (
-              <div className="border-t border-line px-4 py-3 md:px-5">
-                <button type="button" onClick={() => setShowAllLater(!showAllLater)} className={linkStyles}>
-                  {showAllLater ? "Mostrar menos" : `Mostrar todas (${groups.later.length})`}
-                </button>
-              </div>
+              <button type="button" onClick={() => setShowAllLater(!showAllLater)} className={`${linkStyles} mt-3`}>
+                {showAllLater ? "Mostrar menos" : `Mostrar todas (${groups.later.length})`}
+              </button>
             )}
           </Card>
         ))}
 
       <Drawer open={scheduling === "estudados"} onClose={() => setScheduling(null)} eyebrow="Revisões" title="Agendar revisões">
+        {scheduling === "estudados" && (
+          <Segmented className="mb-5" options={SCHEDULE_OPTIONS} value="estudados" onChange={setScheduling} />
+        )}
         {scheduling === "estudados" && (
           <ScheduleReviewsForm
             onDone={(count) => {
@@ -183,9 +165,15 @@ export function RevisoesScreen() {
         )}
       </Drawer>
 
-      <Drawer open={scheduling === "manual"} onClose={() => setScheduling(null)} eyebrow="Revisões" title="Agendar revisão">
+      <Drawer
+        open={scheduling === "manual"}
+        onClose={() => setScheduling(null)}
+        eyebrow="Revisões"
+        title={pro ? "Agendar revisões" : "Agendar revisão"}
+      >
         {scheduling === "manual" && (
           <div className="grid gap-5">
+            {pro && <Segmented options={SCHEDULE_OPTIONS} value="manual" onChange={setScheduling} />}
             <ManualReviewForm
               today={today}
               onDone={(message) => {

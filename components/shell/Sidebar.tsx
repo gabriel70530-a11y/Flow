@@ -1,7 +1,7 @@
 import { Settings } from "lucide-react";
 import Link from "next/link";
 import type { Theme } from "@/store/study-store";
-import { NAV_ITEMS, PREP_ITEMS } from "./nav-items";
+import { NAV_ITEMS, PREP_ITEMS, isCurrentPath } from "./nav-items";
 import { ThemeSelect } from "./ThemeSelect";
 import { Wordmark } from "./Wordmark";
 
@@ -24,7 +24,7 @@ export function Sidebar({ pathname, dueReviews, timerText, theme, onThemeChange 
           <Link
             key={href}
             href={href}
-            aria-current={pathname.startsWith(href) ? "page" : undefined}
+            aria-current={isCurrentPath(pathname, href) ? "page" : undefined}
             className="flex items-center gap-3 rounded-[12px] border-2 border-transparent px-3 py-2.5 font-medium text-muted hover:text-text aria-[current=page]:border-edge aria-[current=page]:bg-surface aria-[current=page]:font-semibold aria-[current=page]:text-text aria-[current=page]:shadow-stamp"
           >
             <Icon size={20} strokeWidth={2} aria-hidden />
@@ -46,7 +46,7 @@ export function Sidebar({ pathname, dueReviews, timerText, theme, onThemeChange 
           <Link
             key={href}
             href={href}
-            aria-current={pathname.startsWith(href) ? "page" : undefined}
+            aria-current={isCurrentPath(pathname, href) ? "page" : undefined}
             className="flex items-center gap-3 rounded-[12px] border-2 border-transparent px-3 py-2 text-sm font-medium text-muted hover:text-text aria-[current=page]:border-edge aria-[current=page]:bg-surface aria-[current=page]:font-semibold aria-[current=page]:text-text aria-[current=page]:shadow-stamp"
           >
             <Icon size={18} strokeWidth={2} aria-hidden />

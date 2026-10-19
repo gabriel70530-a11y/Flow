@@ -88,7 +88,7 @@ export function ExamRunner({ draft, exam, onFinish }: { draft: ExamDraft; exam: 
 
   return (
     <div className="grid gap-5">
-      <div className="sticky top-[calc(60px+env(safe-area-inset-top,0px))] z-10 -mt-1 overflow-hidden rounded-[18px] border-2 border-edge bg-surface shadow-card md:top-4">
+      <div className="sticky top-[calc(60px+env(safe-area-inset-top,0px))] z-10 -mt-1 overflow-hidden rounded-[16px] border border-line bg-surface md:top-4">
         <div className="flex items-center justify-between gap-3 px-4 py-3 md:px-6">
           <div className="hidden min-w-0 md:grid">
             <strong className="truncate font-heading text-base font-semibold font-stretch-108%">{officialExamTitle(exam)}</strong>

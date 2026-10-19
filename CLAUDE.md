@@ -55,12 +55,13 @@ app/
   (site)/               landing (/), /ajuda, /privacidade, /termos: sem a navegação do app
   (app)/layout.tsx      AppShell
   (app)/painel, cronograma, materias, timer, revisoes (+ revisoes/erros), ajustes, planos, comecar (onboarding)
-  (app)/questoes, simulados, redacao, tabuada, prova   ferramentas de preparação (fora das abas do celular)
+  (app)/preparacao, questoes, simulados, redacao, tabuada, prova   ferramentas de preparação (fora das abas do celular)
+  (app)/painel/resumo   sua semana: setas, meta, resumo e horas por área
   globals.css           tokens de cor e tipografia
 components/
   ui/                   componentes genéricos (Button, Card, Drawer, Toast, Segmented...)
   shell/                Sidebar, TabBar, Wordmark, ThemeSelect, avisos globais
-  painel/ cronograma/ materias/ timer/ revisoes/ simulados/ redacao/ prova/ ajustes/ planos/ onboarding/ site/
+  painel/ preparacao/ cronograma/ materias/ timer/ revisoes/ simulados/ redacao/ prova/ ajustes/ planos/ onboarding/ site/
 lib/
   syllabus.ts           as cinco áreas do ENEM e as matérias de Natureza e Humanas (sem tópicos prontos)
   legacy-topics.ts      lista antiga de tópicos, só para migração, dados de exemplo e testes
@@ -189,7 +190,7 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 - Quem não quiser cronograma usa o app manualmente.
 - **Dias corridos** (`lightDays`, opcional): dias de estudo em que o plano coloca só 1 matéria (escola integral, trabalho). Vale para gerar, repetir e transferir; à mão a pessoa ainda pode pôr 2.
 - **Dia leve**: no Painel, com 2 matérias abertas hoje, "Dia leve" deixa só uma (a iniciada, se houver) e passa a outra planejada para o próximo dia de estudo, pela regra das transferências. O toast diz para onde foi, sem culpa.
-- **Reta final**: nas 4 semanas antes da data da prova, tópicos "Não iniciado" perdem peso no plano; revisões, "Precisa revisar" e "Em andamento" vêm antes. O Painel conta os dias até o próximo dia de prova (o 1º e, entre os dois domingos, o 2º).
+- **Reta final**: nas 4 semanas antes da data da prova, tópicos "Não iniciado" perdem peso no plano; revisões, "Precisa revisar" e "Em andamento" vêm antes. O subtítulo do Painel conta os dias até o próximo dia de prova (o 1º e, entre os dois domingos, o 2º).
 
 **Preparação** (tudo opcional, nada bloqueia o resto do app)
 - **Cartões** (`/revisoes/cartoes`, gratuito): o Flow não traz cartões prontos; quem monta é o estudante. O máximo que o app oferece é importar o que ele já fez no Anki, pelo texto que o Anki exporta ("Notas em texto simples": cabeçalhos `#`, separador, aspas, HTML, colunas de guid/tipo/baralho/etiquetas), sem repetir cartões iguais. Frente e verso, com o assunto opcional. Ao estudar, "Mostrar resposta" (espaço) e as notas Errei, Difícil, Bom e Fácil (teclas 1 a 4), cada uma mostrando quando o cartão volta. O intervalo segue o SM-2 do Anki (`lib/flashcards.ts`): facilidade inicial 2,5, mínimo 1,3; "Errei" volta para o fim da fila da mesma sessão e recomeça o cartão. Os vencidos entram no contador de Revisões.
@@ -203,13 +204,15 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 - **Modo foco** no Timer: tela cheia só com o relógio. Depois da sessão, a pergunta opcional "se distraiu?" vira uma linha no resumo da semana.
 - **Offline**: em produção, um service worker (`public/sw.js`) guarda as páginas e os arquivos do app; os dados já são locais.
 
-**Painel**
-- "Estudar hoje" fica no topo: as matérias do dia, quantas foram dominadas, o tempo estudado hoje (sem meta), botão para começar, "Dominei?" e a próxima revisão. Sem plano, oferece organizar a semana ou estudar sem plano.
+**Painel** (prévia aprovada em `docs/previa-simplificada.html`)
+- Só três blocos: "Estudar hoje", "Esta semana" e "Revisões" (as 3 próximas), mais uma linha com o ritmo e, no celular, uma linha que abre `/preparacao`. O subtítulo traz o dia e a contagem para o Enem.
+- "Estudar hoje": as matérias do dia (uma por linha, com "Dominei?" à direita), quantas foram dominadas e o tempo estudado hoje (sem meta), "Começar a estudar", "Dia leve" e uma linha com a revisão de hoje e os erros para rever. Sem plano, oferece organizar a semana ou estudar sem plano.
+- "Esta semana" no Painel mostra só o total e as barras da semana atual; "Ver resumo" abre `/painel/resumo` ("Sua semana"), com as setas para semanas anteriores, a meta editável, o resumo e as horas por área.
 - A semana vai de segunda a domingo, no fuso local. Setas para semanas anteriores; não há navegação para semanas futuras.
 - Meta semanal em horas (padrão 25 h), sessões ou tópicos concluídos, editável sem reescrever histórico. Em horas, a meta diária é `meta / 7` e os dias que a atingem ficam com a barra na cor de destaque.
 - Números vêm só de sessões registradas. Sem denominador válido, não mostre porcentagem. Estado vazio explica como começar.
 - Sequência = dias consecutivos com estudo, contando hoje ou, se hoje ainda não teve estudo, a partir de ontem. É opcional (pode ser escondida em Ajustes) e discreta.
-- "Seu ritmo" no Painel: rank pelas horas totais (até 10 h por dia contam, para não premiar a exaustão) e quantas conquistas a pessoa tem, com link para `/conquistas`. Some junto com a sequência quando ela está escondida.
+- Ritmo no Painel (uma linha que abre `/conquistas`): o nível pelas horas totais (até 10 h por dia contam, para não premiar a exaustão), a barra até o próximo e quantas conquistas a pessoa tem. Some junto com a sequência quando ela está escondida.
 - `/conquistas`: a sequência atual, os últimos 7 dias marcados e a grade de conquistas (`ACHIEVEMENTS` em `lib/achievements.ts`), cada uma com ícone, nome, o que pede e o progresso enquanto bloqueada. Só usam dados que já existem (horas, maior sequência, sessões, tópicos, revisões, matérias dominadas, erros superados, cartões, simulados e nota estimada, blocos, redações, tabuada); conquista ganha não se perde. Ao registrar uma sessão que cruza uma meta de horas, o toast avisa.
 
 **Conta e sincronização** (obrigatória)
@@ -238,7 +241,7 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 
 ## Design system
 
-A identidade vem do logo e da paleta azul escolhida pelo estudante (#135487, #2F87B5, #47BCDF, #85B0C6, #B0E1F1). O visual é limpo, moderno e com pouca poluição visual: muito espaço, uma cor de ação e um único bloco de destaque por tela. Os cards e botões principais têm contorno de 2px e sombra de carimbo (deslocada, sem desfoque), herdados do Clube do Filme. Nada de gradientes, emojis ou ornamentos. A referência aprovada é `docs/previa-design.html`; novas telas reutilizam os mesmos tokens e componentes.
+A identidade vem do logo e da paleta azul escolhida pelo estudante (#135487, #2F87B5, #47BCDF, #85B0C6, #B0E1F1). O visual é limpo, moderno e com pouca poluição visual: muito espaço, uma cor de ação e um único bloco de destaque por tela. Só o que pede ação tem contorno de 2px e sombra de carimbo (deslocada, sem desfoque, herdada do Clube do Filme): a faixa de destaque, o botão primário e o item ativo do menu. Os outros cards têm borda fina. Nada de gradientes, emojis ou ornamentos. A referência aprovada é `docs/previa-design.html`; novas telas reutilizam os mesmos tokens e componentes.
 
 ### Cores
 
@@ -282,8 +285,9 @@ Recriado em texto, nunca como imagem: o símbolo (quadrado azul `action` com o F
 ### Forma e espaçamento
 
 - Raios: cards 18px (faixa de destaque 22px), campos 10px, botões, busca, filtros e opções 999px.
-- Cards: contorno `2px edge` e sombra de carimbo `4px 4px 0 edge`. Botão primário: contorno e carimbo de 3px, sobe 1px no hover e "afunda" ao clicar.
-- Espaçamento interno: 28px nos cards (20px no celular). Gap de 24px entre cards e seções da tela.
+- Cards comuns: borda de 1px `line`, sem sombra, raio 18px (16px no celular). Faixa de destaque: contorno `2px edge` e sombra de carimbo `4px 4px 0 edge`. Botão primário: contorno e carimbo de 3px, sobe 1px no hover e "afunda" ao clicar.
+- Um único botão primário por tela; os outros são secundários (`hover`) ou ficam no menu "⋯". Links são texto `accent` sem sublinhado.
+- Espaçamento interno: 24px nos cards (18px no celular). Gap de 24px entre cards e seções da tela (16px no celular).
 - Botões: 36px de altura (44px nos principais), peso 600. Primário em `action`; secundário em `hover`.
 - Status de tópico: bolinha colorida + texto (nunca só cor).
 
@@ -291,7 +295,7 @@ Recriado em texto, nunca como imagem: o símbolo (quadrado azul `action` com o F
 
 - **Desktop (> 760px):** barra lateral fixa de 240px, sem fundo próprio, com o logo, os itens de navegação (ícone + texto) e, no rodapé, Ajustes e o seletor de aparência. Item ativo: fundo `surface`, contorno e carimbo. Conteúdo com até 1180px, 40px no topo e 48px à direita.
 - **Celular (≤ 760px):** barra superior com o logo, Ajustes e o botão de tema (botões redondos com contorno) e um traço de 2px `edge` embaixo, mais uma barra inferior fixa com as abas (ícone + rótulo). Respeite as `safe-area-inset`.
-- Navegação: Painel, Cronograma, Matérias, Timer, Revisões. Revisões mostra um contador vermelho com as pendentes de hoje + atrasadas (tópicos, erros e cartões) e tem três abas: Tópicos, Erros e Cartões. Questões, Simulados, Redação, Tabuada e Dia da prova ficam num grupo discreto "Preparação" na barra lateral e, no celular, no card de Preparação do Painel, logo depois de "Estudar hoje". Timer mostra o tempo enquanto há uma sessão em andamento.
+- Navegação: Painel, Cronograma, Matérias, Timer, Revisões. Revisões mostra um contador vermelho com as pendentes de hoje + atrasadas (tópicos, erros e cartões) e tem três abas: Tópicos, Erros e Cartões. Questões, Simulados, Redação, Cartões, Tabuada e Dia da prova ficam num grupo discreto "Preparação" na barra lateral e, no celular, na tela `/preparacao` (com Conquistas), aberta por uma linha no Painel. A barra superior do celular tem borda fina e botões sem contorno; a aba ativa fica em `accent`. Timer mostra o tempo enquanto há uma sessão em andamento.
 - Cada página abre com h1 + uma linha de subtítulo em `muted`.
 - Formulários e listas longas usam o Drawer (folha inferior no celular).
 

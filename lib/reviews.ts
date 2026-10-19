@@ -96,6 +96,11 @@ export function reviewLabel(review: Review): string {
   return days ? `Revisão ${review.stage} de 4 · ${days} ${days === 1 ? "dia" : "dias"}` : `Revisão ${review.stage}`;
 }
 
+// Versão curta para listas: "2ª de 4" ou, se a pessoa agendou, "2ª revisão".
+export function shortReviewLabel(review: Review): string {
+  return review.manual || !REVIEW_DAYS[review.stage - 1] ? `${review.stage}ª revisão` : `${review.stage}ª de 4`;
+}
+
 // Um tópico tem no máximo uma revisão pendente: agendar de novo só muda a data dela.
 export function scheduleManualReview(progress: TopicProgress, date: string, today: string): TopicProgress {
   if (date < today) return progress;

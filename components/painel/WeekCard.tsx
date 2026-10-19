@@ -34,6 +34,56 @@ interface WeekCardProps {
   locked?: boolean;
 }
 
+// Versão do Painel: só a semana atual, o total e as barras. A navegação e a meta ficam no resumo.
+export function CompactWeekCard({ today, monday }: { today: string; monday: string }) {
+  const sessions = useStudyStore((state) => state.sessions);
+  const progress = useStudyStore((state) => state.progress);
+  const goal = useStudyStore((state) => state.goal);
+  const days = weekDays(monday);
+  const perDay = secondsByDay(sessions, days);
+  const total = perDay.reduce((sum, seconds) => sum + seconds, 0);
+  const inHours = goal.type === "horas";
+  const dailyGoal = inHours ? (goal.value * 3600) / 7 : 0;
+  const scale = Math.max(dailyGoal * 1.25, ...perDay, 3600);
+  const { done } = goalProgress(goal, sessions, progress, days[0], days[6]);
+
+  return (
+    <Card>
+      <CardHeader title="Esta semana">
+        <Link href="/painel/resumo" className={`${linkStyles} shrink-0`}>
+          Ver resumo
+        </Link>
+      </CardHeader>
+      <div className="flex items-baseline gap-2">
+        <strong className="font-heading text-[44px] leading-none font-extrabold font-stretch-120% italic tabular-nums">
+          {inHours ? formatHours(total) : done}
+        </strong>
+        <span className="text-muted tabular-nums">
+          de {goal.value} {inHours ? "h" : GOAL_UNITS[goal.type].label}
+        </span>
+      </div>
+      <div
+        className="mt-[18px] grid h-[110px] grid-cols-7 items-end gap-2.5"
+        role="img"
+        aria-label={`Horas estudadas por dia: ${days.map((date, index) => `${WEEKDAY_LABELS[index]} ${formatHours(perDay[index])} h`).join(", ")}`}
+      >
+        {days.map((date, index) => {
+          const seconds = perDay[index];
+          return (
+            <div key={date} className="flex h-full flex-col items-center justify-end gap-1.5">
+              <div
+                className={`min-h-1 w-full max-w-7 rounded-[6px] ${inHours && seconds >= dailyGoal ? "bg-mid" : "bg-bar"}`}
+                style={{ height: (seconds / scale) * 84 }}
+              />
+              <span className={`text-xs ${date === today ? "font-bold text-text" : "text-muted"}`}>{WEEKDAY_LABELS[index]}</span>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
 export function WeekCard({ today, monday, onPreviousWeek, onNextWeek, locked = false }: WeekCardProps) {
   const sessions = useStudyStore((state) => state.sessions);
   const progress = useStudyStore((state) => state.progress);

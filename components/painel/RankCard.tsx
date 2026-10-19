@@ -1,37 +1,29 @@
 "use client";
 
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { linkStyles } from "@/components/ui/Button";
-import { Card, CardHeader } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { useAchievements } from "@/components/conquistas/use-achievements";
 import { ACHIEVEMENTS, countedSeconds, rankProgress } from "@/lib/achievements";
-import { formatHours } from "@/lib/stats";
 
+// Uma linha só: o nível pelas horas totais e quantas conquistas a pessoa tem. O resto fica em Conquistas.
 export function RankCard() {
   const { sessions, status } = useAchievements();
-  const total = countedSeconds(sessions);
-  const { current, next, fraction, hoursToNext } = rankProgress(total);
+  const { current, next, fraction } = rankProgress(countedSeconds(sessions));
   const unlocked = status.filter((item) => item.unlocked).length;
 
   return (
-    <Card>
-      <CardHeader title="Seu ritmo">
-        <Link href="/conquistas" className={`${linkStyles} shrink-0 whitespace-nowrap`}>
-          Conquistas
-        </Link>
-      </CardHeader>
-      <div className="grid gap-2">
-        <div className="flex items-baseline justify-between gap-3">
-          <span className="font-heading text-[22px] font-bold font-stretch-108%">{current.name}</span>
-          <span className="text-[13px] text-muted tabular-nums">{formatHours(total)} h</span>
-        </div>
-        <ProgressBar value={fraction} label={next ? `Progresso até ${next.name}` : "Último nível"} />
-        <p className="text-[13px] text-muted tabular-nums">
-          {next ? `Faltam ${formatHours(hoursToNext * 3600)} h para ${next.name}. ` : ""}
-          {unlocked} de {ACHIEVEMENTS.length} conquistas.
-        </p>
-      </div>
-    </Card>
+    <Link
+      href="/conquistas"
+      aria-label={`${current.name}: ${unlocked} de ${ACHIEVEMENTS.length} conquistas`}
+      className="flex items-center gap-3.5 rounded-[16px] border border-line bg-surface px-[18px] py-3.5 hover:bg-hover"
+    >
+      <span className="font-semibold whitespace-nowrap">{current.name}</span>
+      <ProgressBar thin value={fraction} label={next ? `Progresso até ${next.name}` : "Último nível"} className="flex-1" />
+      <span className="text-[13px] whitespace-nowrap text-muted tabular-nums">
+        {unlocked} de {ACHIEVEMENTS.length}
+      </span>
+      <ChevronRight size={16} className="shrink-0 text-muted" aria-hidden />
+    </Link>
   );
 }

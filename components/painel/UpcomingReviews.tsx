@@ -13,11 +13,11 @@ import { useStudyStore } from "@/store/study-store";
 export function UpcomingReviews({ today }: { today: string }) {
   const progress = useStudyStore((state) => state.progress);
   const topics = useStudyStore((state) => state.topics);
-  const upcoming = pendingReviews(progress, topics).slice(0, 4);
+  const upcoming = pendingReviews(progress, topics).slice(0, 3);
 
   return (
     <Card>
-      <CardHeader title="Próximas revisões">
+      <CardHeader title="Revisões">
         <Link href="/revisoes" className={`${linkStyles} shrink-0 whitespace-nowrap`}>
           Ver todas
         </Link>

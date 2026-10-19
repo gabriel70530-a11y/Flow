@@ -36,4 +36,4 @@ export function Button({ variant = "secondary", size = "md", className = "", typ
 }
 
 export const linkStyles =
-  "text-sm font-semibold text-accent underline decoration-line underline-offset-3 hover:decoration-current";
+  "text-sm font-semibold text-accent underline-offset-3 hover:underline";

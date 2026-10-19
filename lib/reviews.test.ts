@@ -9,6 +9,7 @@ import {
   postponeNextReview,
   rescheduleNextReview,
   reviewLabel,
+  shortReviewLabel,
   scheduleManualReview,
   scheduleReviews,
   type TopicProgress,
@@ -220,5 +221,7 @@ describe("manual reviews (free plan)", () => {
   it("labels manual and automatic reviews differently", () => {
     expect(reviewLabel({ stage: 2, due: today, manual: true })).toBe("Revisão 2 · agendada por você");
     expect(reviewLabel({ stage: 2, due: today })).toBe("Revisão 2 de 4 · 7 dias");
+    expect(shortReviewLabel({ stage: 2, due: today })).toBe("2ª de 4");
+    expect(shortReviewLabel({ stage: 2, due: today, manual: true })).toBe("2ª revisão");
   });
 });

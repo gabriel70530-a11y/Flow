@@ -126,8 +126,8 @@ export function ConquistasScreen() {
           return (
             <li
               key={item.id}
-              className={`grid content-start gap-2 rounded-[18px] border-2 p-4 ${
-                item.unlocked ? "border-edge bg-surface shadow-card" : "border-line bg-surface/60"
+              className={`grid content-start gap-2 rounded-[16px] border p-4 ${
+                item.unlocked ? "border-accent bg-surface" : "border-line bg-surface/60"
               }`}
             >
               <span

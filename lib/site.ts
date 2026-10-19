@@ -20,6 +20,7 @@ export const APP_ROUTES = [
   "/timer",
   "/revisoes",
   "/questoes",
+  "/preparacao",
   "/simulados",
   "/redacao",
   "/tabuada",
