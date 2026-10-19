@@ -94,7 +94,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main id="conteudo" tabIndex={-1} className="max-w-[1180px] outline-none pt-5 pr-[max(16px,env(safe-area-inset-right,0px))] pb-[calc(84px+env(safe-area-inset-bottom,0px))] pl-[max(16px,env(safe-area-inset-left,0px))] md:ml-60 md:pt-[calc(40px+env(safe-area-inset-top,0px))] md:pr-[max(48px,env(safe-area-inset-right,0px))] md:pb-14 md:pl-[max(24px,env(safe-area-inset-left,0px))]">
+      <main id="conteudo" tabIndex={-1} className="max-w-[1180px] outline-none has-[[data-wide]]:max-w-none pt-5 pr-[max(16px,env(safe-area-inset-right,0px))] pb-[calc(84px+env(safe-area-inset-bottom,0px))] pl-[max(16px,env(safe-area-inset-left,0px))] md:ml-60 md:pt-[calc(40px+env(safe-area-inset-top,0px))] md:pr-[max(48px,env(safe-area-inset-right,0px))] md:pb-14 md:pl-[max(24px,env(safe-area-inset-left,0px))]">
         <SaveFailureNotice />
         {hydrated && demo && <DemoNotice />}
         {children}

@@ -92,7 +92,7 @@ export function ExamRunner({ draft, exam, onFinish }: { draft: ExamDraft; exam: 
   const sketchKey = `simulado:${exam.id}:${draft.current}`;
 
   return (
-    <div className="grid gap-5">
+    <div data-wide="" className="grid gap-5">
       <div className="sticky top-[calc(60px+env(safe-area-inset-top,0px))] z-10 -mt-1 overflow-hidden rounded-[16px] border border-line bg-surface md:top-4">
         <div className="flex items-center justify-between gap-3 px-4 py-3 md:px-6">
           <div className="hidden min-w-0 md:grid">
@@ -126,7 +126,7 @@ export function ExamRunner({ draft, exam, onFinish }: { draft: ExamDraft; exam: 
         </div>
       </div>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,720px)_minmax(320px,1fr)]">
         {showMap ? (
           <Card className="grid gap-4 lg:hidden">
             <Button onClick={() => setShowMap(false)} className="justify-self-start">

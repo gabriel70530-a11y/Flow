@@ -456,7 +456,10 @@ export function QuestoesScreen() {
           5 questões oficiais por área e tema, corrigidas pelo gabarito do Inep.
         </ProNotice>
       ) : (
-        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <div
+          data-wide={open ? "" : undefined}
+          className={`grid items-start gap-6 ${open ? "lg:grid-cols-[minmax(0,680px)_minmax(0,1fr)]" : "lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]"}`}
+        >
           {open ? (
             <BlockRunner
               block={open}
@@ -470,7 +473,7 @@ export function QuestoesScreen() {
           ) : (
             <StartForm />
           )}
-          {open ? <ScratchPanel sketchKey={blockSketchKey(open)} className="sticky top-4 hidden h-[calc(100vh-2rem)] max-h-[860px] lg:flex" /> : <StatsCard blocks={blocks} />}
+          {open ? <ScratchPanel sketchKey={blockSketchKey(open)} className="sticky top-4 hidden h-[calc(100vh-2rem)] lg:flex" /> : <StatsCard blocks={blocks} />}
         </div>
       )}
     </div>
