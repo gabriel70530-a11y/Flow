@@ -41,6 +41,8 @@ describe("isAppRoute", () => {
   it("matches app screens and their subpaths, not the site pages", () => {
     expect(isAppRoute("/painel")).toBe(true);
     expect(isAppRoute("/revisoes/erros")).toBe(true);
+    expect(isAppRoute("/revisoes/cartoes")).toBe(true);
+    expect(["/questoes", "/tabuada", "/conquistas"].every(isAppRoute)).toBe(true);
     expect(isAppRoute("/")).toBe(false);
     expect(isAppRoute("/privacidade")).toBe(false);
     expect(isAppRoute("/painelzinho")).toBe(false);
