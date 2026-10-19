@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prévia simplificada · Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira:ital,wdth,wght@0,100..125,300..800;1,100..125,300..800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f3f8fb; --surface: #ffffff; --soft: #e9f4f9; --line: #dcebf2; --text: #0b2a42; --muted: #4f6f83;
+    --accent: #135487; --mid: #2f87b5; --success: #2e7d4f; --danger: #c42b3f; --bar: #b0e1f1; --track: #dcebf2;
+    --hero: #0f4470; --edge: #135487;
+  }
+  :root[data-theme="dark"] {
+    --bg: #061829; --surface: #0b2238; --soft: #102d48; --line: #15344f; --text: #e6f3f9; --muted: #85b0c6;
+    --accent: #47bcdf; --mid: #47bcdf; --success: #6fcf97; --danger: #ff7a8a; --bar: #1d4a6b; --track: #15344f;
+    --hero: #135487; --edge: #eef7fb;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  a { color: inherit; text-decoration: none; }
+  .heading { font-family: "Saira", sans-serif; }
+
+  /* Barra da prévia (não faz parte do design) */
+  .preview-bar { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: center; padding: 12px 16px; background: #0b2a42; color: #fff; font-size: 13px; }
+  .preview-bar .group { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(255,255,255,.1); }
+  .preview-bar button { padding: 6px 14px; border-radius: 999px; color: #fff; font-weight: 600; }
+  .preview-bar button[aria-pressed="true"] { background: #fff; color: #135487; }
+
+  .notes { max-width: 1040px; margin: 24px auto 0; padding: 0 16px; }
+  .notes details { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; }
+  .notes summary { cursor: pointer; font-weight: 600; }
+  .notes ol { margin-top: 12px; padding-left: 20px; display: grid; gap: 8px; color: var(--muted); font-size: 14px; }
+  .notes ol strong { color: var(--text); }
+
+  .stage { display: flex; justify-content: center; padding: 24px 16px 64px; }
+  .frame { width: 100%; max-width: 1280px; background: var(--bg); border-radius: 20px; overflow: hidden; box-shadow: 0 0 0 1px var(--line), 0 30px 60px rgba(15,27,45,.08); }
+  .frame.phone { max-width: 400px; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ---------- App ---------- */
+  .app { display: grid; grid-template-columns: 232px 1fr; min-height: 760px; }
+  .phone .app { grid-template-columns: 1fr; min-height: 0; }
+  .sidebar { padding: 28px 16px; display: flex; flex-direction: column; gap: 28px; }
+  .phone .sidebar { display: none; }
+  .brand { display: inline-flex; align-items: center; gap: 10px; padding: 0 8px; }
+  .wordmark { font-family: "Saira", sans-serif; font-style: italic; font-weight: 800; font-stretch: 125%; font-size: 30px; color: var(--accent); }
+  :root[data-theme="dark"] .wordmark { color: #fff; }
+  .brand-mark { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 10px; background: #135487; border: 2px solid var(--edge); box-shadow: 2px 2px 0 var(--edge); }
+  .brand-mark svg { width: 24px; height: 24px; }
+  .phone .brand { padding: 0; }
+  .phone .brand-mark { width: 30px; height: 30px; }
+  .phone .wordmark { font-size: 24px; }
+
+  .nav { display: grid; gap: 2px; }
+  .nav-label { margin: 14px 12px 4px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .nav a { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-radius: 12px; color: var(--muted); font-weight: 500; border: 2px solid transparent; }
+  .nav a.active { background: var(--surface); color: var(--text); font-weight: 600; border-color: var(--edge); box-shadow: 3px 3px 0 var(--edge); }
+  .nav svg { width: 18px; height: 18px; flex: none; }
+  .count { margin-left: auto; min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--danger); color: #fff; font-size: 11px; font-weight: 700; text-align: center; line-height: 20px; }
+
+  .topbar { display: none; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--surface); }
+  .phone .topbar { display: flex; }
+  .round { width: 38px; height: 38px; border-radius: 999px; display: grid; place-items: center; color: var(--muted); }
+  .round svg { width: 20px; height: 20px; }
+  .tabbar { display: none; }
+  .phone .tabbar { display: grid; grid-template-columns: repeat(5, 1fr); position: sticky; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); padding: 8px 4px 10px; }
+  .tabbar a { display: grid; justify-items: center; gap: 2px; font-size: 11px; color: var(--muted); position: relative; }
+  .tabbar a.active { color: var(--accent); font-weight: 600; }
+  .tabbar svg { width: 20px; height: 20px; }
+  .tabbar .dot { position: absolute; top: -2px; left: calc(50% + 6px); min-width: 16px; line-height: 16px; border-radius: 999px; background: var(--danger); color: #fff; font-size: 10px; font-weight: 700; }
+
+  .content { padding: 40px 48px 56px 24px; display: grid; gap: 24px; align-content: start; max-width: 1000px; }
+  .phone .content { padding: 20px 16px 28px; gap: 16px; }
+  .page-head h1 { font-family: "Saira", sans-serif; font-weight: 700; font-stretch: 112%; font-size: 32px; line-height: 1.1; }
+  .phone .page-head h1 { font-size: 26px; }
+  .page-head p { margin-top: 4px; color: var(--muted); }
+  .page-head p strong { color: var(--text); font-weight: 600; }
+
+  /* Cards comuns: sem carimbo. O carimbo fica só no que pede ação: Estudar hoje, botão principal e item ativo. */
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 24px; }
+  .phone .card { padding: 18px; border-radius: 16px; }
+  .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  .card h2 { font-family: "Saira", sans-serif; font-weight: 600; font-stretch: 108%; font-size: 18px; }
+  .link { color: var(--accent); font-size: 14px; font-weight: 600; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 22px; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+  .btn-primary { background: #135487; color: #fff; border: 2px solid var(--edge); box-shadow: 3px 3px 0 var(--edge); }
+  .btn-soft { background: var(--soft); }
+  .btn-sm { height: 36px; padding: 0 16px; font-size: 14px; }
+  .btn-icon { width: 36px; padding: 0; color: var(--muted); }
+
+  /* Estudar hoje: o único bloco de destaque da tela */
+  .today { background: var(--hero); color: #fff; border-radius: 22px; padding: 28px; border: 2px solid var(--edge); box-shadow: 4px 4px 0 var(--edge); }
+  .phone .today { padding: 20px; }
+  .today-top { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: #b0e1f1; }
+  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  .tasks { margin: 16px 0 22px; display: grid; }
+  .task { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid rgba(176,225,241,.18); }
+  .task:first-child { border-top: 0; padding-top: 4px; }
+  .task-name { font-family: "Saira", sans-serif; font-weight: 700; font-stretch: 110%; font-size: 24px; line-height: 1.15; }
+  .phone .task-name { font-size: 20px; }
+  .task-meta { font-size: 13px; color: #b0e1f1; margin-top: 2px; }
+  .task .btn { margin-left: auto; height: 34px; padding: 0 14px; font-size: 13px; border: 1.5px solid rgba(255,255,255,.55); color: #fff; }
+  .today-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .today .btn-primary { background: #fff; color: #135487; border-color: #0b2a42; box-shadow: 3px 3px 0 #0b2a42; }
+  .today .btn-ghost { color: #fff; opacity: .85; }
+  .today-foot { margin-top: 18px; font-size: 13px; color: #b0e1f1; }
+  .today-foot strong { color: #fff; font-weight: 600; }
+
+  .grid-2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; align-items: start; }
+  .phone .grid-2 { grid-template-columns: 1fr; gap: 16px; }
+
+  .week-total { display: flex; align-items: baseline; gap: 8px; }
+  .week-total b { font-family: "Saira", sans-serif; font-style: italic; font-weight: 800; font-stretch: 120%; font-size: 44px; line-height: 1; }
+  .bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; height: 110px; align-items: end; margin-top: 18px; }
+  .bars div { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 6px; height: 100%; }
+  .bars i { display: block; width: 100%; max-width: 28px; min-height: 4px; border-radius: 6px; background: var(--bar); }
+  .bars i.hit { background: var(--mid); }
+  .bars span { font-size: 12px; color: var(--muted); }
+  .bars .today-col span { color: var(--text); font-weight: 700; }
+
+  .rows { display: grid; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+  .row:first-child { border-top: 0; padding-top: 0; }
+  .row-main { min-width: 0; flex: 1; }
+  .row-title { font-weight: 600; }
+  .row-sub { font-size: 13px; color: var(--muted); }
+  .row-end { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+  .row .icon { width: 36px; height: 36px; flex: none; border-radius: 10px; display: grid; place-items: center; background: var(--soft); color: var(--accent); }
+  .row .icon svg { width: 18px; height: 18px; }
+  .chev { width: 16px; height: 16px; color: var(--muted); }
+
+  .slim { display: flex; align-items: center; gap: 14px; padding: 14px 18px; }
+  .meter { flex: 1; height: 6px; border-radius: 999px; background: var(--track); overflow: hidden; }
+  .meter i { display: block; height: 100%; background: var(--mid); border-radius: 999px; }
+
+  .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; border-radius: 999px; background: var(--soft); max-width: 420px; }
+  .tabs a { text-align: center; padding: 8px 0; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--muted); }
+  .tabs a.active { background: var(--surface); color: var(--text); box-shadow: 0 0 0 1px var(--line); }
+  .tabs .count { display: inline-block; margin-left: 6px; min-width: 18px; line-height: 18px; font-size: 10px; vertical-align: 1px; }
+
+  .section-label { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .02em; margin-bottom: 4px; }
+  .section-label.late { color: var(--danger); }
+  .menu-wrap { position: relative; }
+</style>
+</head>
+<body>
+
+<div class="preview-bar">
+  <div class="group" data-control="screen">
+    <button aria-pressed="true" data-value="painel">Painel</button>
+    <button aria-pressed="false" data-value="revisoes">Revisões</button>
+    <button aria-pressed="false" data-value="preparacao">Preparação</button>
+  </div>
+  <div class="group" data-control="theme">
+    <button aria-pressed="false" data-value="light">Claro</button>
+    <button aria-pressed="true" data-value="dark">Escuro</button>
+  </div>
+  <div class="group" data-control="device">
+    <button aria-pressed="true" data-value="desktop">Computador</button>
+    <button aria-pressed="false" data-value="phone">Celular</button>
+  </div>
+</div>
+
+<div class="notes">
+  <details open>
+    <summary>O que muda em relação ao app de hoje</summary>
+    <ol>
+      <li><strong>Um só destaque por tela.</strong> O contorno grosso com sombra de carimbo fica só em "Estudar hoje", no botão principal e no item ativo do menu. Os outros cards ganham uma borda fina, sem sombra. Hoje todos os cards brigam pela atenção, ainda mais no tema escuro, em que a borda é branca.</li>
+      <li><strong>Painel com 3 blocos em vez de 7.</strong> Ficam Estudar hoje, Esta semana e Revisões, mais uma linha com o ritmo. A contagem para o Enem vai para o subtítulo. O resumo da semana e as horas por área abrem em "Ver resumo".</li>
+      <li><strong>Preparação sai do Painel.</strong> No celular, as 7 ferramentas viram uma tela própria, aberta por uma linha só no Painel. No computador, continuam no menu lateral.</li>
+      <li><strong>Botões padronizados.</strong> Cada tela tem um único botão principal. Os demais são "suaves" ou ficam no menu "⋯". "Dominei?" fica sempre alinhado à direita. Não há mais links sublinhados misturados com botões.</li>
+      <li><strong>Menos texto.</strong> Saem as frases explicativas dos cards, como "Estude o tempo que quiser…" e "Nas últimas 4 semanas…", e as linhas de detalhe ficam curtas ("1ª de 4" no lugar de "Revisão 1 de 4 · 1 dia · Hoje · Reagendada"). Quem quiser entender as regras vê o guia.</li>
+    </ol>
+  </details>
+</div>
+
+<div class="stage">
+  <div class="frame" id="frame">
+
+    <!-- ===== Painel ===== -->
+    <section class="screen active" data-screen="painel">
+      <div class="app">
+        <aside class="sidebar" data-nav="painel"></aside>
+        <div>
+          <div class="topbar" data-topbar></div>
+          <main class="content">
+            <header class="page-head">
+              <h1>Boa tarde</h1>
+              <p>Segunda, 19/10 · <strong>faltam 20 dias</strong> para o Enem</p>
+            </header>
+
+            <section class="today">
+              <div class="today-top"><span class="eyebrow">Estudar hoje</span><span class="num">0 de 2 dominadas</span></div>
+              <div class="tasks">
+                <div class="task">
+                  <div><div class="task-name">Razão e proporção</div><div class="task-meta">Matemática · veio de ontem</div></div>
+                  <button class="btn">Dominei?</button>
+                </div>
+                <div class="task">
+                  <div><div class="task-name">Juros</div><div class="task-meta">Matemática</div></div>
+                  <button class="btn">Dominei?</button>
+                </div>
+              </div>
+              <div class="today-actions">
+                <button class="btn btn-primary">Começar a estudar</button>
+                <button class="btn btn-ghost">Dia leve</button>
+              </div>
+              <p class="today-foot">Revisão de hoje: <strong>Funções da linguagem</strong></p>
+            </section>
+
+            <div class="grid-2">
+              <section class="card">
+                <div class="card-head"><h2>Esta semana</h2><a class="link" href="#">Ver resumo</a></div>
+                <div class="week-total"><b class="num">3,5</b><span class="muted">de 25 h</span></div>
+                <div class="bars">
+                  <div class="today-col"><i class="hit" style="height:62%"></i><span>Seg</span></div>
+                  <div><i style="height:0"></i><span>Ter</span></div>
+                  <div><i style="height:0"></i><span>Qua</span></div>
+                  <div><i style="height:0"></i><span>Qui</span></div>
+                  <div><i style="height:0"></i><span>Sex</span></div>
+                  <div><i style="height:0"></i><span>Sáb</span></div>
+                  <div><i style="height:0"></i><span>Dom</span></div>
+                </div>
+              </section>
+
+              <div style="display:grid;gap:inherit">
+                <section class="card">
+                  <div class="card-head"><h2>Revisões</h2><a class="link" href="#">Ver todas</a></div>
+                  <div class="rows">
+                    <div class="row"><div class="row-main"><div class="row-title">Funções da linguagem</div><div class="row-sub">Linguagens</div></div><span class="row-end">Hoje</span></div>
+                    <div class="row"><div class="row-main"><div class="row-title">Problemas ambientais</div><div class="row-sub">Biologia</div></div><span class="row-end">Amanhã</span></div>
+                  </div>
+                </section>
+                <a class="card slim" href="#">
+                  <span class="row-title">Começando</span>
+                  <span class="meter"><i style="width:6%"></i></span>
+                  <span class="small muted num">3 de 38</span>
+                  <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg>
+                </a>
+                <a class="card slim prep-link" href="#" data-goto="preparacao">
+                  <span class="row-title">Preparação</span>
+                  <span class="small muted" style="flex:1">Questões, simulados, redação…</span>
+                  <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg>
+                </a>
+              </div>
+            </div>
+          </main>
+          <nav class="tabbar" data-tabbar="painel"></nav>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Revisões ===== -->
+    <section class="screen" data-screen="revisoes">
+      <div class="app">
+        <aside class="sidebar" data-nav="revisoes"></aside>
+        <div>
+          <div class="topbar" data-topbar></div>
+          <main class="content">
+            <header class="page-head">
+              <h1>Revisões</h1>
+              <p>1 para hoje, 1 nos próximos dias</p>
+            </header>
+            <div class="tabs">
+              <a class="active" href="#">Tópicos<span class="count">1</span></a>
+              <a href="#">Erros</a>
+              <a href="#">Cartões</a>
+            </div>
+            <div><button class="btn btn-primary">Agendar revisões</button></div>
+
+            <section class="card">
+              <p class="section-label">Hoje</p>
+              <div class="rows">
+                <div class="row">
+                  <div class="row-main"><div class="row-title">Funções da linguagem</div><div class="row-sub">Linguagens · 1ª de 4</div></div>
+                  <div class="row-end">
+                    <button class="btn btn-soft btn-sm">Concluir</button>
+                    <button class="btn btn-icon btn-sm" aria-label="Mais opções">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="card">
+              <p class="section-label">Próximos 7 dias</p>
+              <div class="rows">
+                <div class="row">
+                  <div class="row-main"><div class="row-title">Problemas ambientais</div><div class="row-sub">Biologia · 1ª de 4</div></div>
+                  <div class="row-end">
+                    <span>Amanhã</span>
+                    <button class="btn btn-icon btn-sm" aria-label="Mais opções">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </main>
+          <nav class="tabbar" data-tabbar="revisoes"></nav>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Preparação ===== -->
+    <section class="screen" data-screen="preparacao">
+      <div class="app">
+        <aside class="sidebar" data-nav="preparacao"></aside>
+        <div>
+          <div class="topbar" data-topbar></div>
+          <main class="content">
+            <header class="page-head">
+              <h1>Preparação</h1>
+              <p>Ferramentas para treinar para a prova</p>
+            </header>
+            <section class="card">
+              <div class="rows" data-prep-list></div>
+            </section>
+          </main>
+          <nav class="tabbar" data-tabbar="painel"></nav>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  const svg = (inner) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+  const ICONS = {
+    painel: svg('<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>'),
+    cronograma: svg('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>'),
+    materias: svg('<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>'),
+    timer: svg('<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M10 2h4"/>'),
+    revisoes: svg('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M9 16l2 2 4-4"/>'),
+    questoes: svg('<path d="M3 6l2 2 3-3M3 13l2 2 3-3M12 6h9M12 13h9M12 20h9"/>'),
+    simulados: svg('<circle cx="12" cy="13" r="8"/><path d="M12 9v4M9 2h6"/>'),
+    redacao: svg('<path d="M12 20h9M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4Z"/>'),
+    cartoes: svg('<path d="m12 2 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 17l9 5 9-5"/>'),
+    tabuada: svg('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>'),
+    prova: svg('<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 14l2 2 4-4"/>'),
+    conquistas: svg('<circle cx="12" cy="8" r="6"/><path d="M15.5 13 17 22l-5-3-5 3 1.5-9"/>'),
+    ajustes: svg('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/>'),
+    tema: svg('<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18Z" fill="currentColor"/>'),
+    chev: '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg>',
+  };
+  const MARK = '<span class="brand"><span class="brand-mark"><svg viewBox="0 0 64 64" aria-hidden="true"><path fill="#fff" d="M23 13h28l-2.4 8H31.2l-1.6 5.4h15.2l-2.4 8H27.2L22.4 51h-9.6z"/></svg></span><span class="wordmark">FLOW</span></span>';
+
+  const MAIN = [["painel", "Painel"], ["cronograma", "Cronograma"], ["materias", "Matérias"], ["timer", "Timer"], ["revisoes", "Revisões"]];
+  const PREP = [
+    ["questoes", "Questões", "Blocos de 5 por tema", ""],
+    ["simulados", "Simulados", "Prova oficial no app", "2"],
+    ["redacao", "Redação", "Temas e correção", ""],
+    ["cartoes", "Cartões", "1 para hoje", ""],
+    ["tabuada", "Tabuada", "Rodadas de 20 contas", ""],
+    ["prova", "Dia da prova", "Checklist", ""],
+    ["conquistas", "Conquistas", "3 de 38", ""],
+  ];
+
+  document.querySelectorAll("[data-nav]").forEach((aside) => {
+    const current = aside.dataset.nav;
+    const link = ([id, label]) => `<a href="#" class="${id === current ? "active" : ""}">${ICONS[id]}${label}${id === "revisoes" ? '<span class="count">1</span>' : ""}</a>`;
+    aside.innerHTML = `${MARK}<nav class="nav">${MAIN.map(link).join("")}<p class="nav-label">Preparação</p>${PREP.slice(0, 6).map(link).join("")}</nav>
+      <nav class="nav" style="margin-top:auto"><a href="#">${ICONS.ajustes}Ajustes</a></nav>`;
+  });
+  document.querySelectorAll("[data-topbar]").forEach((bar) => {
+    bar.innerHTML = `${MARK}<span style="display:flex;gap:4px"><button class="round" aria-label="Ajustes">${ICONS.ajustes}</button><button class="round" aria-label="Tema">${ICONS.tema}</button></span>`;
+  });
+  document.querySelectorAll("[data-tabbar]").forEach((bar) => {
+    const current = bar.dataset.tabbar;
+    bar.innerHTML = MAIN.map(([id, label]) => `<a href="#" class="${id === current ? "active" : ""}">${ICONS[id]}${label}${id === "revisoes" ? '<span class="dot">1</span>' : ""}</a>`).join("");
+  });
+  document.querySelector("[data-prep-list]").innerHTML = PREP.map(([id, label, sub, count]) =>
+    `<a class="row" href="#"><span class="icon">${ICONS[id]}</span><span class="row-main"><span class="row-title">${label}</span><br><span class="row-sub">${sub}</span></span><span class="row-end">${count ? `<span class="num">${count}</span>` : ""}${ICONS.chev}</span></a>`
+  ).join("");
+
+  const state = { screen: "painel", theme: "dark", device: "desktop" };
+  function render() {
+    document.documentElement.dataset.theme = state.theme;
+    document.getElementById("frame").classList.toggle("phone", state.device === "phone");
+    document.querySelectorAll(".screen").forEach((screen) => screen.classList.toggle("active", screen.dataset.screen === state.screen));
+    // No computador a Preparação está no menu lateral, então a linha do Painel só aparece no celular.
+    document.querySelectorAll(".prep-link").forEach((link) => (link.style.display = state.device === "phone" ? "" : "none"));
+    document.querySelectorAll("[data-control]").forEach((group) =>
+      group.querySelectorAll("button").forEach((button) => button.setAttribute("aria-pressed", String(state[group.dataset.control] === button.dataset.value))),
+    );
+  }
+  document.querySelectorAll("[data-control]").forEach((group) =>
+    group.addEventListener("click", (event) => {
+      const button = event.target.closest("button");
+      if (!button) return;
+      state[group.dataset.control] = button.dataset.value;
+      render();
+    }),
+  );
+  document.querySelectorAll("[data-goto]").forEach((link) =>
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      state.screen = link.dataset.goto;
+      render();
+    }),
+  );
+  render();
+</script>
+</body>
+</html>
