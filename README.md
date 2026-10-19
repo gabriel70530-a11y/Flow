@@ -132,7 +132,7 @@ A função `send-reminders` manda os avisos de estudo com o app fechado (Web Pus
 1. Rodar `supabase/migrations/20261020000000_study_tools.sql` (blocos e cartões na sincronização) e `20261021000000_push.sql` (tabela `push_subscriptions`).
 2. Gerar as chaves: `deno run supabase/functions/_shared/generate_vapid.ts`. A pública vai em `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (Vercel e `.env.local`).
 3. Segredos da função: `supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=https://<endereço> REMINDERS_SECRET=<aleatório>`.
-4. Publicar: `supabase functions deploy send-reminders --no-verify-jwt`.
+4. Publicar: `supabase functions deploy send-reminders --no-verify-jwt` (já publicada em 19/10/2026, sem verificação de JWT; falta só os segredos).
 5. Criar no Vault `project_url` e `reminders_secret` (o mesmo valor de `REMINDERS_SECRET`) e rodar `supabase/cron/lembretes.sql`.
 
 ## O que ainda depende de decisão ou serviço externo
