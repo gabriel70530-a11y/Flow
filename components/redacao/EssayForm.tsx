@@ -7,10 +7,10 @@ import { Segmented } from "@/components/ui/Segmented";
 import { COMPETENCIES, COMPETENCY_SCORES, ESSAY_TEXT_MAX, ESSAY_THEME_MAX, essayTotal } from "@/lib/essays";
 import { useStudyStore } from "@/store/study-store";
 
-export function EssayForm({ today, onDone }: { today: string; onDone: () => void }) {
+export function EssayForm({ today, initialTheme = "", onDone }: { today: string; initialTheme?: string; onDone: () => void }) {
   const addEssay = useStudyStore((state) => state.addEssay);
   const [date, setDate] = useState(today);
-  const [theme, setTheme] = useState("");
+  const [theme, setTheme] = useState(initialTheme);
   const [corrected, setCorrected] = useState<"sim" | "nao">("sim");
   const [scores, setScores] = useState<number[]>(COMPETENCIES.map(() => 120));
   const [corrector, setCorrector] = useState("");

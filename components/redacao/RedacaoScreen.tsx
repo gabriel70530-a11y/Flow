@@ -17,6 +17,7 @@ import { useProAccess } from "@/store/pro";
 import { useHydrated, useStudyStore } from "@/store/study-store";
 import { AiEssayCard } from "./AiEssayCard";
 import { EssayForm } from "./EssayForm";
+import { ThemesCard } from "./ThemesCard";
 import { RepertoireForm } from "./RepertoireForm";
 
 const SUBTITLE = "Registre as notas e acompanhe a evolução.";
@@ -77,6 +78,7 @@ export function RedacaoScreen() {
   const repertoire = useStudyStore((state) => state.repertoire);
   const [drawer, setDrawer] = useState<"redacao" | "repertorio" | null>(null);
   const [query, setQuery] = useState("");
+  const [chosenTheme, setChosenTheme] = useState("");
   const pro = useProAccess();
 
   const header = (
@@ -116,7 +118,16 @@ export function RedacaoScreen() {
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <div className="grid gap-6">
-          <AiEssayCard today={today} />
+          <div id="corrigir">
+            <AiEssayCard key={chosenTheme} today={today} initialTheme={chosenTheme} />
+          </div>
+          <ThemesCard
+            onWrite={(theme, mode) => {
+              setChosenTheme(theme);
+              if (mode === "registro") setDrawer("redacao");
+              else document.getElementById("corrigir")?.scrollIntoView({ block: "start" });
+            }}
+          />
 
           {corrected.length > 0 && (
             <Card>
@@ -200,7 +211,7 @@ export function RedacaoScreen() {
       </div>
 
       <Drawer open={drawer === "redacao"} onClose={() => setDrawer(null)} eyebrow="Redação" title="Registrar redação">
-        {drawer === "redacao" && <EssayForm today={today} onDone={() => close("Redação registrada.")} />}
+        {drawer === "redacao" && <EssayForm today={today} initialTheme={chosenTheme} onDone={() => close("Redação registrada.")} />}
       </Drawer>
       <Drawer open={drawer === "repertorio"} onClose={() => setDrawer(null)} eyebrow="Redação" title="Novo repertório">
         {drawer === "repertorio" && <RepertoireForm onDone={() => close("Repertório salvo.")} />}

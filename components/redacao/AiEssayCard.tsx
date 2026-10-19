@@ -65,9 +65,9 @@ function Result({ result, theme, today, onSaved }: { result: EssayCorrection; th
   );
 }
 
-export function AiEssayCard({ today }: { today: string }) {
+export function AiEssayCard({ today, initialTheme = "" }: { today: string; initialTheme?: string }) {
   const pro = useProAccess();
-  const [theme, setTheme] = useState("");
+  const [theme, setTheme] = useState(initialTheme);
   const [text, setText] = useState("");
   const [photos, setPhotos] = useState<ImagePayload[]>([]);
   const [sending, setSending] = useState(false);
