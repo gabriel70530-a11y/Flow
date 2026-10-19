@@ -1,10 +1,11 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Flag, LayoutGrid, Pause } from "lucide-react";
+import { ChevronLeft, ChevronRight, Flag, LayoutGrid, Pause, PencilLine } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNow } from "@/components/timer/use-now";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { Segmented } from "@/components/ui/Segmented";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { showToast } from "@/components/ui/Toast";
 import {
@@ -26,6 +27,7 @@ import { clockText } from "@/lib/timer";
 import { useStudyStore } from "@/store/study-store";
 import { QuestionMap } from "./QuestionMap";
 import { QuestionView } from "./QuestionView";
+import { ScratchPanel, ScratchSheet } from "./ScratchPad";
 import { useExamQuestions } from "./use-exam-questions";
 
 export interface ExamResult {
@@ -43,6 +45,8 @@ export function ExamRunner({ draft, exam, onFinish }: { draft: ExamDraft; exam: 
   const [questionsState, retry] = useExamQuestions(exam, draft.language);
   const [showMap, setShowMap] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [side, setSide] = useState<"mapa" | "rascunho">("mapa");
+  const [sketching, setSketching] = useState(false);
   const now = useNow(true);
   const seconds = draftSeconds(draft, Math.max(now, draft.startedAt ?? 0));
   const indices = scopeIndices(exam.day, draft.scope);
@@ -85,6 +89,7 @@ export function ExamRunner({ draft, exam, onFinish }: { draft: ExamDraft; exam: 
 
   const question = questionsState.status === "pronto" ? questionsState.questions[draft.current] : null;
   const last = position === indices.length - 1;
+  const sketchKey = `simulado:${exam.id}:${draft.current}`;
 
   return (
     <div className="grid gap-5">
@@ -139,15 +144,20 @@ export function ExamRunner({ draft, exam, onFinish }: { draft: ExamDraft; exam: 
                   {findArea(areaOfQuestion(exam.day, draft.current)).shortName}
                 </span>
               </div>
-              <button
-                type="button"
-                aria-pressed={draft.flagged.includes(draft.current)}
-                onClick={() => toggleExamFlag(draft.current)}
-                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border-2 border-line px-3 text-sm font-semibold text-muted aria-pressed:border-danger aria-pressed:bg-danger-soft aria-pressed:text-danger"
-              >
-                <Flag size={16} aria-hidden />
-                Rever depois
-              </button>
+              <div className="flex shrink-0 items-center gap-2">
+                <Button onClick={() => setSketching(true)} aria-label="Rascunho" className="lg:hidden">
+                  <PencilLine size={16} aria-hidden />
+                </Button>
+                <button
+                  type="button"
+                  aria-pressed={draft.flagged.includes(draft.current)}
+                  onClick={() => toggleExamFlag(draft.current)}
+                  className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border-2 border-line px-3 text-sm font-semibold text-muted aria-pressed:border-danger aria-pressed:bg-danger-soft aria-pressed:text-danger"
+                >
+                  <Flag size={16} aria-hidden />
+                  Rever depois
+                </button>
+              </div>
             </div>
 
             {questionsState.status === "carregando" && <Skeleton className="h-80" />}
@@ -196,8 +206,23 @@ export function ExamRunner({ draft, exam, onFinish }: { draft: ExamDraft; exam: 
           </Card>
         )}
 
-        <Card className="sticky top-28 hidden max-h-[calc(100vh-8rem)] overflow-y-auto lg:grid">{map}</Card>
+        <div className="sticky top-28 hidden h-[calc(100vh-8rem)] flex-col gap-3 lg:flex">
+          <Segmented
+            options={[
+              { value: "mapa", label: "Questões" },
+              { value: "rascunho", label: "Rascunho" },
+            ]}
+            value={side}
+            onChange={setSide}
+          />
+          {side === "mapa" ? (
+            <Card className="min-h-0 overflow-y-auto">{map}</Card>
+          ) : (
+            <ScratchPanel sketchKey={sketchKey} className="flex min-h-0 flex-1" />
+          )}
+        </div>
       </div>
+      {sketching && <ScratchSheet sketchKey={sketchKey} title={`questão ${number}`} onClose={() => setSketching(false)} />}
     </div>
   );
 }

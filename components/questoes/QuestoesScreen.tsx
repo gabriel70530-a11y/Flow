@@ -1,8 +1,9 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, PencilLine } from "lucide-react";
 import { useState } from "react";
 import { QuestionView } from "@/components/simulados/QuestionView";
+import { ScratchPanel, ScratchSheet } from "@/components/simulados/ScratchPad";
 import { Button, linkStyles } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Drawer } from "@/components/ui/Drawer";
@@ -178,10 +179,16 @@ function StartForm() {
   );
 }
 
+// Um rascunho por questão do bloco.
+function blockSketchKey(block: QuestionBlock): string {
+  return `bloco:${block.id}:${block.current}`;
+}
+
 function BlockRunner({ block, onFinish }: { block: QuestionBlock; onFinish: (block: QuestionBlock) => void }) {
   const actions = useStudyStore.getState();
   const [poolState, retry] = usePracticePool(dayOfArea(block.areaId), block.language);
   const [confirmingDiscard, setConfirmingDiscard] = useState(false);
+  const [sketching, setSketching] = useState(false);
   const index = block.current;
   const item = block.items[index];
   const last = index === block.items.length - 1;
@@ -208,9 +215,13 @@ function BlockRunner({ block, onFinish }: { block: QuestionBlock; onFinish: (blo
           <h2 className="tabular-nums">
             Questão {index + 1} de {block.items.length}
           </h2>
-          <span className="text-[13px] text-muted">
+          <span className="flex items-center gap-2 text-[13px] text-muted">
             {findArea(block.areaId).shortName}
             {block.theme && ` · ${block.theme}`}
+            <Button onClick={() => setSketching(true)} className="lg:hidden">
+              <PencilLine size={16} aria-hidden />
+              Rascunho
+            </Button>
           </span>
         </div>
         <div className="flex gap-2" role="group" aria-label="Questões do bloco">
@@ -277,6 +288,9 @@ function BlockRunner({ block, onFinish }: { block: QuestionBlock; onFinish: (blo
         <button type="button" onClick={discard} className={confirmingDiscard ? "font-semibold text-danger" : linkStyles}>
           {confirmingDiscard ? "Confirmar: descartar o bloco" : "Descartar bloco"}
         </button>
+        {sketching && (
+          <ScratchSheet sketchKey={blockSketchKey(block)} title={`questão ${index + 1}`} onClose={() => setSketching(false)} />
+        )}
       </div>
     </Card>
   );
@@ -456,7 +470,7 @@ export function QuestoesScreen() {
           ) : (
             <StartForm />
           )}
-          <StatsCard blocks={blocks} />
+          {open ? <ScratchPanel sketchKey={blockSketchKey(open)} className="sticky top-4 hidden h-[calc(100vh-2rem)] max-h-[860px] lg:flex" /> : <StatsCard blocks={blocks} />}
         </div>
       )}
     </div>
