@@ -267,6 +267,8 @@ function AnswerSheet({ draft, exam, onResult }: { draft: ExamDraft; exam: Offici
   );
 }
 
+const scoreFormat = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
 function Result({ result, onClose }: { result: ExamResult; onClose: () => void }) {
   const addExamMistakes = useStudyStore((state) => state.addExamMistakes);
   const [sent, setSent] = useState(false);
@@ -296,7 +298,13 @@ function Result({ result, onClose }: { result: ExamResult; onClose: () => void }
             <div className="flex justify-between gap-3 text-sm">
               <span>{findArea(section.areaId).name}</span>
               <span className="text-muted tabular-nums">
-                {section.correct} de {section.total} · {Math.round((section.correct / section.total) * 100)}%
+                {section.correct} de {section.total}
+                {section.score !== undefined && (
+                  <>
+                    {" · "}
+                    <strong className="text-text">{scoreFormat.format(section.score)}</strong>
+                  </>
+                )}
               </span>
             </div>
             <ProgressBar value={section.correct / section.total} thin label={`Acertos em ${findArea(section.areaId).name}`} />
@@ -306,7 +314,9 @@ function Result({ result, onClose }: { result: ExamResult; onClose: () => void }
       {graded.annulled.length > 0 && (
         <p className="text-[13px] text-muted tabular-nums">Questão anulada pelo Inep, fora da conta: {graded.annulled.join(", ")}.</p>
       )}
-      <p className="text-[13px] text-muted">Registrado em Seus simulados. O Flow mostra acertos, não nota TRI.</p>
+      <p className="text-[13px] text-muted">
+        Nota estimada pela TRI, com os parâmetros oficiais do Inep. Registrado em Seus simulados.
+      </p>
       <div className="flex flex-wrap items-center gap-3">
         {graded.wrong.length > 0 && !sent && (
           <Button variant="primary" onClick={send}>

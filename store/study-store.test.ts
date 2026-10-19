@@ -399,8 +399,8 @@ describe("official mock exam in the app", () => {
         day: 2,
         minutes: 60,
         sections: [
-          { areaId: "nat", correct: 1, total: 44 },
-          { areaId: "mat", correct: 0, total: 45 },
+          { areaId: "nat", correct: 1, total: 44, score: expect.any(Number) },
+          { areaId: "mat", correct: 0, total: 45, score: expect.any(Number) },
         ],
       }),
     ]);
@@ -434,7 +434,7 @@ describe("official mock exam in the app", () => {
 
     const result = state().finishExam();
     if ("error" in result) throw new Error(result.error);
-    expect(result.graded.sections).toEqual([{ areaId: "mat", correct: 0, total: 44 }]);
+    expect(result.graded.sections).toEqual([{ areaId: "mat", correct: 0, total: 44, score: expect.any(Number) }]);
     expect(state().addExamMistakes(result.examId, result.graded.wrong.slice(1, 2), { 137: "A média dos salários é" })).toBe(1);
     expect(state().mistakes[0]).toMatchObject({
       question: "Questão 137: A média dos salários é",

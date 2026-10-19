@@ -82,6 +82,7 @@ import {
 import { isTime } from "@/lib/reminders";
 import { GOAL_LIMITS, type WeeklyGoal } from "@/lib/stats";
 import { recordAnswer, type Fact } from "@/lib/times-table";
+import { estimateExamScores } from "@/lib/tri";
 import {
   elapsed,
   isIdle,
@@ -556,6 +557,10 @@ export const useStudyStore = create<StudyStore>()(
           const exam = draft && findOfficialExam(draft.examId);
           if (!draft || !exam) return { error: "Nenhum simulado em andamento." };
           const graded = gradeExam(exam, draft.answers, draft.language, draft.scope);
+          const scores = estimateExamScores(exam, draft.answers, draft.language, draft.scope);
+          graded.sections = graded.sections.map((section) =>
+            scores[section.areaId] === undefined ? section : { ...section, score: scores[section.areaId] },
+          );
           const minutes = Math.round(draftSeconds(draft, Date.now()) / 60);
           const mock = {
             id: newId("simulado-"),

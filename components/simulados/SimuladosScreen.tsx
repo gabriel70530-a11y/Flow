@@ -1,9 +1,8 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import Link from "next/link";
 import { useState } from "react";
-import { Button, linkStyles } from "@/components/ui/Button";
+import { Button } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Drawer } from "@/components/ui/Drawer";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -57,7 +56,12 @@ function MockRow({ mock }: { mock: MockExam }) {
         )}
       </div>
       <p className="text-sm tabular-nums">
-        {mock.sections.map((section) => `${findArea(section.areaId).shortName} ${section.correct}/${section.total}`).join(" · ")}
+        {mock.sections
+          .map(
+            (section) =>
+              `${findArea(section.areaId).shortName} ${section.correct}/${section.total}${section.score !== undefined ? ` (nota ${Math.round(section.score)})` : ""}`,
+          )
+          .join(" · ")}
       </p>
       {pace !== null && (
         <p className={`text-[13px] tabular-nums ${pace > target + 0.3 ? "text-danger" : "text-muted"}`}>
@@ -177,21 +181,11 @@ export function SimuladosScreen() {
       )}
 
       <Card>
-        <CardHeader title="Por que o Flow não mostra nota?" />
-        <div className="grid gap-2 text-sm text-muted">
-          <p>
-            A nota do Enem usa a TRI: cada questão tem um peso calculado pelo Inep, e acertos coerentes valem mais. Quem erra
-            questões fáceis e acerta difíceis no chute pode tirar menos do que alguém com o mesmo número de acertos.
-          </p>
-          <p>
-            Por isso o Flow mostra acertos e ritmo, não uma nota inventada. Na prova, garanta primeiro as fáceis e médias. Errou
-            alguma no simulado?{" "}
-            <Link href="/revisoes/erros" className={linkStyles}>
-              Registre no caderno de erros
-            </Link>
-            .
-          </p>
-        </div>
+        <CardHeader title="Como sai a nota" />
+        <p className="text-sm text-muted">
+          Nas provas feitas no Flow, a nota é estimada pela TRI com os parâmetros oficiais de cada questão: acertar as fáceis vale
+          mais que acertar as difíceis no chute. A oficial só sai pelo Inep.
+        </p>
       </Card>
 
       <Drawer open={adding} onClose={() => setAdding(false)} eyebrow="Simulados" title="Registrar simulado">

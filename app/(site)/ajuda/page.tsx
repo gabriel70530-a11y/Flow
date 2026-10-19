@@ -37,7 +37,7 @@ const QUESTIONS: { question: string; answer: string }[] = [
   {
     question: "O simulado calcula a minha nota do Enem?",
     answer:
-      "Não. A nota do Enem usa a TRI, que depende das respostas de todos os participantes e não pode ser reproduzida. O Flow mostra os acertos por área, a comparação com o simulado anterior e o seu ritmo por questão.",
+      "Nas provas oficiais feitas no Flow, sim: uma estimativa pela TRI com os parâmetros que o Inep publica para cada questão. Em testes com candidatos reais, ela bate com a nota oficial. Simulados registrados só com acertos mostram acertos e ritmo.",
   },
   {
     question: "As questões do simulado são oficiais?",

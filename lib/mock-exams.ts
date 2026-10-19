@@ -5,6 +5,8 @@ export interface MockSection {
   areaId: AreaId;
   correct: number;
   total: number;
+  // Nota estimada pela TRI (lib/tri.ts), só nas provas oficiais feitas no Flow com a área inteira.
+  score?: number;
 }
 
 // Simulado feito fora do app (MEC Enem, cursinho, prova antiga): a pessoa registra acertos e tempo, sem nota oficial.
