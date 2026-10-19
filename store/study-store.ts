@@ -160,6 +160,7 @@ interface StudyActions {
   addMistake: (input: MistakeInput) => { error: string } | { id: string; suggestReview: boolean };
   answerMistake: (mistakeId: string, remembered: boolean) => void;
   removeMistake: (mistakeId: string) => void;
+  clearMistakes: () => void;
 
   addMockExam: (input: MockExamInput) => string | null;
   removeMockExam: (mockId: string) => void;
@@ -514,6 +515,7 @@ export const useStudyStore = create<StudyStore>()(
           }),
 
         removeMistake: (mistakeId) => set({ mistakes: get().mistakes.filter((mistake) => mistake.id !== mistakeId) }),
+        clearMistakes: () => set({ mistakes: [] }),
 
         addMockExam: (input) => {
           const error = validateMockExam(input, today());

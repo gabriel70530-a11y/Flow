@@ -336,6 +336,8 @@ describe("final stretch tools", () => {
     expect(state().mistakes[0]).toMatchObject({ stage: 1, due: "2026-10-23" });
     state().removeMistake(id);
     expect(state().mistakes).toHaveLength(2);
+    state().clearMistakes();
+    expect(state().mistakes).toEqual([]);
   });
 
   it("lightens today by moving the second topic to the next study day", () => {

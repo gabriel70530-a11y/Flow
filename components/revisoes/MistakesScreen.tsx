@@ -77,6 +77,35 @@ function DueMistake({ mistake, topics }: { mistake: Mistake; topics: readonly To
   );
 }
 
+function ClearMistakes({ count }: { count: number }) {
+  const [confirming, setConfirming] = useState(false);
+
+  const clear = () => {
+    useStudyStore.getState().clearMistakes();
+    showToast("Caderno de erros apagado.");
+  };
+
+  return confirming ? (
+    <div className="flex flex-wrap items-center gap-3 text-[13px]">
+      <span className="text-muted">
+        Apagar {count === 1 ? "o erro" : `os ${count} erros`} do caderno? Não dá para desfazer.
+      </span>
+      <button type="button" onClick={clear} className="font-semibold text-danger">
+        Apagar tudo
+      </button>
+      <button type="button" onClick={() => setConfirming(false)} className="text-muted underline underline-offset-3">
+        Cancelar
+      </button>
+    </div>
+  ) : (
+    <div>
+      <button type="button" onClick={() => setConfirming(true)} className="text-[13px] text-muted underline underline-offset-3">
+        Apagar todos os erros
+      </button>
+    </div>
+  );
+}
+
 export function MistakesScreen() {
   const hydrated = useHydrated();
   const mistakes = useStudyStore((state) => state.mistakes);
@@ -128,6 +157,7 @@ export function MistakesScreen() {
             </ul>
           </Card>
         )}
+        {mistakes.length > 0 && <ClearMistakes count={mistakes.length} />}
       </div>
     );
   }
@@ -200,6 +230,7 @@ export function MistakesScreen() {
               </ul>
             </Card>
           )}
+          <ClearMistakes count={mistakes.length} />
         </>
       )}
 
