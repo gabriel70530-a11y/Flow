@@ -1,7 +1,7 @@
 // Deixa o Flow abrir sem internet. Os dados já ficam no navegador; aqui só guardamos as páginas e os arquivos do app.
 const CACHE = "flow-v2";
 const PAGES = ["/", "/painel", "/cronograma", "/materias", "/timer", "/revisoes", "/revisoes/erros", "/revisoes/cartoes", "/questoes",
-  "/simulados", "/redacao", "/tabuada", "/prova", "/ajustes", "/ajuda"];
+  "/simulados", "/redacao", "/tabuada", "/prova", "/conquistas", "/ajustes", "/ajuda"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

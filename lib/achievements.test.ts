@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { achievementStatus, countedSeconds, newlyUnlocked, rankProgress, unlockMessage, unlockedBySession } from "./achievements";
+import {
+  ACHIEVEMENTS,
+  achievementStatus,
+  countedSeconds,
+  longestStreak,
+  newlyUnlocked,
+  rankProgress,
+  unlockMessage,
+  unlockedBySession,
+} from "./achievements";
 import type { StudySession } from "./sessions";
 
 function session(date: string, hours: number): StudySession {
@@ -45,16 +54,57 @@ describe("rankProgress", () => {
   });
 });
 
-describe("conquistas de horas", () => {
-  it("desbloqueia as metas atingidas", () => {
-    const status = achievementStatus(55 * 3600);
-    expect(status.filter((item) => item.unlocked).map((item) => item.hours)).toEqual([1, 10, 50]);
-    expect(status.find((item) => item.hours === 100)?.fraction).toBeCloseTo(0.55);
+const empty = {
+  sessions: [],
+  progress: {},
+  tasks: [],
+  mistakes: [],
+  flashcards: [],
+  mockExams: [],
+  questionBlocks: [],
+  essays: [],
+  timesTable: {},
+};
+
+describe("conquistas", () => {
+  it("começa com tudo bloqueado e ids únicos", () => {
+    const status = achievementStatus(empty);
+    expect(status.every((item) => !item.unlocked && item.fraction === 0)).toBe(true);
+    expect(new Set(ACHIEVEMENTS.map((item) => item.id)).size).toBe(ACHIEVEMENTS.length);
   });
 
-  it("aponta só as conquistas cruzadas por uma sessão nova", () => {
+  it("desbloqueia pelas horas, pela maior sequência e pelo resto do histórico", () => {
+    const sessions = ["2026-10-01", "2026-10-02", "2026-10-03", "2026-10-10"].map((date) => session(date, 10));
+    const status = achievementStatus({
+      ...empty,
+      sessions,
+      essays: [{ id: "r1", date: "2026-10-01", theme: "Tema", scores: [200, 200, 160, 160, 120], corrector: "", improve: "" }],
+      mockExams: [{ id: "s1", date: "2026-10-01", day: 2, minutes: null, note: "", sections: [{ areaId: "mat", correct: 30, total: 45, score: 712.3 }] }],
+      timesTable: Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((factor) => [`${Math.min(7, factor)}x${Math.max(7, factor)}`, { right: 3, wrong: 0, streak: 3 }])),
+    });
+    const unlocked = (id: string) => status.find((item) => item.id === id)?.unlocked;
+    expect(unlocked("horas-25")).toBe(true);
+    expect(unlocked("horas-50")).toBe(false);
+    expect(status.find((item) => item.id === "horas-50")?.fraction).toBeCloseTo(0.8);
+    expect(unlocked("sequencia-3")).toBe(true);
+    expect(unlocked("sequencia-7")).toBe(false);
+    expect(unlocked("redacao-800")).toBe(true);
+    expect(unlocked("nota-600")).toBe(true);
+    expect(unlocked("nota-750")).toBe(false);
+    expect(unlocked("tabuada-1")).toBe(true);
+  });
+
+  it("aponta só as conquistas de horas cruzadas por uma sessão nova", () => {
     expect(newlyUnlocked(9.5 * 3600, 10.2 * 3600).map((item) => item.id)).toEqual(["horas-10"]);
     expect(newlyUnlocked(10.2 * 3600, 11 * 3600)).toEqual([]);
+  });
+});
+
+describe("longestStreak", () => {
+  it("conta a maior sequência de dias seguidos de todo o histórico", () => {
+    const dates = ["2026-10-01", "2026-10-02", "2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08"];
+    expect(longestStreak(dates.map((date) => session(date, 1)))).toBe(4);
+    expect(longestStreak([])).toBe(0);
   });
 });
 
@@ -70,7 +120,7 @@ describe("unlockedBySession", () => {
 
   it("escreve o aviso da conquista mais alta", () => {
     expect(unlockMessage([])).toBe("");
-    expect(unlockMessage(newlyUnlocked(0, 2 * 3600))).toBe(" Nova conquista: 1 hora de estudo.");
-    expect(unlockMessage(newlyUnlocked(0, 12 * 3600))).toBe(" Nova conquista: 10 horas de estudo.");
+    expect(unlockMessage(newlyUnlocked(0, 2 * 3600))).toBe(" Nova conquista: Primeira hora.");
+    expect(unlockMessage(newlyUnlocked(0, 12 * 3600))).toBe(" Nova conquista: Aquecido.");
   });
 });
