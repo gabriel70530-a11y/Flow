@@ -37,10 +37,10 @@ export default function TermosPage() {
         </p>
       </section>
       <section>
-        <h2>Correção e análise com IA</h2>
+        <h2>Análise com IA</h2>
         <p>
-          No Pro, a nota da redação e a análise de erros são estimativas feitas por inteligência artificial. Podem errar, não são a
-          nota oficial e não substituem um professor ou corretor. Confira sempre antes de salvar.
+          No Pro, a análise de erros é feita por inteligência artificial. Pode errar, não é a
+          resposta oficial e não substitui um professor. Confira sempre antes de salvar.
         </p>
       </section>
       <section>
@@ -57,7 +57,7 @@ export default function TermosPage() {
             Você pode desistir em até 7 dias depois do pagamento e receber o valor de volta (Código de Defesa do Consumidor, art.
             49), pelo contato do rodapé.
           </li>
-          <li>Correção de redação com IA: até 8 por mês. Análise de erros com IA: até 60 por mês. O limite renova no dia 1º.</li>
+          <li>Análise de erros com IA: até 60 por mês. O limite renova no dia 1º.</li>
           <li>Enquanto a assinatura não estiver aberta, nada é cobrado.</li>
         </ul>
       </section>

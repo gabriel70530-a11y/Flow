@@ -31,7 +31,6 @@ export const FREE_FEATURES = [
 
 export const PRO_FEATURES = [
   "Tudo do gratuito",
-  "Correção de redação com IA, até 8 por mês",
   "Caderno de erros com análise por IA",
   "Simulado no app, com nota estimada pela TRI",
   "Blocos de 5 questões oficiais por tema",

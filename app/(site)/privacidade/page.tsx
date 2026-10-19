@@ -39,17 +39,17 @@ export default function PrivacidadePage() {
         </ul>
       </section>
       <section>
-        <h2>Correção de redação e análise de erros com IA (Pro)</h2>
+        <h2>Análise de erros com IA (Pro)</h2>
         <ul>
           <li>
-            Só quando você pede, o texto ou as fotos da redação ou da questão são enviados à Anthropic, empresa da IA Claude, com
-            servidores nos Estados Unidos, para gerar a correção ou a análise. Seu e-mail e seus outros dados não vão junto.
+            Só quando você pede, o texto ou a foto da questão são enviados à Anthropic, empresa da IA Claude, com
+            servidores nos Estados Unidos, para gerar a análise. Seu e-mail e seus outros dados não vão junto.
           </li>
           <li>
             A Anthropic não usa esse conteúdo para treinar a IA e o apaga depois de um prazo curto. O Flow não guarda as fotos:
             fica só o resultado que você decidir salvar.
           </li>
-          <li>Guardamos quantas correções e análises você usou no mês, para aplicar o limite do plano.</li>
+          <li>Guardamos quantas análises você usou no mês, para aplicar o limite do plano.</li>
           <li>Não envie fotos com seu nome, documento ou rosto.</li>
         </ul>
       </section>

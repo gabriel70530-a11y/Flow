@@ -30,7 +30,7 @@ Abra http://localhost:3000. A página inicial é o site; o app começa em `/pain
 - `/materias`: as cinco áreas do ENEM, com Natureza (Química, Física, Biologia) e Humanas (Geografia, História, Filosofia, Sociologia) divididas em matérias. Nenhum tópico vem pronto: o estudante cria os próprios. Ao criar, aparecem sugestões do que mais cai em cada área ou matéria (só preenchem o nome). Busca, filtros, ordenação, editar, ocultar e excluir.
 - `/timer`: Pomodoro e cronômetro, estudo geral, reflexão pós-sessão, sessões de hoje.
 - `/revisoes`: atrasadas, hoje, próximos 7 dias e futuras; concluir com feedback, adiar e reagendar. "Agendar revisões do que já estudei" marca tópicos já estudados e agenda as revisões. `/revisoes/erros`: caderno de erros, com cada erro voltando em 1, 7, 15 e 30 dias.
-- `/simulados`: simulado no app (Pro) com a prova oficial do Inep: as questões aparecem na tela (Enem 2023) ou, nas provas que ainda não estão no app, o PDF oficial com cartão-resposta; dia inteiro ou uma área, cronômetro, mapa das questões, "Rever depois" e correção pelo gabarito oficial. Também registra os simulados feitos fora do app; acertos por área, ritmo e, nas provas feitas no app, a nota estimada pela TRI com os parâmetros oficiais dos itens (microdados do Inep). `/redacao`: correção estimada por IA (Pro), notas por competência e repertório pessoal. `/prova`: checklist do dia da prova.
+- `/simulados`: simulado no app (Pro) com a prova oficial do Inep: as questões aparecem na tela (Enem 2023) ou, nas provas que ainda não estão no app, o PDF oficial com cartão-resposta; dia inteiro ou uma área, cronômetro, mapa das questões, "Rever depois" e correção pelo gabarito oficial. Também registra os simulados feitos fora do app; acertos por área, ritmo e, nas provas feitas no app, a nota estimada pela TRI com os parâmetros oficiais dos itens (microdados do Inep). `/redacao`: temas para treinar, registro das notas por competência e repertório pessoal. `/prova`: checklist do dia da prova.
 - No Painel: reta final (contagem e prioridade para revisões nas 4 semanas antes da prova) e "Dia leve" para dias cansativos. No Timer: modo foco.
 - `/comecar`: configuração inicial opcional. `/ajustes`: preferências, meta, cronograma, conta e backup. `/planos`: gratuito e Pro, assinatura e cancelamento.
 
@@ -50,7 +50,7 @@ As provas que aparecem dentro do app ficam em `public/provas/<ano>/<dia>.json`, 
 O que entra em cada plano está em `lib/plan.ts` (`FREE_FEATURES` e `PRO_FEATURES`). Nada que a pessoa já salvou some sem o Pro: o recurso do Pro aparece com um aviso discreto (`ProNotice`) no lugar.
 
 - **Gratuito:** áreas e tópicos, timer, revisões agendadas pela própria pessoa (uma data por vez, em Revisões), registro de simulados e redações, cronograma à mão e Painel com as últimas 4 semanas.
-- **Pro:** revisões agendadas sozinhas (1, 7, 15 e 30 dias) ao concluir um tópico, sugestões do que mais cai, semana montada sozinha, caderno de erros (no gratuito, os erros já salvos ficam só para leitura), resumo e histórico completos, simulado no app, correção de redação (até 8 por mês) e análise de erros (até 60 por mês) com IA.
+- **Pro:** revisões agendadas sozinhas (1, 7, 15 e 30 dias) ao concluir um tópico, sugestões do que mais cai, semana montada sozinha, caderno de erros (no gratuito, os erros já salvos ficam só para leitura), resumo e histórico completos, simulado no app e análise de erros com IA (até 60 por mês).
 - O acesso vem só do servidor (tabela `entitlements`, gravada pelo webhook do pagamento). O app guarda uma cópia por conta em `enem-flow:pro:<usuário>` para valer sem internet até `pro_until`.
 - `NEXT_PUBLIC_PRO_TRIAL=true` (no app) e `PRO_TRIAL=true` (nas funções) liberam o Pro para todos durante testes com estudantes.
 
@@ -110,7 +110,7 @@ O estudo de custos e a arquitetura estão em `docs/plano-pro.md`. As funções f
 | `checkout` | cria a assinatura mensal (`/preapproval`, no cartão) ou o pagamento anual (`/checkout/preferences`, Pix ou cartão) no Mercado Pago e devolve o link de pagamento |
 | `mercadopago-webhook` | confere a assinatura do aviso, consulta o pagamento na API e grava `entitlements` (mensal: até a próxima cobrança + 3 dias; anual: +365 dias). Cada pagamento é aplicado uma vez só (tabela `payments`) |
 | `cancel-subscription` | cancela a assinatura mensal; o Pro vale até o fim do período pago |
-| `ai-essay` | corrige a redação (texto ou até 2 fotos) com o Claude Sonnet 5.5: nota estimada por competência |
+| `ai-essay` | corrige a redação (texto ou até 2 fotos) com o Claude Sonnet 5.5: nota estimada por competência. Publicada, mas fora do app por enquanto: nenhuma tela a chama |
 | `ai-mistake` | analisa uma questão errada (texto ou 1 foto) com o Claude Haiku 5.5 e preenche o formulário do caderno |
 
 As funções de IA conferem login, Pro e o limite do mês (`reserve_ai_use`, tabela `ai_usage`) antes de chamar a IA e devolvem o uso se a chamada falhar.

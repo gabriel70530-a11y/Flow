@@ -45,11 +45,6 @@ const QUESTIONS: { question: string; answer: string }[] = [
       "Sim. São as provas aplicadas pelo INEP (caderno azul), corrigidas pelo gabarito oficial. Questões anuladas saem do total.",
   },
   {
-    question: "A correção de redação com IA vale como nota oficial?",
-    answer:
-      "Não. É uma estimativa por competência para você ter um retorno rápido. Pode errar e não substitui um professor ou corretor.",
-  },
-  {
     question: "Como cancelo o Pro?",
     answer:
       "Em Planos, dentro do app. Depois de cancelar, nada mais é cobrado e o Pro continua até o fim do período pago. Em até 7 dias depois do pagamento, você pode pedir o valor de volta.",

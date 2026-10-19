@@ -447,17 +447,6 @@ export interface ImagePayload {
   data: string;
 }
 
-export interface EssayCorrection {
-  scores: number[];
-  comments: string[];
-  summary: string;
-  remaining: number;
-}
-
-export function correctEssay(input: { theme: string; text: string; images: ImagePayload[] }) {
-  return callFunction<EssayCorrection>("ai-essay", input);
-}
-
 export interface MistakeAnalysis {
   answer: string | null;
   question: string;

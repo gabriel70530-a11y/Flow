@@ -15,7 +15,6 @@ import { shortDate, toDateKey } from "@/lib/dates";
 import { COMPETENCIES, essayTotal, searchRepertoire, weakestCompetency, type Essay, type RepertoireItem } from "@/lib/essays";
 import { useProAccess } from "@/store/pro";
 import { useHydrated, useStudyStore } from "@/store/study-store";
-import { AiEssayCard } from "./AiEssayCard";
 import { EssayForm } from "./EssayForm";
 import { ThemesCard } from "./ThemesCard";
 import { RepertoireForm } from "./RepertoireForm";
@@ -118,14 +117,10 @@ export function RedacaoScreen() {
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <div className="grid gap-6">
-          <div id="corrigir">
-            <AiEssayCard key={chosenTheme} today={today} initialTheme={chosenTheme} />
-          </div>
           <ThemesCard
-            onWrite={(theme, mode) => {
+            onWrite={(theme) => {
               setChosenTheme(theme);
-              if (mode === "registro") setDrawer("redacao");
-              else document.getElementById("corrigir")?.scrollIntoView({ block: "start" });
+              setDrawer("redacao");
             }}
           />
 

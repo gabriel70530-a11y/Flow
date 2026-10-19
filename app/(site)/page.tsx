@@ -40,7 +40,7 @@ const FAQ = [
   ["Funciona no celular?", "Sim, direto no navegador do celular, do tablet ou do computador."],
   [
     "Quanto custa?",
-    "O plano gratuito é gratuito de verdade. O Flow Pro, com correção de redação por IA, simulado no app e a semana montada sozinha, abre em breve.",
+    "O plano gratuito é gratuito de verdade. O Flow Pro, com simulado no app, análise de erros por IA e a semana montada sozinha, abre em breve.",
   ],
   ["E se eu não conseguir seguir o plano?", "Normal. O que não deu para estudar passa sozinho para o próximo dia, e você pode mover qualquer matéria quando quiser."],
   [

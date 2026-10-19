@@ -30,7 +30,7 @@ function ThemeButton({ theme, written, onOpen }: { theme: EssayTheme; written: b
   );
 }
 
-export function ThemesCard({ onWrite }: { onWrite: (theme: string, mode: "ia" | "registro") => void }) {
+export function ThemesCard({ onWrite }: { onWrite: (theme: string) => void }) {
   const essays = useStudyStore((state) => state.essays);
   const [listing, setListing] = useState(false);
   const [axis, setAxis] = useState<EssayAxis | null>(null);
@@ -39,9 +39,9 @@ export function ThemesCard({ onWrite }: { onWrite: (theme: string, mode: "ia" | 
   const recommended = recommendThemes(ESSAY_THEMES, essays, week);
   const listed = ESSAY_THEMES.filter((theme) => !axis || theme.axis === axis);
 
-  const write = (mode: "ia" | "registro") => {
+  const write = () => {
     if (!open) return;
-    onWrite(open.title, mode);
+    onWrite(open.title);
     setOpen(null);
     setListing(false);
   };
@@ -101,11 +101,10 @@ export function ThemesCard({ onWrite }: { onWrite: (theme: string, mode: "ia" | 
                 </li>
               ))}
             </ul>
-            <div className="flex flex-wrap gap-2">
-              <Button variant="primary" onClick={() => write("ia")}>
-                Corrigir com IA
+            <div>
+              <Button variant="primary" onClick={write}>
+                Registrar redação
               </Button>
-              <Button onClick={() => write("registro")}>Registrar redação</Button>
             </div>
           </div>
         )}
