@@ -8,6 +8,7 @@ import { NumberInput } from "@/components/ui/NumberInput";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Segmented } from "@/components/ui/Segmented";
 import { showToast } from "@/components/ui/Toast";
+import { unlockMessage, unlockedBySession } from "@/lib/achievements";
 import { GENERAL_STUDY, parseStudyChoice } from "@/lib/sessions";
 import { formatDuration } from "@/lib/stats";
 import { clockText, displaySeconds, elapsed, isIdle, phaseSeconds, type TimerMode } from "@/lib/timer";
@@ -64,7 +65,7 @@ export function TimerCard() {
     const session = actions.finishTimer();
     showToast(
       session
-        ? `Sessão de ${formatDuration(session.sec)} registrada.`
+        ? `Sessão de ${formatDuration(session.sec)} registrada.${unlockMessage(unlockedBySession(useStudyStore.getState().sessions, session))}`
         : "Sessões com menos de 1 minuto não são registradas.",
     );
   };

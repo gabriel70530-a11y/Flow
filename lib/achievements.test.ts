@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { achievementStatus, countedSeconds, newlyUnlocked, rankProgress } from "./achievements";
+import { achievementStatus, countedSeconds, newlyUnlocked, rankProgress, unlockMessage, unlockedBySession } from "./achievements";
 import type { StudySession } from "./sessions";
 
 function session(date: string, hours: number): StudySession {
@@ -55,5 +55,22 @@ describe("conquistas de horas", () => {
   it("aponta só as conquistas cruzadas por uma sessão nova", () => {
     expect(newlyUnlocked(9.5 * 3600, 10.2 * 3600).map((item) => item.id)).toEqual(["horas-10"]);
     expect(newlyUnlocked(10.2 * 3600, 11 * 3600)).toEqual([]);
+  });
+});
+
+describe("unlockedBySession", () => {
+  it("compara o total com e sem a sessão nova, respeitando o teto do dia", () => {
+    const earlier = session("2026-10-12", 9.5);
+    const latest = session("2026-10-13", 1);
+    expect(unlockedBySession([earlier, latest], latest).map((item) => item.id)).toEqual(["horas-10"]);
+    const fullDay = session("2026-10-14", 10);
+    const extra = session("2026-10-14", 4);
+    expect(unlockedBySession([earlier, latest, fullDay, extra], extra)).toEqual([]);
+  });
+
+  it("escreve o aviso da conquista mais alta", () => {
+    expect(unlockMessage([])).toBe("");
+    expect(unlockMessage(newlyUnlocked(0, 2 * 3600))).toBe(" Nova conquista: 1 hora de estudo.");
+    expect(unlockMessage(newlyUnlocked(0, 12 * 3600))).toBe(" Nova conquista: 10 horas de estudo.");
   });
 });

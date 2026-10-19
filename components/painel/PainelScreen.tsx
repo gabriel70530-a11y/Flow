@@ -6,9 +6,10 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { addDays, mondayOf, toDateKey } from "@/lib/dates";
 import { FREE_HISTORY_WEEKS } from "@/lib/plan";
 import { useProAccess } from "@/store/pro";
-import { useHydrated } from "@/store/study-store";
+import { useHydrated, useStudyStore } from "@/store/study-store";
 import { AreaCard } from "./AreaCard";
 import { PrepCard } from "./PrepCard";
+import { RankCard } from "./RankCard";
 import { StudyTodayCard } from "./StudyTodayCard";
 import { SummaryCard } from "./SummaryCard";
 import { UpcomingReviews } from "./UpcomingReviews";
@@ -29,6 +30,7 @@ export function PainelScreen() {
   const hydrated = useHydrated();
   const [weekOffset, setWeekOffset] = useState(0);
   const pro = useProAccess();
+  const showStreak = useStudyStore((state) => state.showStreak);
 
   if (!hydrated) {
     return (
@@ -69,6 +71,7 @@ export function PainelScreen() {
           <PrepCard today={today} className="hidden lg:block" />
           {!locked && <AreaCard monday={monday} />}
           <UpcomingReviews today={today} />
+          {showStreak && <RankCard />}
         </div>
       </div>
     </div>

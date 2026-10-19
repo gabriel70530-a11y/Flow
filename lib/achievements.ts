@@ -70,3 +70,15 @@ export function newlyUnlocked(beforeSeconds: number, afterSeconds: number): Achi
     (achievement) => beforeSeconds / 3600 < achievement.hours && afterSeconds / 3600 >= achievement.hours,
   );
 }
+
+// Conquistas que a sessão recém-registrada (já incluída em `sessions`) desbloqueou.
+export function unlockedBySession(sessions: readonly StudySession[], session: StudySession): Achievement[] {
+  const before = countedSeconds(sessions.filter((candidate) => candidate.id !== session.id));
+  return newlyUnlocked(before, countedSeconds(sessions));
+}
+
+export function unlockMessage(achievements: readonly Achievement[]): string {
+  if (achievements.length === 0) return "";
+  const hours = achievements[achievements.length - 1].hours;
+  return ` Nova conquista: ${hours} ${hours === 1 ? "hora" : "horas"} de estudo.`;
+}

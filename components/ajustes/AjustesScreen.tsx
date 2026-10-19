@@ -130,7 +130,7 @@ function Settings() {
                 Aviso sonoro ao fim de cada bloco do Pomodoro
               </Toggle>
               <Toggle pressed={showStreak} onChange={setShowStreak}>
-                Mostrar sequência de dias no painel
+                Mostrar sequência de dias e conquistas no painel
               </Toggle>
               {analyticsUrl() && (
                 <>

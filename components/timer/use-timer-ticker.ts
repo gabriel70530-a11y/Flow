@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { showToast } from "@/components/ui/Toast";
+import { unlockMessage, unlockedBySession } from "@/lib/achievements";
 import { clockText, displaySeconds, isIdle } from "@/lib/timer";
 import { useStudyStore } from "@/store/study-store";
 import { chime } from "./chime";
@@ -26,7 +27,7 @@ export function useTimerTicker(hydrated: boolean): string | null {
     if (sound) chime();
     showToast(
       result.kind === "focus-done"
-        ? "Bloco de foco registrado. Comece a pausa quando quiser."
+        ? `Bloco de foco registrado.${result.session ? unlockMessage(unlockedBySession(useStudyStore.getState().sessions, result.session)) : ""} Comece a pausa quando quiser.`
         : "Pausa encerrada. Comece o próximo bloco quando quiser.",
     );
   }, [hydrated, now, tick, sound]);

@@ -75,7 +75,9 @@ O produto é "sem culpa", e um ranking de horas pode gerar pressão e burnout (v
 
 **Feito (estrutura, sem tela):** `lib/achievements.ts` tem o rank pessoal por horas totais (Começando, Pegando o ritmo 10 h, Constante 50 h, Dedicado 100 h, Focado 250 h, Maratonista 500 h) e as conquistas "Estude 1/10/50/100/250/500 horas", com teto de 10 h contadas por dia. Funciona só no aparelho, sem conta.
 
-**Falta:** card de rank e conquistas no Painel (ou em Ajustes), toast ao desbloquear (`newlyUnlocked` ao registrar sessão), e as ligas e o ranking entre amigos no Supabase.
+**Feito:** card "Seu ritmo" no Painel e aviso no toast ao desbloquear uma conquista.
+
+**Falta:** as ligas e o ranking entre amigos no Supabase.
 
 ## Etapa 4: chegar ao público e aguentar o crescimento (item 4)
 

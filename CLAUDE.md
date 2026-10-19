@@ -199,6 +199,7 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 - Meta semanal em horas (padrão 25 h), sessões ou tópicos concluídos, editável sem reescrever histórico. Em horas, a meta diária é `meta / 7` e os dias que a atingem ficam com a barra na cor de destaque.
 - Números vêm só de sessões registradas. Sem denominador válido, não mostre porcentagem. Estado vazio explica como começar.
 - Sequência = dias consecutivos com estudo, contando hoje ou, se hoje ainda não teve estudo, a partir de ontem. É opcional (pode ser escondida em Ajustes) e discreta.
+- "Seu ritmo" (`lib/achievements.ts`): rank pelas horas totais e conquistas de 1 a 500 h, contando no máximo 10 h por dia para não premiar a exaustão. Some junto com a sequência quando ela está escondida. Ao registrar uma sessão que cruza uma meta, o toast avisa.
 
 **Conta e sincronização** (obrigatória)
 - Sem login, o `AuthGate` mostra a tela de entrar no lugar do app. Entrar com e-mail e senha (mínimo de 8 caracteres) ou com o Google. Criar conta pede o ano de nascimento (mínimo de 13 anos; menor de 18 confirma que um responsável sabe) e a confirmação de que leu privacidade e termos, e confirma o e-mail por link. Quem entra pelo Google responde ano e aceite depois do primeiro login. "Esqueci minha senha" manda um link que volta para Ajustes pedindo a senha nova. Ajustes mostra a conta, sair e excluir.
