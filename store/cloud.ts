@@ -340,6 +340,11 @@ export async function signUp(email: string, password: string, birthYear: number)
 }
 
 // Volta para o app pelo Google; a sessão é lida da URL ao carregar a página.
+// O botão do Google só aparece com o provedor ativado no Supabase (NEXT_PUBLIC_GOOGLE_LOGIN=true).
+export function googleLoginOpen(): boolean {
+  return process.env.NEXT_PUBLIC_GOOGLE_LOGIN === "true";
+}
+
 export async function signInWithGoogle(): Promise<string | null> {
   const db = await client();
   if (!db) return "A conta ainda não está disponível.";

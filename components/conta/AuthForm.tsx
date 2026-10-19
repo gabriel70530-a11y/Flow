@@ -14,6 +14,7 @@ import {
   saveBirthYear,
   sendPasswordReset,
   signIn,
+  googleLoginOpen,
   signInWithGoogle,
   signUp,
 } from "@/store/cloud";
@@ -224,12 +225,16 @@ export function AuthForm() {
         value={step}
         onChange={go}
       />
-      <Button size="lg" disabled={busy} onClick={() => void run(signInWithGoogle)}>
-        {step === "criar" ? "Criar conta com Google" : "Entrar com Google"}
-      </Button>
-      <p className="flex items-center gap-3 text-[13px] text-muted before:flex-1 before:border-t before:border-line after:flex-1 after:border-t after:border-line">
-        ou com e-mail
-      </p>
+      {googleLoginOpen() && (
+        <>
+          <Button size="lg" disabled={busy} onClick={() => void run(signInWithGoogle)}>
+            {step === "criar" ? "Criar conta com Google" : "Entrar com Google"}
+          </Button>
+          <p className="flex items-center gap-3 text-[13px] text-muted before:flex-1 before:border-t before:border-line after:flex-1 after:border-t after:border-line">
+            ou com e-mail
+          </p>
+        </>
+      )}
       {emailField}
       <Field label="Senha" hint={step === "criar" ? `Pelo menos ${PASSWORD_MIN} caracteres.` : undefined}>
         <input
