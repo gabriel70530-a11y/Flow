@@ -4,6 +4,7 @@ import { siteUrl } from "@/lib/site";
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { path: "/", priority: 1 },
+    { path: "/ajuda", priority: 0.5 },
     { path: "/privacidade", priority: 0.3 },
     { path: "/termos", priority: 0.3 },
   ].map(({ path, priority }) => ({ url: new URL(path, siteUrl()).href, changeFrequency: "monthly", priority }));

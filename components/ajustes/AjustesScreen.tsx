@@ -257,6 +257,9 @@ function Settings() {
                 <Link href="/planos" className={buttonStyles()}>
                   Planos
                 </Link>
+                <Link href="/ajuda" className={linkStyles}>
+                  Ajuda
+                </Link>
                 <Link href="/privacidade" className={linkStyles}>
                   Privacidade
                 </Link>

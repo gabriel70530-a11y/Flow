@@ -52,7 +52,7 @@ Um commit por unidade lógica de trabalho.
 ```
 app/
   layout.tsx            fontes, script de tema
-  (site)/               landing (/), /privacidade, /termos: sem a navegação do app
+  (site)/               landing (/), /ajuda, /privacidade, /termos: sem a navegação do app
   (app)/layout.tsx      AppShell
   (app)/painel, cronograma, materias, timer, revisoes (+ revisoes/erros), ajustes, planos, comecar (onboarding)
   (app)/simulados, redacao, prova   ferramentas de preparação (fora das abas do celular)

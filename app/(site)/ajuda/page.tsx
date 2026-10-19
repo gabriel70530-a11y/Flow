@@ -1,0 +1,109 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { linkStyles } from "@/components/ui/Button";
+import { contactEmail } from "@/lib/plan";
+
+export const metadata: Metadata = {
+  title: "Ajuda",
+  description: "Dúvidas frequentes sobre o Flow: conta, dados, cronograma, revisões, simulados e o plano Pro.",
+};
+
+const QUESTIONS: { question: string; answer: string }[] = [
+  {
+    question: "O Flow é um cursinho?",
+    answer:
+      "Não. O Flow organiza a sua preparação: o que estudar em cada dia, o tempo de estudo, as revisões, os erros e os simulados. As aulas e os materiais você escolhe. O app não é oficial e não tem vínculo com o INEP ou o MEC.",
+  },
+  {
+    question: "Por que preciso de uma conta?",
+    answer:
+      "A conta guarda uma cópia dos seus dados e sincroniza entre o celular e o computador. Os dados também ficam no aparelho, então o app continua funcionando sem internet depois de entrar.",
+  },
+  {
+    question: "Troquei de celular. Perdi meus dados?",
+    answer:
+      "Não, se você entrou com a mesma conta. Ao entrar no aparelho novo, o Flow baixa o que está na nuvem e junta com o que já existir ali.",
+  },
+  {
+    question: "Como o cronograma funciona?",
+    answer:
+      "Você escolhe em quais dias estuda e quais áreas são prioritárias. O Flow coloca até duas matérias do mesmo assunto em cada dia, sem limitar o tempo. O que ficou para trás passa sozinho para o próximo dia de estudo, sem culpa.",
+  },
+  {
+    question: "Como funcionam as revisões?",
+    answer:
+      "No gratuito, você agenda a revisão de um tópico na data que quiser. No Pro, ao concluir um tópico, o Flow agenda quatro revisões: depois de 1, 7, 15 e 30 dias.",
+  },
+  {
+    question: "O simulado calcula a minha nota do Enem?",
+    answer:
+      "Não. A nota do Enem usa a TRI, que depende das respostas de todos os participantes e não pode ser reproduzida. O Flow mostra os acertos por área, a comparação com o simulado anterior e o seu ritmo por questão.",
+  },
+  {
+    question: "As questões do simulado são oficiais?",
+    answer:
+      "Sim. São as provas aplicadas pelo INEP (caderno azul), corrigidas pelo gabarito oficial. Questões anuladas saem do total.",
+  },
+  {
+    question: "A correção de redação com IA vale como nota oficial?",
+    answer:
+      "Não. É uma estimativa por competência para você ter um retorno rápido. Pode errar e não substitui um professor ou corretor.",
+  },
+  {
+    question: "Como cancelo o Pro?",
+    answer:
+      "Em Planos, dentro do app. Depois de cancelar, nada mais é cobrado e o Pro continua até o fim do período pago. Em até 7 dias depois do pagamento, você pode pedir o valor de volta.",
+  },
+  {
+    question: "Como apago meus dados ou a conta?",
+    answer:
+      "Em Ajustes. \"Apagar todos os dados\" apaga no aparelho e na nuvem. \"Excluir conta\" apaga a conta e a cópia na nuvem e mantém o que está no aparelho.",
+  },
+];
+
+export default function AjudaPage() {
+  const email = contactEmail();
+  return (
+    <article className="mx-auto grid max-w-3xl gap-6 px-4 py-12 md:px-8">
+      <header className="grid gap-2">
+        <h1>Ajuda</h1>
+        <p className="text-muted">As dúvidas mais comuns sobre o Flow.</p>
+      </header>
+      <div className="grid gap-3">
+        {QUESTIONS.map(({ question, answer }) => (
+          <details key={question} className="group rounded-[18px] border-2 border-edge bg-surface p-5 shadow-card">
+            <summary className="cursor-pointer list-none font-semibold [&::-webkit-details-marker]:hidden">
+              <span className="flex items-center justify-between gap-3">
+                {question}
+                <span aria-hidden className="text-muted group-open:rotate-45 motion-safe:transition-transform">
+                  +
+                </span>
+              </span>
+            </summary>
+            <p className="mt-3 text-muted">{answer}</p>
+          </details>
+        ))}
+      </div>
+      <p className="text-muted">
+        Não achou o que procurava?{" "}
+        {email ? (
+          <a href={`mailto:${email}`} className={linkStyles}>
+            Escreva para {email}
+          </a>
+        ) : (
+          <>
+            Veja também os{" "}
+            <Link href="/termos" className={linkStyles}>
+              termos de uso
+            </Link>{" "}
+            e a{" "}
+            <Link href="/privacidade" className={linkStyles}>
+              política de privacidade
+            </Link>
+            .
+          </>
+        )}
+      </p>
+    </article>
+  );
+}

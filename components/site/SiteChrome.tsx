@@ -45,6 +45,9 @@ export function SiteFooter() {
     <footer className="border-t-2 border-edge bg-surface pb-[env(safe-area-inset-bottom,0px)]">
       <div className="mx-auto grid max-w-6xl gap-4 px-5 py-10 text-sm text-muted md:px-12">
         <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <Link href="/ajuda" className={linkStyles}>
+            Ajuda
+          </Link>
           <Link href="/privacidade" className={linkStyles}>
             Privacidade
           </Link>
