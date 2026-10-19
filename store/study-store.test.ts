@@ -508,6 +508,19 @@ describe("flashcards", () => {
     state().removeCard(card.id);
     expect(state().flashcards).toEqual([]);
   });
+
+  it("imports cards without repeating the ones that already exist", () => {
+    state().addCard(input);
+    const subject = { areaId: "nat" as const, subjectId: "bio" as const, topicId: null };
+    const cards = [
+      { front: "Mitose", back: "Gera duas células iguais" },
+      { front: "Meiose", back: "Gera quatro células" },
+      { front: "Meiose", back: "Gera quatro células" },
+    ];
+    expect(state().importCards(cards, subject)).toBe(1);
+    expect(state().flashcards.map((card) => card.front)).toEqual(["Mitose", "Meiose"]);
+    expect(state().flashcards[1]).toMatchObject({ due: today, subjectId: "bio" });
+  });
 });
 
 describe("free plan", () => {

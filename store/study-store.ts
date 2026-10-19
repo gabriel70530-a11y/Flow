@@ -188,6 +188,8 @@ interface StudyActions {
   updateCard: (cardId: string, input: CardInput) => string | null;
   removeCard: (cardId: string) => void;
   answerCard: (cardId: string, grade: CardGrade) => void;
+  // Cartões que a pessoa trouxe do Anki; os que já existem (mesma frente e verso) não se repetem.
+  importCards: (cards: readonly { front: string; back: string }[], subject: Omit<CardInput, "front" | "back">) => number;
 
   toggleChecklistItem: (itemId: string) => void;
   resetChecklist: (day: ExamDay) => void;
@@ -650,6 +652,21 @@ export const useStudyStore = create<StudyStore>()(
           return null;
         },
         removeCard: (cardId) => set({ flashcards: get().flashcards.filter((card) => card.id !== cardId) }),
+        importCards: (cards, subject) => {
+          const existing = new Set(get().flashcards.map((card) => `${card.front}
+${card.back}`));
+          const created = cards
+            .filter((card) => {
+              const key = `${card.front.trim()}
+${card.back.trim()}`;
+              if (existing.has(key)) return false;
+              existing.add(key);
+              return true;
+            })
+            .map((card, index) => createCard({ ...subject, ...card }, newId(`cartao-${index}-`), today()));
+          set({ flashcards: [...get().flashcards, ...created] });
+          return created.length;
+        },
         answerCard: (cardId, grade) =>
           set({ flashcards: get().flashcards.map((card) => (card.id === cardId ? reviewCard(card, grade, today()) : card)) }),
 

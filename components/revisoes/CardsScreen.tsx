@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { StudyOptions } from "@/components/timer/StudyOptions";
 import { Button, linkStyles } from "@/components/ui/Button";
@@ -20,8 +20,10 @@ import {
   cardCounts,
   dueCards,
   intervalLabel,
+  parseAnkiText,
   previewInterval,
   type CardGrade,
+  type ImportedCards,
   type Flashcard,
 } from "@/lib/flashcards";
 import { GENERAL_STUDY, parseStudyChoice, studyTitle, studyValue } from "@/lib/sessions";
@@ -121,6 +123,75 @@ function CardForm({ card, onDone }: { card: Flashcard | null; onDone: (message: 
   );
 }
 
+const IMPORT_FILE_MAX = 5 * 1024 * 1024;
+
+function ImportForm({ onDone }: { onDone: (message: string) => void }) {
+  const topics = useStudyStore((state) => state.topics);
+  const importCards = useStudyStore((state) => state.importCards);
+  const [choice, setChoice] = useState(GENERAL_STUDY);
+  const [parsed, setParsed] = useState<ImportedCards | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const read = async (file: File | undefined) => {
+    setParsed(null);
+    setError(null);
+    if (!file) return;
+    if (file.size > IMPORT_FILE_MAX) {
+      setError("O arquivo passa de 5 MB. Exporte um baralho menor.");
+      return;
+    }
+    const result = parseAnkiText(await file.text());
+    if (result.cards.length === 0) setError("Nenhum cartão com frente e verso neste arquivo. Confira se é a exportação em texto.");
+    else setParsed(result);
+  };
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    if (!parsed) return;
+    const { topicId, areaId, subjectId } = parseStudyChoice(choice, topics);
+    const added = importCards(parsed.cards, { topicId, areaId, subjectId });
+    const repeated = parsed.cards.length - added;
+    onDone(
+      `${added} ${added === 1 ? "cartão importado" : "cartões importados"}${repeated > 0 ? `, ${repeated} já existiam` : ""}.`,
+    );
+  };
+
+  return (
+    <form onSubmit={submit} className="grid gap-5">
+      <p className="text-sm text-muted">
+        No Anki, abra o baralho e use Arquivo › Exportar › Notas em texto simples (.txt). O Flow lê a frente e o verso de cada
+        nota; imagens e áudios ficam de fora.
+      </p>
+      <Field label="Arquivo exportado do Anki" error={error}>
+        <input
+          type="file"
+          accept=".txt,.csv,.tsv,text/plain,text/csv"
+          onChange={(event) => void read(event.target.files?.[0])}
+          className={`${inputStyles} h-auto py-2`}
+        />
+      </Field>
+      <Field label="De qual assunto?">
+        <select value={choice} onChange={(event) => setChoice(event.target.value)} className={inputStyles}>
+          <option value={GENERAL_STUDY}>Sem assunto definido</option>
+          <StudyOptions topics={visibleTopics(topics)} />
+        </select>
+      </Field>
+      {parsed && (
+        <p className="text-sm tabular-nums" aria-live="polite">
+          {parsed.cards.length} {parsed.cards.length === 1 ? "cartão encontrado" : "cartões encontrados"}
+          {parsed.skipped > 0 && `, ${parsed.skipped} sem frente ou verso (ou grandes demais) ficam de fora`}. Primeiro:{" "}
+          <strong>{parsed.cards[0].front}</strong>
+        </p>
+      )}
+      <div>
+        <Button type="submit" variant="primary" size="lg" disabled={!parsed}>
+          {parsed ? `Importar ${parsed.cards.length} ${parsed.cards.length === 1 ? "cartão" : "cartões"}` : "Importar"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 // A fila é fixada ao começar: "Errei" manda o cartão para o fim e ele volta antes de terminar.
 function StudySession({ initial, onClose }: { initial: string[]; onClose: () => void }) {
   const flashcards = useStudyStore((state) => state.flashcards);
@@ -215,6 +286,7 @@ export function CardsScreen() {
   const flashcards = useStudyStore((state) => state.flashcards);
   const topics = useStudyStore((state) => state.topics);
   const [editing, setEditing] = useState<Flashcard | "novo" | null>(null);
+  const [importing, setImporting] = useState(false);
   const [session, setSession] = useState<string[] | null>(null);
   const [query, setQuery] = useState("");
 
@@ -254,6 +326,10 @@ export function CardsScreen() {
             <Plus size={18} aria-hidden />
             Novo cartão
           </Button>
+          <Button size="lg" onClick={() => setImporting(true)}>
+            <Upload size={18} aria-hidden />
+            Importar do Anki
+          </Button>
           {flashcards.length > 0 && (
             <span className="text-sm text-muted tabular-nums">
               {counts.fresh} novos · {counts.learning} aprendendo · {counts.mature} firmes
@@ -265,7 +341,7 @@ export function CardsScreen() {
       {flashcards.length === 0 ? (
         <Card flush>
           <EmptyState title="Nenhum cartão ainda">
-            Escreva uma pergunta na frente e a resposta no verso. Ao estudar, diga se errou, achou difícil, bom ou fácil: o Flow
+            Monte seus cartões: uma pergunta na frente e a resposta no verso. Se já usa o Anki, importe seus baralhos. Ao estudar, diga se errou, achou difícil, bom ou fácil: o Flow
             traz o cartão de volta na mesma sessão, em dias ou em meses, como no Anki.
           </EmptyState>
         </Card>
@@ -307,6 +383,16 @@ export function CardsScreen() {
         </Card>
       )}
 
+      <Drawer open={importing} onClose={() => setImporting(false)} eyebrow="Cartões" title="Importar do Anki">
+        {importing && (
+          <ImportForm
+            onDone={(message) => {
+              setImporting(false);
+              showToast(message);
+            }}
+          />
+        )}
+      </Drawer>
       <Drawer
         open={editing !== null}
         onClose={() => setEditing(null)}
