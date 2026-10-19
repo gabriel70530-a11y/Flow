@@ -92,13 +92,17 @@ function writeJson(key: string, value: unknown) {
 }
 
 const SYNCED_FIELDS = [
-  "topics", "progress", "sessions", "tasks", "mistakes", "mockExams", "essays", "repertoire",
+  "topics", "progress", "sessions", "tasks", "mistakes", "mockExams", "essays", "repertoire", "questionBlocks", "flashcards",
   "examChecklist", "goal", "planner", "onboarding", "showStreak",
 ] as const satisfies readonly (keyof SyncedData)[];
 
 function syncedPart(data: StudyData): SyncedData {
-  const { topics, progress, sessions, tasks, mistakes, mockExams, essays, repertoire, examChecklist, goal, planner, onboarding, showStreak } = data;
-  return { topics, progress, sessions, tasks, mistakes, mockExams, essays, repertoire, examChecklist, goal, planner, onboarding, showStreak };
+  const { topics, progress, sessions, tasks, mistakes, mockExams, essays, repertoire, questionBlocks, flashcards } = data;
+  const { examChecklist, goal, planner, onboarding, showStreak } = data;
+  return {
+    topics, progress, sessions, tasks, mistakes, mockExams, essays, repertoire, questionBlocks, flashcards,
+    examChecklist, goal, planner, onboarding, showStreak,
+  };
 }
 
 // Deixa o aparelho só com as preferências dele; o resto vem da conta.

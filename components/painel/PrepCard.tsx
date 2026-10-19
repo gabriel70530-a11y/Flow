@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, ClipboardCheck, NotebookPen, PenLine, TimerReset, type LucideIcon } from "lucide-react";
+import { ChevronRight, ClipboardCheck, ListChecks, NotebookPen, PenLine, TimerReset, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { shortDate } from "@/lib/dates";
@@ -63,6 +63,7 @@ export function PrepCard({ today, className = "" }: { today: string; className?:
           label="Caderno de erros"
           detail={dueCount > 0 ? `${dueCount} para rever` : mistakes.length ? String(mistakes.length) : undefined}
         />
+        <ToolLink href="/questoes" icon={ListChecks} label="Blocos de questões" />
         <ToolLink href="/simulados" icon={TimerReset} label="Simulados" detail={mockCount ? String(mockCount) : undefined} />
         <ToolLink href="/redacao" icon={PenLine} label="Redação" detail={essayCount ? String(essayCount) : undefined} />
       </ul>

@@ -1,8 +1,10 @@
 import type { Essay, RepertoireItem } from "@/lib/essays";
+import type { Flashcard } from "@/lib/flashcards";
 import type { Mistake } from "@/lib/mistakes";
 import type { MockExam } from "@/lib/mock-exams";
 import type { ExamDraft } from "@/lib/official-exams";
 import { DEFAULT_PLANNER, type PlanTask, type PlannerSettings } from "@/lib/planner";
+import type { QuestionBlock } from "@/lib/question-blocks";
 import type { ProgressMap } from "@/lib/reviews";
 import type { StudySession } from "@/lib/sessions";
 import { DEFAULT_GOAL, type WeeklyGoal } from "@/lib/stats";
@@ -27,6 +29,8 @@ export interface StudyData {
   mockExams: MockExam[];
   essays: Essay[];
   repertoire: RepertoireItem[];
+  questionBlocks: QuestionBlock[];
+  flashcards: Flashcard[];
   // Itens já conferidos no checklist do dia da prova.
   examChecklist: string[];
   goal: WeeklyGoal;
@@ -53,6 +57,8 @@ export function emptyData(): StudyData {
     mockExams: [],
     essays: [],
     repertoire: [],
+    questionBlocks: [],
+    flashcards: [],
     examChecklist: [],
     goal: DEFAULT_GOAL,
     planner: DEFAULT_PLANNER,

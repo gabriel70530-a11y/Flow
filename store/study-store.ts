@@ -4,6 +4,7 @@ import { persist, type PersistStorage } from "zustand/middleware";
 import { isDateKey, toDateKey } from "@/lib/dates";
 import { validateEssay, validateRepertoire, type EssayInput, type RepertoireInput } from "@/lib/essays";
 import { checklistIds, type ExamDay } from "@/lib/exam";
+import { createCard, editCard, reviewCard, validateCard, type CardGrade, type CardInput } from "@/lib/flashcards";
 import {
   MISTAKES_TO_SUGGEST_REVIEW,
   createMistake,
@@ -31,6 +32,15 @@ import {
   type Letter,
   type WrongAnswer,
 } from "@/lib/official-exams";
+import {
+  answerBlock,
+  blockWrongAnswers,
+  createBlock,
+  moveBlock,
+  type PoolQuestion,
+  type PracticeArea,
+  type QuestionBlock,
+} from "@/lib/question-blocks";
 import {
   applyFocusToTask,
   carryOverMissed,
@@ -165,6 +175,20 @@ interface StudyActions {
   addRepertoire: (input: RepertoireInput) => string | null;
   removeRepertoire: (itemId: string) => void;
 
+  startBlock: (input: { areaId: PracticeArea; theme: string; language: ForeignLanguage; picked: readonly PoolQuestion[] }) => string | null;
+  answerBlockQuestion: (index: number, letter: Letter | null) => void;
+  goToBlockQuestion: (index: number) => void;
+  finishBlock: () => QuestionBlock | null;
+  discardBlock: () => void;
+  removeBlock: (blockId: string) => void;
+  // stems: o comando de cada questão errada, pela chave "prova:número".
+  addBlockMistakes: (blockId: string, stems: Record<string, string>) => number;
+
+  addCard: (input: CardInput) => string | null;
+  updateCard: (cardId: string, input: CardInput) => string | null;
+  removeCard: (cardId: string) => void;
+  answerCard: (cardId: string, grade: CardGrade) => void;
+
   toggleChecklistItem: (itemId: string) => void;
   resetChecklist: (day: ExamDay) => void;
 
@@ -271,6 +295,8 @@ function toStudyData(state: StudyData): StudyData {
     mockExams: state.mockExams,
     essays: state.essays,
     repertoire: state.repertoire,
+    questionBlocks: state.questionBlocks,
+    flashcards: state.flashcards,
     examChecklist: state.examChecklist,
     goal: state.goal,
     planner: state.planner,
@@ -299,6 +325,8 @@ export const useStudyStore = create<StudyStore>()(
       const updateSession = (sessionId: string, changes: Partial<StudySession>) =>
         set({ sessions: get().sessions.map((session) => (session.id === sessionId ? { ...session, ...changes } : session)) });
       const today = () => toDateKey(new Date());
+      const updateOpenBlock = (change: (block: QuestionBlock) => QuestionBlock) =>
+        set({ questionBlocks: get().questionBlocks.map((block) => (block.finished ? block : change(block))) });
 
       return {
         ...emptyData(),
@@ -568,6 +596,62 @@ export const useStudyStore = create<StudyStore>()(
           return null;
         },
         removeRepertoire: (itemId) => set({ repertoire: get().repertoire.filter((item) => item.id !== itemId) }),
+
+        startBlock: ({ areaId, theme, language, picked }) => {
+          if (!proAccessNow()) return "Os blocos de questões fazem parte do Pro.";
+          if (picked.length === 0) return "Nenhuma questão encontrada com esse tema. Tente outra palavra.";
+          if (get().questionBlocks.some((block) => !block.finished)) return "Termine ou descarte o bloco aberto.";
+          const block = createBlock({ id: newId("bloco-"), areaId, theme, language, date: today(), picked });
+          set({ questionBlocks: [...get().questionBlocks, block] });
+          return null;
+        },
+        answerBlockQuestion: (index, letter) => updateOpenBlock((block) => answerBlock(block, index, letter)),
+        goToBlockQuestion: (index) => updateOpenBlock((block) => moveBlock(block, index)),
+        finishBlock: () => {
+          const open = get().questionBlocks.find((block) => !block.finished);
+          if (!open) return null;
+          const finished = { ...open, finished: true };
+          set({ questionBlocks: get().questionBlocks.map((block) => (block.id === open.id ? finished : block)) });
+          return finished;
+        },
+        discardBlock: () => set({ questionBlocks: get().questionBlocks.filter((block) => block.finished) }),
+        removeBlock: (blockId) => set({ questionBlocks: get().questionBlocks.filter((block) => block.id !== blockId) }),
+        addBlockMistakes: (blockId, stems) => {
+          const block = get().questionBlocks.find((candidate) => candidate.id === blockId);
+          if (!block) return 0;
+          const created = blockWrongAnswers(block).map((item, index) =>
+            createMistake(
+              {
+                topicId: null,
+                areaId: item.areaId,
+                subjectId: null,
+                reason: "conteudo",
+                ...examMistakeText(item, stems[`${item.examId}:${item.number}`] ?? null),
+                source: `Enem ${findOfficialExam(item.examId)?.year ?? ""}, questão ${item.number}`,
+              },
+              newId(`erro-${index}-`),
+              today(),
+            ),
+          );
+          set({ mistakes: [...get().mistakes, ...created] });
+          return created.length;
+        },
+
+        addCard: (input) => {
+          const error = validateCard(input);
+          if (error) return error;
+          set({ flashcards: [...get().flashcards, createCard(input, newId("cartao-"), today())] });
+          return null;
+        },
+        updateCard: (cardId, input) => {
+          const error = validateCard(input);
+          if (error) return error;
+          set({ flashcards: get().flashcards.map((card) => (card.id === cardId ? editCard(card, input) : card)) });
+          return null;
+        },
+        removeCard: (cardId) => set({ flashcards: get().flashcards.filter((card) => card.id !== cardId) }),
+        answerCard: (cardId, grade) =>
+          set({ flashcards: get().flashcards.map((card) => (card.id === cardId ? reviewCard(card, grade, today()) : card)) }),
 
         toggleChecklistItem: (itemId) => {
           const checked = get().examChecklist;

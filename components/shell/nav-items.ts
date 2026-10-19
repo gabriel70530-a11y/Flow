@@ -4,6 +4,7 @@ import {
   CalendarDays,
   ClipboardCheck,
   LayoutDashboard,
+  ListChecks,
   PenLine,
   Timer,
   TimerReset,
@@ -26,6 +27,7 @@ export const NAV_ITEMS: NavItem[] = [
 
 // Ferramentas de preparação: ficam fora das abas do celular (que chegam pelo Painel) e num grupo discreto da barra lateral.
 export const PREP_ITEMS: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/questoes", label: "Questões", icon: ListChecks },
   { href: "/simulados", label: "Simulados", icon: TimerReset },
   { href: "/redacao", label: "Redação", icon: PenLine },
   { href: "/prova", label: "Dia da prova", icon: ClipboardCheck },

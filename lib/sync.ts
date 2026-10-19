@@ -1,7 +1,9 @@
 import type { Essay, RepertoireItem } from "./essays";
+import type { Flashcard } from "./flashcards";
 import type { Mistake } from "./mistakes";
 import type { MockExam } from "./mock-exams";
 import type { PlanTask, PlannerSettings } from "./planner";
+import type { QuestionBlock } from "./question-blocks";
 import type { ProgressMap } from "./reviews";
 import type { StudySession } from "./sessions";
 import type { WeeklyGoal } from "./stats";
@@ -17,6 +19,8 @@ export interface SyncedData {
   mockExams: MockExam[];
   essays: Essay[];
   repertoire: RepertoireItem[];
+  questionBlocks: QuestionBlock[];
+  flashcards: Flashcard[];
   examChecklist: string[];
   goal: WeeklyGoal;
   planner: PlannerSettings;
@@ -24,7 +28,7 @@ export interface SyncedData {
   showStreak: boolean;
 }
 
-const LIST_COLLECTIONS = ["topics", "sessions", "tasks", "mistakes", "mockExams", "essays", "repertoire"] as const;
+const LIST_COLLECTIONS = ["topics", "sessions", "tasks", "mistakes", "mockExams", "essays", "repertoire", "questionBlocks", "flashcards"] as const;
 const SETTINGS = ["examChecklist", "goal", "planner", "onboarding", "showStreak"] as const;
 
 type ListCollection = (typeof LIST_COLLECTIONS)[number];

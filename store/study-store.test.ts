@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlanTask } from "@/lib/planner";
 import { GENERAL_STUDY } from "@/lib/sessions";
 import { legacyTopics } from "@/lib/legacy-topics";
+import { findOfficialExam } from "@/lib/official-exams";
+import { poolFromExam } from "@/lib/question-blocks";
 import { findTopic } from "@/lib/topics";
 import { usePro } from "./pro";
 import { emptyData } from "./state";
@@ -446,6 +448,65 @@ describe("official mock exam in the app", () => {
     state().discardExam();
     expect(state().examDraft).toBeNull();
     expect(state().mockExams).toEqual([]);
+  });
+});
+
+describe("question blocks", () => {
+  const exam = findOfficialExam("2023-2")!;
+  const pool = poolFromExam(
+    exam,
+    [136, 137, 138].map((number) => ({
+      number,
+      areaId: "mat" as const,
+      language: null,
+      text: "Uma porcentagem.",
+      stem: `Comando ${number}`,
+      alternatives: (["A", "B", "C", "D", "E"] as const).map((letter) => ({ letter, text: letter, image: null })),
+    })),
+    "ingles",
+  );
+
+  it("opens one block at a time, grades it and sends the mistakes to the notebook", () => {
+    expect(state().startBlock({ areaId: "mat", theme: "", language: "ingles", picked: [] })).toMatch(/Nenhuma questão/);
+    expect(state().startBlock({ areaId: "mat", theme: "porcentagem", language: "ingles", picked: pool })).toBeNull();
+    expect(state().startBlock({ areaId: "mat", theme: "", language: "ingles", picked: pool })).toBe("Termine ou descarte o bloco aberto.");
+    const [first, second] = state().questionBlocks[0].items;
+    state().answerBlockQuestion(0, first.correct);
+    state().answerBlockQuestion(1, second.correct === "A" ? "B" : "A");
+    state().goToBlockQuestion(2);
+    expect(state().questionBlocks[0]).toMatchObject({ current: 2, date: today, theme: "porcentagem" });
+    const finished = state().finishBlock();
+    expect(finished?.finished).toBe(true);
+    expect(state().finishBlock()).toBeNull();
+    expect(state().addBlockMistakes(finished!.id, { [`2023-2:${second.number}`]: `Comando ${second.number}` })).toBe(2);
+    expect(state().mistakes[0]).toMatchObject({ areaId: "mat", source: `Enem 2023, questão ${second.number}` });
+    expect(state().mistakes[0].question).toContain(`Comando ${second.number}`);
+  });
+
+  it("discards only the open block", () => {
+    state().startBlock({ areaId: "mat", theme: "", language: "ingles", picked: pool });
+    state().finishBlock();
+    state().startBlock({ areaId: "mat", theme: "", language: "ingles", picked: pool });
+    state().discardBlock();
+    expect(state().questionBlocks).toHaveLength(1);
+    expect(state().questionBlocks[0].finished).toBe(true);
+  });
+});
+
+describe("flashcards", () => {
+  const input = { front: "Mitose", back: "Gera duas células iguais", areaId: "nat" as const, subjectId: "bio" as const, topicId: null };
+
+  it("creates, reviews, edits and removes a card", () => {
+    expect(state().addCard({ ...input, back: " " })).toBe("Escreva a resposta do verso.");
+    expect(state().addCard(input)).toBeNull();
+    const card = state().flashcards[0];
+    expect(card).toMatchObject({ due: today, reps: 0 });
+    state().answerCard(card.id, "bom");
+    expect(state().flashcards[0]).toMatchObject({ due: "2026-10-17", reps: 1 });
+    expect(state().updateCard(card.id, { ...input, front: "Mitose e meiose" })).toBeNull();
+    expect(state().flashcards[0]).toMatchObject({ front: "Mitose e meiose", due: "2026-10-17" });
+    state().removeCard(card.id);
+    expect(state().flashcards).toEqual([]);
   });
 });
 

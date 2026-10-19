@@ -155,6 +155,8 @@ function fillDefaults(saved: Record<string, unknown>): StudyData {
     mockExams: records(saved.mockExams) as unknown as StudyData["mockExams"],
     essays: records(saved.essays) as unknown as StudyData["essays"],
     repertoire: records(saved.repertoire) as unknown as StudyData["repertoire"],
+    questionBlocks: records(saved.questionBlocks) as unknown as StudyData["questionBlocks"],
+    flashcards: records(saved.flashcards) as unknown as StudyData["flashcards"],
     examChecklist: Array.isArray(saved.examChecklist) ? saved.examChecklist.filter((id) => typeof id === "string") : [],
     goal: {
       type: GOAL_TYPES.includes(goal.type as GoalType) ? (goal.type as GoalType) : base.goal.type,
