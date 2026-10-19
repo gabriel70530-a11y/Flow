@@ -1,10 +1,11 @@
 "use client";
 
-import { ChevronRight, ClipboardCheck, ListChecks, NotebookPen, PenLine, TimerReset, type LucideIcon } from "lucide-react";
+import { ChevronRight, ClipboardCheck, Layers, ListChecks, NotebookPen, PenLine, TimerReset, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { shortDate } from "@/lib/dates";
 import { daysUntil, isFinalStretch, nextExamDay, secondExamDay } from "@/lib/exam";
+import { dueCards } from "@/lib/flashcards";
 import { dueMistakes } from "@/lib/mistakes";
 import { useStudyStore } from "@/store/study-store";
 
@@ -25,12 +26,14 @@ function ToolLink({ href, icon: Icon, label, detail }: { href: string; icon: Luc
 export function PrepCard({ today, className = "" }: { today: string; className?: string }) {
   const targetDate = useStudyStore((state) => state.planner.targetDate);
   const mistakes = useStudyStore((state) => state.mistakes);
+  const flashcards = useStudyStore((state) => state.flashcards);
   const mockCount = useStudyStore((state) => state.mockExams.length);
   const essayCount = useStudyStore((state) => state.essays.length);
   const upcoming = nextExamDay(targetDate, today);
   const finalStretch = upcoming !== null && isFinalStretch(upcoming.date, today);
   const remaining = upcoming ? daysUntil(upcoming.date, today) : null;
   const dueCount = dueMistakes(mistakes, today).length;
+  const cardsDue = dueCards(flashcards, today).length;
 
   return (
     <Card className={className}>
@@ -62,6 +65,12 @@ export function PrepCard({ today, className = "" }: { today: string; className?:
           icon={NotebookPen}
           label="Caderno de erros"
           detail={dueCount > 0 ? `${dueCount} para rever` : mistakes.length ? String(mistakes.length) : undefined}
+        />
+        <ToolLink
+          href="/revisoes/cartoes"
+          icon={Layers}
+          label="Cartões"
+          detail={cardsDue > 0 ? `${cardsDue} para estudar` : flashcards.length ? String(flashcards.length) : undefined}
         />
         <ToolLink href="/questoes" icon={ListChecks} label="Blocos de questões" />
         <ToolLink href="/simulados" icon={TimerReset} label="Simulados" detail={mockCount ? String(mockCount) : undefined} />

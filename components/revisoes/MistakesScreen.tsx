@@ -107,7 +107,7 @@ export function MistakesScreen() {
     return (
       <div className="grid gap-6">
         {header}
-        <RevisoesTabs current="/revisoes/erros" mistakesDue={0} />
+        <RevisoesTabs current="/revisoes/erros" />
         <ProNotice title="O caderno de erros faz parte do Pro" className="max-w-2xl">
           Guarde as questões que errou, reveja cada uma em 1, 7, 15 e 30 dias e peça para a IA explicar onde o raciocínio desviou.
           {mistakes.length > 0 && " Os erros que você já registrou continuam guardados e aparecem abaixo só para leitura."}
@@ -135,7 +135,7 @@ export function MistakesScreen() {
   return (
     <div className="grid gap-6">
       {header}
-      <RevisoesTabs current="/revisoes/erros" mistakesDue={due.length} />
+      <RevisoesTabs current="/revisoes/erros" />
 
       <div className="flex flex-wrap items-center gap-3">
         <Button variant="primary" size="lg" onClick={() => setAdding(true)}>

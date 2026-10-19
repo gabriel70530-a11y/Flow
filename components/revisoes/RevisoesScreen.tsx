@@ -14,7 +14,6 @@ import { ProNotice } from "@/components/ui/ProNotice";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { showToast } from "@/components/ui/Toast";
 import { toDateKey } from "@/lib/dates";
-import { dueMistakes } from "@/lib/mistakes";
 import { groupReviews, nextReview, pendingReviews, progressOf, reviewLabel, type PendingReview } from "@/lib/reviews";
 import { focusName } from "@/lib/syllabus";
 import { findTopic } from "@/lib/topics";
@@ -32,7 +31,6 @@ export function RevisoesScreen() {
   const hydrated = useHydrated();
   const progress = useStudyStore((state) => state.progress);
   const topics = useStudyStore((state) => state.topics);
-  const mistakes = useStudyStore((state) => state.mistakes);
   const completeReview = useStudyStore((state) => state.completeReview);
   const [openTopicId, setOpenTopicId] = useState<string | null>(null);
   const [completed, setCompleted] = useState<{ topicId: string; stage: number } | null>(null);
@@ -81,7 +79,7 @@ export function RevisoesScreen() {
   return (
     <div className="grid gap-6">
       {header}
-      <RevisoesTabs current="/revisoes" mistakesDue={pro ? dueMistakes(mistakes, today).length : 0} />
+      <RevisoesTabs current="/revisoes" />
 
       <div className="flex flex-wrap gap-2">
         {pro && (
