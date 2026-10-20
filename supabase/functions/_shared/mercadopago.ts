@@ -15,7 +15,11 @@ export async function mercadoPago<T>(path: string, init: { method?: string; body
     },
     body: init.body === undefined ? undefined : JSON.stringify(init.body),
   });
-  if (!response.ok) throw new Error(`Mercado Pago respondeu ${response.status} em ${path}.`);
+  if (!response.ok) {
+    // O motivo vem no corpo (ex.: e-mail do pagador recusado) e só aparece nos logs da função, nunca para a pessoa.
+    console.error(`Mercado Pago respondeu ${response.status} em ${path}: ${await response.text()}`);
+    throw new Error(`Mercado Pago respondeu ${response.status} em ${path}.`);
+  }
   return (await response.json()) as T;
 }
 
