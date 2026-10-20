@@ -10,6 +10,7 @@ import { DueLabel } from "@/components/ui/DueLabel";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Field, inputStyles } from "@/components/ui/Field";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { ProNotice } from "@/components/ui/ProNotice";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { showToast } from "@/components/ui/Toast";
 import { toDateKey } from "@/lib/dates";
@@ -28,6 +29,7 @@ import {
 } from "@/lib/flashcards";
 import { GENERAL_STUDY, parseStudyChoice, studyTitle, studyValue } from "@/lib/sessions";
 import { visibleTopics, type TopicRecord } from "@/lib/topics";
+import { useProAccess } from "@/store/pro";
 import { useHydrated, useStudyStore } from "@/store/study-store";
 import { RevisoesTabs } from "./RevisoesTabs";
 
@@ -288,6 +290,7 @@ export function CardsScreen() {
   const [importing, setImporting] = useState(false);
   const [session, setSession] = useState<string[] | null>(null);
   const [query, setQuery] = useState("");
+  const pro = useProAccess();
 
   const header = <PageHeader title="Revisões" subtitle={SUBTITLE} />;
   if (!hydrated) {
@@ -306,6 +309,35 @@ export function CardsScreen() {
   const listed = [...flashcards]
     .filter((card) => !search || `${card.front} ${card.back}`.toLocaleLowerCase("pt-BR").includes(search))
     .sort((first, second) => first.due.localeCompare(second.due));
+
+  // No gratuito, os cartões já criados continuam visíveis, só para leitura.
+  if (!pro) {
+    return (
+      <div className="grid gap-6">
+        {header}
+        <RevisoesTabs current="/revisoes/cartoes" />
+        <ProNotice title="Os cartões de memorização fazem parte do Pro" className="max-w-2xl">
+          Pergunta na frente, resposta no verso, e cada cartão volta na hora certa. Dá para importar seus baralhos do Anki.
+          {flashcards.length > 0 && " Os cartões que você já criou continuam guardados e aparecem abaixo só para leitura."}
+        </ProNotice>
+        {flashcards.length > 0 && (
+          <Card flush>
+            <CardHeader flush title="Seus cartões">
+              <span className="text-[13px] text-muted tabular-nums">{flashcards.length}</span>
+            </CardHeader>
+            <ul className="pb-2">
+              {listed.map((card) => (
+                <li key={card.id} className="grid gap-0.5 border-t border-line px-5 py-3 first:border-t-0 md:px-7">
+                  <span className="truncate font-medium">{card.front}</span>
+                  <span className="truncate text-[13px] text-muted">{card.back}</span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-6">

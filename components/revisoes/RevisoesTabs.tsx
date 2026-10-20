@@ -25,8 +25,8 @@ export function RevisoesTabs({ current }: { current: (typeof TABS)[number]["href
   const reviews = groupReviews(pendingReviews(progress, topics), today);
   const badges: Record<string, number> = {
     "/revisoes": reviews.late.length + reviews.today.length,
-    "/revisoes/erros": pro ? dueMistakes(mistakes, today).length : 0,
-    "/revisoes/cartoes": dueCards(flashcards, today).length,
+    "/revisoes/erros": dueMistakes(mistakes, today).length,
+    "/revisoes/cartoes": pro ? dueCards(flashcards, today).length : 0,
   };
   return (
     <nav aria-label="Tipo de revisão" className="flex max-w-[420px] gap-1 rounded-full bg-hover p-1">
@@ -38,7 +38,7 @@ export function RevisoesTabs({ current }: { current: (typeof TABS)[number]["href
           className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-semibold whitespace-nowrap text-muted aria-[current=page]:bg-surface aria-[current=page]:text-text aria-[current=page]:shadow-[0_0_0_1px_var(--line)]"
         >
           {label}
-          {href === "/revisoes/erros" && !pro && <span className="text-xs font-bold opacity-80">Pro</span>}
+          {href === "/revisoes/cartoes" && !pro && <span className="text-xs font-bold opacity-80">Pro</span>}
           {(badges[href] ?? 0) > 0 && (
             <span className="rounded-full bg-danger px-1.5 text-xs leading-[18px] font-bold text-white tabular-nums">{badges[href]}</span>
           )}

@@ -37,13 +37,6 @@ export default function TermosPage() {
         </p>
       </section>
       <section>
-        <h2>Análise com IA</h2>
-        <p>
-          No Pro, a análise de erros é feita por inteligência artificial. Pode errar, não é a
-          resposta oficial e não substitui um professor. Confira sempre antes de salvar.
-        </p>
-      </section>
-      <section>
         <h2>Plano gratuito e Pro</h2>
         <ul>
           <li>O plano gratuito não tem prazo e não exige pagamento.</li>
@@ -57,7 +50,6 @@ export default function TermosPage() {
             Você pode desistir em até 7 dias depois do pagamento e receber o valor de volta (Código de Defesa do Consumidor, art.
             49), pelo contato do rodapé.
           </li>
-          <li>Análise de erros com IA: até 60 por mês. O limite renova no dia 1º.</li>
           <li>Enquanto a assinatura não estiver aberta, nada é cobrado.</li>
         </ul>
       </section>

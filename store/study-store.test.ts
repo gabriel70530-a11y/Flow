@@ -542,6 +542,14 @@ describe("free plan", () => {
     expect(state().timer).toMatchObject({ mode: "cronometro", running: true });
   });
 
+  it("blocks memory cards: they are Pro", () => {
+    expect(state().addCard({ front: "Mitose", back: "Duas células", topicId: null, areaId: "nat", subjectId: "bio" })).toBe(
+      "Os cartões de memorização fazem parte do Pro.",
+    );
+    expect(state().importCards([{ front: "Meiose", back: "Quatro células" }], { topicId: null, areaId: null, subjectId: null })).toBe(0);
+    expect(state().flashcards).toEqual([]);
+  });
+
   it("concludes a topic without scheduling reviews", () => {
     const updated = state().setStatus("mat-1", "concluido");
     expect(updated).toMatchObject({ status: "concluido", completedAt: today, reviews: [] });

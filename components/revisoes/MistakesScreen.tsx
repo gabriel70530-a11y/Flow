@@ -9,14 +9,12 @@ import { DueLabel } from "@/components/ui/DueLabel";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ListRow } from "@/components/ui/ListRow";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { ProNotice } from "@/components/ui/ProNotice";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { showToast } from "@/components/ui/Toast";
 import { toDateKey } from "@/lib/dates";
 import { MISTAKE_REASONS, dueMistakes, mainReason, openMistakes, type Mistake } from "@/lib/mistakes";
 import { studyTitle } from "@/lib/sessions";
 import type { TopicRecord } from "@/lib/topics";
-import { useProAccess } from "@/store/pro";
 import { useHydrated, useStudyStore } from "@/store/study-store";
 import { MistakeForm } from "./MistakeForm";
 import { RevisoesTabs } from "./RevisoesTabs";
@@ -111,7 +109,6 @@ export function MistakesScreen() {
   const mistakes = useStudyStore((state) => state.mistakes);
   const topics = useStudyStore((state) => state.topics);
   const [adding, setAdding] = useState(false);
-  const pro = useProAccess();
 
   const header = <PageHeader title="Revisões" subtitle={SUBTITLE} />;
   if (!hydrated) {
@@ -130,37 +127,6 @@ export function MistakesScreen() {
     .sort((first, second) => (first.due ?? "").localeCompare(second.due ?? ""));
   const overcome = mistakes.length - openMistakes(mistakes).length;
   const main = mainReason(mistakes);
-
-  // No gratuito, o que já foi registrado continua visível, só para leitura.
-  if (!pro) {
-    return (
-      <div className="grid gap-6">
-        {header}
-        <RevisoesTabs current="/revisoes/erros" />
-        <ProNotice title="O caderno de erros faz parte do Pro" className="max-w-2xl">
-          Guarde as questões que errou, reveja cada uma em 1, 7, 15 e 30 dias e peça para a IA explicar onde o raciocínio desviou.
-          {mistakes.length > 0 && " Os erros que você já registrou continuam guardados e aparecem abaixo só para leitura."}
-        </ProNotice>
-        {mistakes.length > 0 && (
-          <Card flush>
-            <CardHeader flush title="Seus erros">
-              <span className="text-[13px] text-muted tabular-nums">{mistakes.length}</span>
-            </CardHeader>
-            <ul>
-              {mistakes.map((mistake) => (
-                <ListRow
-                  key={mistake.id}
-                  title={mistake.question}
-                  subtitle={`${mistakeSubject(mistake, topics)} · ${MISTAKE_REASONS[mistake.reason].label}`}
-                />
-              ))}
-            </ul>
-          </Card>
-        )}
-        {mistakes.length > 0 && <ClearMistakes count={mistakes.length} />}
-      </div>
-    );
-  }
 
   return (
     <div className="grid gap-6">

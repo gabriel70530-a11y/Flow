@@ -60,7 +60,7 @@ export function PlanCards({ proActions }: { proActions?: ReactNode }) {
             <span className="text-muted"> /mês ou {PRICES.anual.label}</span>
           </p>
         )}
-        <p className="text-sm text-muted">Organiza a semana por você, analisa seus erros com IA e traz o simulado no app.</p>
+        <p className="text-sm text-muted">Organiza a semana por você, guarda tudo na nuvem e traz o simulado no app.</p>
         <FeatureList items={PRO_FEATURES} />
         {inApp ? (
           proActions

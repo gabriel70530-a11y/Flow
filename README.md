@@ -49,8 +49,8 @@ As provas que aparecem dentro do app ficam em `public/provas/<ano>/<dia>.json`, 
 
 O que entra em cada plano está em `lib/plan.ts` (`FREE_FEATURES` e `PRO_FEATURES`). Nada que a pessoa já salvou some sem o Pro: o recurso do Pro aparece com um aviso discreto (`ProNotice`) no lugar.
 
-- **Gratuito:** áreas e tópicos, timer, revisões agendadas pela própria pessoa (uma data por vez, em Revisões), registro de simulados e redações, cronograma à mão e Painel com as últimas 4 semanas.
-- **Pro:** revisões agendadas sozinhas (1, 7, 15 e 30 dias) ao concluir um tópico, sugestões do que mais cai, semana montada sozinha, caderno de erros (no gratuito, os erros já salvos ficam só para leitura), resumo e histórico completos, simulado no app e análise de erros com IA (até 60 por mês).
+- **Gratuito:** áreas e tópicos, timer no cronômetro, revisões agendadas pela própria pessoa (uma data por vez, em Revisões), caderno de erros, registro de simulados e redações, cronograma à mão e Painel com as últimas 4 semanas.
+- **Pro:** cópia na nuvem e sincronização, Pomodoro e modo foco, cartões de memorização (no gratuito, os já criados ficam só para leitura), revisões agendadas sozinhas (1, 7, 15 e 30 dias) ao concluir um tópico, sugestões do que mais cai, semana montada sozinha, resumo e histórico completos e simulado no app.
 - O acesso vem só do servidor (tabela `entitlements`, gravada pelo webhook do pagamento). O app guarda uma cópia por conta em `enem-flow:pro:<usuário>` para valer sem internet até `pro_until`.
 - `NEXT_PUBLIC_PRO_TRIAL=true` (no app) e `PRO_TRIAL=true` (nas funções) liberam o Pro para todos durante testes com estudantes.
 
@@ -101,7 +101,7 @@ Copie `.env.example` para `.env.local` e preencha o que quiser. Sem as variávei
 | `NEXT_PUBLIC_SITE_URL` | endereço público do site (ex.: `https://flow.exemplo.com`), usado no sitemap, no robots e nos cartões de compartilhamento. Só é preciso com domínio próprio: na Vercel, sem ela, vale o endereço de produção do projeto (hoje `https://flow-black.vercel.app`); fora da Vercel, `http://localhost:3000`. |
 | `APP_OPEN` | `true` abre o app na produção da Vercel. Sem ela, a produção é só vitrine: página inicial, privacidade e termos, com "Em breve" no lugar dos botões, e as telas do app voltam para a página inicial. Local e prévias da Vercel ficam sempre abertos. Mudar exige publicar de novo. |
 
-## Pagamento e IA (funções do Supabase)
+## Pagamento (funções do Supabase)
 
 O estudo de custos e a arquitetura estão em `docs/plano-pro.md`. As funções ficam em `supabase/functions` (Deno) e guardam as chaves secretas, que nunca vão para o navegador.
 
@@ -110,21 +110,19 @@ O estudo de custos e a arquitetura estão em `docs/plano-pro.md`. As funções f
 | `checkout` | cria a assinatura mensal (um plano por pessoa em `/preapproval_plan`, no cartão, pagável por qualquer conta do Mercado Pago) ou o pagamento anual (`/checkout/preferences`, Pix ou cartão) no Mercado Pago e devolve o link de pagamento |
 | `mercadopago-webhook` | confere a assinatura do aviso, consulta o pagamento na API e grava `entitlements` (mensal: até a próxima cobrança + 3 dias; anual: +365 dias). Cada pagamento é aplicado uma vez só (tabela `payments`) |
 | `cancel-subscription` | cancela a assinatura mensal; o Pro vale até o fim do período pago |
-| `ai-essay` | corrige a redação (texto ou até 2 fotos) com o Claude Sonnet 5.5: nota estimada por competência. Publicada, mas fora do app por enquanto: nenhuma tela a chama |
-| `ai-mistake` | analisa uma questão errada (texto ou 1 foto) com o Claude Haiku 5.5 e preenche o formulário do caderno |
 
-As funções de IA conferem login, Pro e o limite do mês (`reserve_ai_use`, tabela `ai_usage`) antes de chamar a IA e devolvem o uso se a chamada falhar.
+O Flow não usa IA: as funções `ai-essay` e `ai-mistake` saíram do código (a tabela `ai_usage` da migração ficou, sem uso).
 
 Para ativar:
 
 1. Rodar `supabase/migrations/20261019000000_pro.sql` (tabelas `entitlements`, `payments` e `ai_usage`).
-2. Configurar os segredos: `supabase secrets set MP_ACCESS_TOKEN=... MP_WEBHOOK_SECRET=... APP_URL=https://<endereço> ANTHROPIC_API_KEY=...` (e `PRO_TRIAL=true` durante testes abertos).
-3. Publicar: `supabase functions deploy checkout cancel-subscription ai-essay ai-mistake` e `supabase functions deploy mercadopago-webhook --no-verify-jwt` (quem chama o webhook é o Mercado Pago, sem login).
+2. Configurar os segredos: `supabase secrets set MP_ACCESS_TOKEN=... MP_WEBHOOK_SECRET=... APP_URL=https://<endereço>`.
+3. Publicar: `supabase functions deploy checkout cancel-subscription` e `supabase functions deploy mercadopago-webhook --no-verify-jwt` (quem chama o webhook é o Mercado Pago, sem login).
 4. No Mercado Pago (Suas integrações > Webhooks), cadastrar `https://<projeto>.supabase.co/functions/v1/mercadopago-webhook` com os eventos de pagamentos e de planos e assinaturas, e copiar a assinatura secreta para `MP_WEBHOOK_SECRET`.
 5. Testar com as credenciais e contas de teste do Mercado Pago antes de usar as de produção.
 6. Só então pôr `NEXT_PUBLIC_PAYMENTS_OPEN=true` na hospedagem: é o que mostra os botões de assinar.
 
-Conferência local: `deno check` e `deno lint` passam dentro de `supabase/functions`. As funções ainda não foram testadas de ponta a ponta contra o Supabase, o Mercado Pago e a API da Anthropic.
+Conferência local: `deno check` e `deno lint` passam dentro de `supabase/functions`. As funções ainda não foram testadas de ponta a ponta contra o Supabase e o Mercado Pago (o anual foi testado com contas de teste em 19/10/2026).
 
 ## Lembretes por push
 
@@ -141,7 +139,6 @@ A função `send-reminders` manda os avisos de estudo com o app fechado (Web Pus
 **Para publicar esta versão, na ordem:** (1) rodar no Supabase as migrações `20261019000000_pro.sql`, `20261020000000_study_tools.sql` e `20261021000000_push.sql` (sem elas, a sincronização de cartões e blocos falha); (2) na Vercel, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` e, se for abrir o app, `APP_OPEN=true` (e `NEXT_PUBLIC_PRO_TRIAL=true` para testar o Pro com estudantes); (3) para o login com Google, ativar o provedor no Supabase e pôr `NEXT_PUBLIC_GOOGLE_LOGIN=true` (sem ela, o botão não aparece); (4) dar push na `main`; (5) os lembretes por push, acima.
 
 - **Cobrança do Flow Pro.** O código de pagamento existe (ver acima), mas falta criar a conta no Mercado Pago, configurar os segredos, testar com contas de teste e abrir com `NEXT_PUBLIC_PAYMENTS_OPEN`. Até lá, Planos diz que ainda não é possível assinar; nada é vendido nem simulado.
-- **IA no Pro.** Falta a chave da API da Anthropic (`ANTHROPIC_API_KEY`), com limite de gasto configurado no console. Sem ela, as funções respondem que a IA ainda não está disponível.
 - **Play Store.** Planejado como app TWA do próprio site, sem venda dentro do app (ver `docs/plano-pro.md`).
 - **Coleta de métricas para a validação com 20 a 30 estudantes.** O app emite `app_aberto`, `onboarding_concluido`, `onboarding_pulado`, `plano_gerado`, `sessao_registrada`, `revisao_concluida` e `pro_interesse`, com o dia e um código aleatório do navegador. Falta um endpoint que receba esses eventos (ver `NEXT_PUBLIC_ANALYTICS_URL`) e uma forma de coletar motivos de abandono (entrevista ou formulário). Intenção declarada na lista de interesse não é compra.
 - **Política de privacidade e termos.** As páginas descrevem o funcionamento real do app, mas são uma versão preliminar: revisar com orientação jurídica antes de abrir ao público, inclusive pelos cuidados com menores de idade (LGPD).

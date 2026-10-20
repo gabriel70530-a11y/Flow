@@ -6,7 +6,6 @@ import {
   deleteTopic,
   filterTopics,
   findTopic,
-  findTopicByName,
   setTopicHidden,
   sortTopics,
   updateTopic,
@@ -107,15 +106,3 @@ describe("filterTopics and sortTopics", () => {
   });
 });
 
-describe("findTopicByName", () => {
-  const topics = createTopic([], { ...input, name: "Estequiometria", areaId: "nat", subjectId: "qui" }, "custom-1");
-
-  it("matches without accents or case", () => {
-    expect(findTopicByName(topics, " ESTEQUIOMETRÍA ")?.id).toBe("custom-1");
-  });
-
-  it("ignores hidden topics and empty names", () => {
-    expect(findTopicByName(setTopicHidden(topics, "custom-1", true), "Estequiometria")).toBeNull();
-    expect(findTopicByName(topics, "  ")).toBeNull();
-  });
-});

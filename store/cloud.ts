@@ -413,7 +413,7 @@ export async function deleteAccount(): Promise<string | null> {
   return null;
 }
 
-// Chama uma função do servidor (pagamento ou IA). Os erros dela já vêm escritos para a pessoa.
+// Chama uma função do servidor (pagamento). Os erros dela já vêm escritos para a pessoa.
 async function callFunction<T>(name: string, body: Record<string, unknown>): Promise<{ data: T } | { error: string }> {
   const db = await client();
   if (!db) return { error: "A conta ainda não está disponível." };
@@ -441,24 +441,6 @@ export async function cancelSubscription(): Promise<string | null> {
   if ("error" in result) return result.error;
   await syncNow();
   return null;
-}
-
-export interface ImagePayload {
-  mediaType: "image/jpeg";
-  data: string;
-}
-
-export interface MistakeAnalysis {
-  answer: string | null;
-  question: string;
-  lesson: string;
-  reason: "conteudo" | "interpretacao" | "atencao" | "chute";
-  topic: string;
-  remaining: number;
-}
-
-export function analyzeMistake(input: { text: string; images: ImagePayload[]; marked: string | null }) {
-  return callFunction<MistakeAnalysis>("ai-mistake", input);
 }
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";

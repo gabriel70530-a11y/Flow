@@ -39,21 +39,6 @@ export default function PrivacidadePage() {
         </ul>
       </section>
       <section>
-        <h2>Análise de erros com IA (Pro)</h2>
-        <ul>
-          <li>
-            Só quando você pede, o texto ou a foto da questão são enviados à Anthropic, empresa da IA Claude, com
-            servidores nos Estados Unidos, para gerar a análise. Seu e-mail e seus outros dados não vão junto.
-          </li>
-          <li>
-            A Anthropic não usa esse conteúdo para treinar a IA e o apaga depois de um prazo curto. O Flow não guarda as fotos:
-            fica só o resultado que você decidir salvar.
-          </li>
-          <li>Guardamos quantas análises você usou no mês, para aplicar o limite do plano.</li>
-          <li>Não envie fotos com seu nome, documento ou rosto.</li>
-        </ul>
-      </section>
-      <section>
         <h2>Pagamento (Pro)</h2>
         <p>
           A assinatura é paga no Mercado Pago. O Flow não recebe nem guarda dados de cartão: guarda só o plano, a situação da
@@ -75,7 +60,7 @@ export default function PrivacidadePage() {
         <h2>Fontes e serviços de terceiros</h2>
         <p>
           A fonte Saira é servida junto com o próprio site. Não usamos anúncios nem rastreadores de terceiros. Os serviços que
-          recebem dados são só os citados acima: Supabase (conta), Google (se você entrar com ele), Anthropic (IA, no Pro) e
+          recebem dados são só os citados acima: Supabase (conta), Google (se você entrar com ele) e
           Mercado Pago (pagamento).
         </p>
       </section>

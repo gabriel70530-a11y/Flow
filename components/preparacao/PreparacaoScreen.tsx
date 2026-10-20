@@ -8,6 +8,7 @@ import { PREP_ITEMS } from "@/components/shell/nav-items";
 import { useAchievements } from "@/components/conquistas/use-achievements";
 import { toDateKey } from "@/lib/dates";
 import { dueCards } from "@/lib/flashcards";
+import { useProAccess } from "@/store/pro";
 import { useHydrated, useStudyStore } from "@/store/study-store";
 
 const DETAILS: Record<string, string> = {
@@ -25,7 +26,8 @@ export function PreparacaoScreen() {
   const mockCount = useStudyStore((state) => state.mockExams.length);
   const essayCount = useStudyStore((state) => state.essays.length);
   const { status } = useAchievements();
-  const cardsDue = hydrated ? dueCards(flashcards, toDateKey(new Date())).length : 0;
+  const pro = useProAccess();
+  const cardsDue = hydrated && pro ? dueCards(flashcards, toDateKey(new Date())).length : 0;
   const unlocked = status.filter((item) => item.unlocked).length;
 
   const detail = (href: string) => (href === "/revisoes/cartoes" && cardsDue > 0 ? `${cardsDue} para hoje` : DETAILS[href]);

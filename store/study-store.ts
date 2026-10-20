@@ -667,6 +667,7 @@ export const useStudyStore = create<StudyStore>()(
         },
 
         addCard: (input) => {
+          if (!proAccessNow()) return "Os cartões de memorização fazem parte do Pro.";
           const error = validateCard(input);
           if (error) return error;
           set({ flashcards: [...get().flashcards, createCard(input, newId("cartao-"), today())] });
@@ -680,6 +681,7 @@ export const useStudyStore = create<StudyStore>()(
         },
         removeCard: (cardId) => set({ flashcards: get().flashcards.filter((card) => card.id !== cardId) }),
         importCards: (cards, subject) => {
+          if (!proAccessNow()) return 0;
           const existing = new Set(get().flashcards.map((card) => `${card.front}
 ${card.back}`));
           const created = cards
@@ -694,8 +696,10 @@ ${card.back.trim()}`;
           set({ flashcards: [...get().flashcards, ...created] });
           return created.length;
         },
-        answerCard: (cardId, grade) =>
-          set({ flashcards: get().flashcards.map((card) => (card.id === cardId ? reviewCard(card, grade, today()) : card)) }),
+        answerCard: (cardId, grade) => {
+          if (!proAccessNow()) return;
+          set({ flashcards: get().flashcards.map((card) => (card.id === cardId ? reviewCard(card, grade, today()) : card)) });
+        },
 
         toggleChecklistItem: (itemId) => {
           const checked = get().examChecklist;

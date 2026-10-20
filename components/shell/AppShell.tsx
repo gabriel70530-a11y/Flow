@@ -43,7 +43,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (!hydrated) return 0;
     const today = toDateKey(new Date());
     const groups = groupReviews(pendingReviews(progress, topics), today);
-    return groups.late.length + groups.today.length + (pro ? dueMistakes(mistakes, today).length : 0) + dueCards(flashcards, today).length;
+    return groups.late.length + groups.today.length + dueMistakes(mistakes, today).length + (pro ? dueCards(flashcards, today).length : 0);
   }, [hydrated, progress, topics, mistakes, flashcards, pro]);
 
   useEffect(() => {
