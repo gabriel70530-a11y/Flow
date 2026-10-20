@@ -16,7 +16,7 @@ const BENEFITS = [
   ["Semana organizada, sem rigidez", "Até 2 matérias por dia nos dias que você escolher. Sem limite de horas e sem obrigação de fazer tudo."],
   ["Saber o que estudar hoje", "O painel abre com as matérias do dia e um botão para começar."],
   ["Timer de estudo", "O tempo de foco entra sozinho no painel. Pausas não contam como estudo."],
-  ["Revisões espaçadas", "Ao concluir um tópico, as revisões de 1, 7, 15 e 30 dias são agendadas. Questões que você errou também voltam."],
+  ["Revisões espaçadas", "Escolha quando revisar cada tópico ou deixe o Pro agendar 1, 7, 15 e 30 dias. Questões que você errou também voltam."],
   ["Evolução com dados reais", "Horas por dia e por área, planejado x realizado, tudo a partir das suas sessões."],
   ["Estude até dominar", "Ainda não dominou? A matéria volta no dia seguinte. Não deu tempo? Ela passa para o próximo dia, sem culpa."],
 ];
@@ -35,12 +35,12 @@ const FAQ = [
   ["É oficial do INEP ou do MEC?", "Não. É uma ferramenta independente, sem vínculo com o INEP ou o MEC."],
   [
     "Preciso criar conta?",
-    "Sim, com e-mail e senha ou com o Google. Seus dados ficam no aparelho, funcionam sem internet e têm uma cópia na conta para você usar no celular e no computador.",
+    "Sim, com e-mail e senha ou com o Google. Seus dados ficam no aparelho e funcionam sem internet. No Pro, a conta guarda uma cópia para você usar no celular e no computador.",
   ],
   ["Funciona no celular?", "Sim, direto no navegador do celular, do tablet ou do computador."],
   [
     "Quanto custa?",
-    "O plano gratuito é gratuito de verdade. O Flow Pro, com simulado no app e a semana montada sozinha, abre em breve.",
+    "O plano gratuito é gratuito de verdade, sem prazo. O Flow Pro, mensal ou anual, monta a semana sozinho, agenda as revisões e traz o simulado no app, os cartões de memorização e a cópia na nuvem. O preço aparece em Planos, dentro do app.",
   ],
   ["E se eu não conseguir seguir o plano?", "Normal. O que não deu para estudar passa sozinho para o próximo dia, e você pode mover qualquer matéria quando quiser."],
   [
