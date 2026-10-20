@@ -21,16 +21,17 @@ export const PRICES: Record<BillingPlan, { label: string; amount: number }> = {
 
 export const FREE_FEATURES = [
   "As cinco áreas do ENEM, com quantos tópicos você quiser",
-  "Timer Pomodoro, cronômetro e modo foco",
+  "Timer com cronômetro, sem limite de tempo",
   "Revisões nas datas que você escolher",
   "Registro de simulados, redações e repertório",
   "Cronograma montado à mão",
   "Painel com as últimas 4 semanas, meta e conquistas",
-  "Conta com cópia na nuvem",
 ];
 
 export const PRO_FEATURES = [
   "Tudo do gratuito",
+  "Cópia na nuvem e sincronização entre aparelhos",
+  "Timer Pomodoro e modo foco",
   "Caderno de erros com análise por IA",
   "Simulado no app, com nota estimada pela TRI",
   "Blocos de 5 questões oficiais por tema",

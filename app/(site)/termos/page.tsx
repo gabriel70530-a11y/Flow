@@ -32,8 +32,8 @@ export default function TermosPage() {
         <h2>Conta e dados</h2>
         <p>
           Para usar o Flow é preciso criar uma conta, com pelo menos 13 anos. Quem tem menos de 18 usa com o conhecimento de um
-          responsável. Os dados ficam no aparelho e uma cópia fica na conta, sincronizada entre os seus aparelhos; apagar os dados
-          em um aparelho conectado apaga também a cópia. Recomendamos baixar backups de tempos em tempos em Ajustes.
+          responsável. Os dados ficam no aparelho; no Pro, uma cópia fica na conta, sincronizada entre os seus aparelhos, e apagar os
+          dados em um aparelho conectado apaga também a cópia. Recomendamos baixar backups de tempos em tempos em Ajustes.
         </p>
       </section>
       <section>

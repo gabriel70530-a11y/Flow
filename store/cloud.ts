@@ -14,7 +14,7 @@ import {
   type SyncedData,
 } from "@/lib/sync";
 import type { BillingPlan, ProRecord } from "@/lib/plan";
-import { usePro } from "./pro";
+import { proAccessNow, usePro } from "./pro";
 import { emptyData, type StudyData } from "./state";
 import { useStudyStore } from "./study-store";
 
@@ -194,8 +194,9 @@ export function syncNow(): Promise<void> {
   running = client()
     .then(async (db) => {
       if (!db) return;
-      await runSync(db, userId);
       await refreshPro(db, userId);
+      // A cópia na nuvem é do Pro. No gratuito, os dados ficam só no aparelho; o que mudar sobe quando a pessoa assinar.
+      if (proAccessNow()) await runSync(db, userId);
     })
     .then(() => useCloud.setState({ status: "ocioso", lastSyncedAt: Date.now() }))
     .catch(() => useCloud.setState({ status: navigator.onLine ? "erro" : "offline" }))

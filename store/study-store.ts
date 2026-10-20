@@ -429,7 +429,10 @@ export const useStudyStore = create<StudyStore>()(
         setAnalyticsConsent: (analyticsConsent) => set({ analyticsConsent }),
         trackEvent: (event) => track(event, get().analyticsConsent),
 
-        setTimerMode: (mode) => updateIdleTimer({ mode }),
+        setTimerMode: (mode) => {
+          if (mode === "pomodoro" && !proAccessNow()) return;
+          updateIdleTimer({ mode });
+        },
         setTimerTopic: (topicId) => {
           if (!get().timer.running) updateTimer({ topicId, taskId: "" });
         },
@@ -445,7 +448,9 @@ export const useStudyStore = create<StudyStore>()(
         },
 
         startTimer: () => {
-          const { timer, tasks } = get();
+          const { tasks } = get();
+          // O Pomodoro é do Pro: no gratuito, um timer parado no Pomodoro começa no cronômetro.
+          const timer = !proAccessNow() && isIdle(get().timer) ? { ...get().timer, mode: "cronometro" as const } : get().timer;
           if (!timer.topicId) return false;
           const startingTask = timer.phase === "focus" && timer.taskId;
           set({

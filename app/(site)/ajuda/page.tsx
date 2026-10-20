@@ -17,12 +17,12 @@ const QUESTIONS: { question: string; answer: string }[] = [
   {
     question: "Por que preciso de uma conta?",
     answer:
-      "A conta guarda uma cópia dos seus dados e sincroniza entre o celular e o computador. Os dados também ficam no aparelho, então o app continua funcionando sem internet depois de entrar.",
+      "A conta é a sua entrada no Flow. Os dados ficam no aparelho, então o app continua funcionando sem internet depois de entrar. No Pro, a conta também guarda uma cópia e sincroniza entre o celular e o computador.",
   },
   {
     question: "Troquei de celular. Perdi meus dados?",
     answer:
-      "Não, se você entrou com a mesma conta. Ao entrar no aparelho novo, o Flow baixa o que está na nuvem e junta com o que já existir ali.",
+      "No Pro, não: ao entrar no aparelho novo com a mesma conta, o Flow baixa o que está na nuvem e junta com o que já existir ali. No gratuito, os dados ficam só no aparelho; baixe um backup em Ajustes antes de trocar.",
   },
   {
     question: "Como o cronograma funciona?",

@@ -5,6 +5,7 @@ import { ErrorText } from "@/components/conta/AuthForm";
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
 import { Field, inputStyles } from "@/components/ui/Field";
+import { ProNotice } from "@/components/ui/ProNotice";
 import { showToast } from "@/components/ui/Toast";
 import { toDateKey } from "@/lib/dates";
 import {
@@ -17,6 +18,7 @@ import {
   useCloud,
   type SyncStatus,
 } from "@/store/cloud";
+import { useProAccess } from "@/store/pro";
 
 function syncText(status: SyncStatus, lastSyncedAt: number | null): string {
   if (status === "sincronizando") return "Sincronizando…";
@@ -41,6 +43,7 @@ const PASSWORD_HINT = `Pelo menos ${PASSWORD_MIN} caracteres.`;
 // Parte de cima do card "Conta e dados": entrar, estado da sincronização e sair.
 export function AccountSection() {
   const { available, email, provider, recovering, status, lastSyncedAt } = useCloud();
+  const pro = useProAccess();
 
   // Só acontece no desenvolvimento local sem o Supabase: em produção, o app nem abre sem conta.
   if (!available || !email) {
@@ -58,12 +61,18 @@ export function AccountSection() {
           <span className="text-[13px] text-muted">{provider === "google" ? "Conta Google" : "Conta com e-mail e senha"}</span>
         </div>
       </div>
-      <p role="status" className="flex items-start gap-2 text-sm">
-        <span aria-hidden className={`mt-1.5 size-2 shrink-0 rounded-full ${DOT_COLORS[status]}`} />
-        <span className="tabular-nums">{syncText(status, lastSyncedAt)}</span>
-      </p>
+      {pro ? (
+        <p role="status" className="flex items-start gap-2 text-sm">
+          <span aria-hidden className={`mt-1.5 size-2 shrink-0 rounded-full ${DOT_COLORS[status]}`} />
+          <span className="tabular-nums">{syncText(status, lastSyncedAt)}</span>
+        </p>
+      ) : (
+        <ProNotice title="Cópia na nuvem">
+          Guarda seus estudos na conta e sincroniza entre aparelhos. No gratuito, os dados ficam só neste aparelho.
+        </ProNotice>
+      )}
       <div className="flex flex-wrap gap-2">
-        {status !== "offline" && (
+        {pro && status !== "offline" && (
           <Button onClick={() => void syncNow()} disabled={status === "sincronizando"}>
             Sincronizar agora
           </Button>

@@ -535,6 +535,13 @@ describe("free plan", () => {
     vi.unstubAllEnvs();
   });
 
+  it("keeps the timer on the stopwatch: Pomodoro is Pro", () => {
+    state().setTimerMode("pomodoro");
+    state().setTimerTopic("mat-1");
+    expect(state().startTimer()).toBe(true);
+    expect(state().timer).toMatchObject({ mode: "cronometro", running: true });
+  });
+
   it("concludes a topic without scheduling reviews", () => {
     const updated = state().setStatus("mat-1", "concluido");
     expect(updated).toMatchObject({ status: "concluido", completedAt: today, reviews: [] });

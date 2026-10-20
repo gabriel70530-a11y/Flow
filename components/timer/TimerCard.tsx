@@ -1,10 +1,11 @@
 "use client";
 
 import { Maximize2, Volume2, VolumeX } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { NumberInput } from "@/components/ui/NumberInput";
+import { ProNotice } from "@/components/ui/ProNotice";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Segmented } from "@/components/ui/Segmented";
 import { showToast } from "@/components/ui/Toast";
@@ -13,6 +14,7 @@ import { GENERAL_STUDY, parseStudyChoice } from "@/lib/sessions";
 import { formatDuration } from "@/lib/stats";
 import { clockText, displaySeconds, elapsed, isIdle, phaseSeconds, type TimerMode } from "@/lib/timer";
 import { findTopic, visibleTopics } from "@/lib/topics";
+import { useProAccess } from "@/store/pro";
 import { useStudyStore } from "@/store/study-store";
 import { FocusMode } from "./FocusMode";
 import { StudyOptions } from "./StudyOptions";
@@ -34,6 +36,7 @@ export function TimerCard() {
   const topicSelect = useRef<HTMLSelectElement>(null);
   const [confirmingDiscard, setConfirmingDiscard] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
+  const pro = useProAccess();
 
   const idle = isIdle(timer);
   const pomodoro = timer.mode === "pomodoro";
@@ -45,6 +48,11 @@ export function TimerCard() {
   const selectable = visibleTopics(topics);
   const selected = findTopic(topics, timer.topicId);
   if (selected && selected.hidden) selectable.push(selected);
+
+  // Pomodoro e modo foco são do Pro: no gratuito, o timer parado fica no cronômetro.
+  useEffect(() => {
+    if (!pro && idle && timer.mode === "pomodoro") useStudyStore.getState().setTimerMode("cronometro");
+  }, [pro, idle, timer.mode]);
 
   const toggle = () => {
     setConfirmingDiscard(false);
@@ -84,7 +92,7 @@ export function TimerCard() {
 
   return (
     <Card className="grid gap-6 md:p-7">
-      <Segmented options={modeOptions} value={timer.mode} onChange={actions.setTimerMode} disabled={!idle} />
+      {pro && <Segmented options={modeOptions} value={timer.mode} onChange={actions.setTimerMode} disabled={!idle} />}
 
       <div className="grid gap-1.5 text-center">
         <span className="text-[13px] text-muted">{phaseLabel}</span>
@@ -173,7 +181,7 @@ export function TimerCard() {
             {sound ? <Volume2 size={16} aria-hidden /> : <VolumeX size={16} aria-hidden />}
             Aviso sonoro {sound ? "ligado" : "desligado"}
           </button>
-          {timer.topicId && (
+          {pro && timer.topicId && (
             <button type="button" onClick={() => setFocusMode(true)} className="inline-flex min-h-9 items-center gap-1.5">
               <Maximize2 size={16} aria-hidden />
               Modo foco
@@ -186,6 +194,11 @@ export function TimerCard() {
           )}
         </div>
       </div>
+      {!pro && (
+        <ProNotice title="Pomodoro e modo foco">
+          Blocos de foco com pausa e uma tela cheia só com o relógio. No gratuito, o cronômetro conta sem limite.
+        </ProNotice>
+      )}
       {focusMode && <FocusMode onClose={() => setFocusMode(false)} />}
     </Card>
   );
