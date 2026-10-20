@@ -19,18 +19,18 @@ Deno.serve(async (request) => {
   const backUrl = `${appUrl}/planos?pagamento=retorno`;
   try {
     if (plan === "mensal") {
-      const subscription = await mercadoPago<{ init_point: string }>("/preapproval", {
+      // Um plano por pessoa: o link aceita qualquer conta do Mercado Pago (a assinatura direta exige o mesmo e-mail
+      // da conta do Flow) e a referência do plano diz ao webhook de quem é a assinatura.
+      const subscriptionPlan = await mercadoPago<{ init_point: string }>("/preapproval_plan", {
         method: "POST",
         body: {
           reason: "Flow Pro mensal",
           external_reference: referenceFor("mensal", user.id),
-          payer_email: user.email,
           auto_recurring: { frequency: 1, frequency_type: "months", transaction_amount: PRICES.mensal, currency_id: "BRL" },
           back_url: backUrl,
-          status: "pending",
         },
       });
-      return json({ url: subscription.init_point });
+      return json({ url: subscriptionPlan.init_point });
     }
 
     const preference = await mercadoPago<{ init_point: string }>("/checkout/preferences", {

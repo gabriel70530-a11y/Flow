@@ -107,7 +107,7 @@ O estudo de custos e a arquitetura estão em `docs/plano-pro.md`. As funções f
 
 | Função | O que faz |
 |---|---|
-| `checkout` | cria a assinatura mensal (`/preapproval`, no cartão) ou o pagamento anual (`/checkout/preferences`, Pix ou cartão) no Mercado Pago e devolve o link de pagamento |
+| `checkout` | cria a assinatura mensal (um plano por pessoa em `/preapproval_plan`, no cartão, pagável por qualquer conta do Mercado Pago) ou o pagamento anual (`/checkout/preferences`, Pix ou cartão) no Mercado Pago e devolve o link de pagamento |
 | `mercadopago-webhook` | confere a assinatura do aviso, consulta o pagamento na API e grava `entitlements` (mensal: até a próxima cobrança + 3 dias; anual: +365 dias). Cada pagamento é aplicado uma vez só (tabela `payments`) |
 | `cancel-subscription` | cancela a assinatura mensal; o Pro vale até o fim do período pago |
 | `ai-essay` | corrige a redação (texto ou até 2 fotos) com o Claude Sonnet 5.5: nota estimada por competência. Publicada, mas fora do app por enquanto: nenhuma tela a chama |

@@ -24,7 +24,15 @@ interface Preapproval {
   id: string;
   status: string;
   external_reference: string | null;
+  preapproval_plan_id?: string;
   next_payment_date?: string;
+}
+
+// A assinatura feita pelo link de um plano pode vir sem referência própria; aí vale a do plano.
+async function subscriptionReference(subscription: Preapproval) {
+  if (subscription.external_reference || !subscription.preapproval_plan_id) return parseReference(subscription.external_reference);
+  const plan = await mercadoPago<{ external_reference: string | null }>(`/preapproval_plan/${subscription.preapproval_plan_id}`);
+  return parseReference(plan.external_reference);
 }
 
 // Registra o pagamento uma vez só. Devolve false se ele já tinha sido aplicado (aviso repetido).
@@ -67,7 +75,7 @@ async function onAuthorizedPayment(admin: SupabaseClient, id: string) {
   const charge = await mercadoPago<AuthorizedPayment>(`/authorized_payments/${id}`);
   if (charge.payment?.status !== "approved") return;
   const subscription = await mercadoPago<Preapproval>(`/preapproval/${charge.preapproval_id}`);
-  const reference = parseReference(subscription.external_reference);
+  const reference = await subscriptionReference(subscription);
   if (reference?.plan !== "mensal") return;
   if (!(await recordPayment(admin, String(charge.payment.id), reference.userId, "mensal", charge.transaction_amount))) return;
   const from = await currentUntil(admin, reference.userId);
