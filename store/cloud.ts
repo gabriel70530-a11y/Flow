@@ -429,9 +429,20 @@ async function callFunction<T>(name: string, body: Record<string, unknown>): Pro
   return { error: "Não foi possível falar com o servidor agora. Tente de novo." };
 }
 
+// O pagamento só abre no site do Mercado Pago, nunca num endereço que venha diferente da função.
+function isMercadoPagoUrl(url: string): boolean {
+  try {
+    const { protocol, hostname } = new URL(url);
+    return protocol === "https:" && /(^|\.)mercadopago\.com(\.br)?$/.test(hostname);
+  } catch {
+    return false;
+  }
+}
+
 export async function startCheckout(plan: BillingPlan): Promise<string | null> {
   const result = await callFunction<{ url: string }>("checkout", { plan });
   if ("error" in result) return result.error;
+  if (!isMercadoPagoUrl(result.data.url)) return "Não foi possível abrir o pagamento agora. Tente de novo.";
   window.location.assign(result.data.url);
   return null;
 }

@@ -70,7 +70,9 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = new URL(event.notification.data?.url || "/painel", self.location.origin).href;
+  // O aviso só abre páginas do próprio Flow.
+  const target = new URL(event.notification.data?.url || "/painel", self.location.origin);
+  const url = target.origin === self.location.origin ? target.href : new URL("/painel", self.location.origin).href;
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
       const open = windows.find((client) => new URL(client.url).origin === self.location.origin);
