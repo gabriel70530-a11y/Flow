@@ -4,8 +4,8 @@
 -- O app grava só por push_records. Sem insert/update direto, ninguém pula a regra da mudança mais recente
 -- nem o limite de registros abaixo.
 revoke insert, update on public.records from authenticated;
-drop policy "Cada conta grava só os próprios registros" on public.records;
-drop policy "Cada conta atualiza só os próprios registros" on public.records;
+drop policy if exists "Cada conta grava só os próprios registros" on public.records;
+drop policy if exists "Cada conta atualiza só os próprios registros" on public.records;
 
 -- Anos de estudo diário ficam bem abaixo disso; o limite só impede que uma conta encha o banco.
 create or replace function public.push_records(changes jsonb)
@@ -46,7 +46,7 @@ grant execute on function public.push_records(jsonb) to authenticated;
 
 -- O servidor manda um POST para o endereço da inscrição: só os serviços de push dos navegadores são aceitos,
 -- para ninguém usar a função de lembretes para chamar outro endereço.
-create function public.is_push_endpoint(endpoint text)
+create or replace function public.is_push_endpoint(endpoint text)
 returns boolean
 language sql
 immutable
@@ -57,7 +57,7 @@ as $$
 $$;
 
 alter table public.push_subscriptions
-  add constraint push_subscriptions_endpoint_check check (public.is_push_endpoint(endpoint)) not valid;
+  add constraint push_subscriptions_endpoint_service check (public.is_push_endpoint(endpoint)) not valid;
 
 create or replace function public.save_push_subscription(
   sub_endpoint text,
@@ -103,5 +103,5 @@ revoke all on function public.save_push_subscription from public, anon;
 grant execute on function public.save_push_subscription to authenticated;
 
 -- A IA saiu do app: as funções de reserva de uso não têm mais quem as chame.
-drop function public.reserve_ai_use(uuid, text, text, integer);
-drop function public.release_ai_use(uuid, text, text);
+drop function if exists public.reserve_ai_use(uuid, text, text, integer);
+drop function if exists public.release_ai_use(uuid, text, text);
