@@ -40,3 +40,19 @@ export function appOpen(): boolean {
 export function isAppRoute(pathname: string): boolean {
   return APP_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
 }
+
+// Identificador do app na Play Store. Depois da primeira publicação não pode mais mudar.
+export const ANDROID_PACKAGE = "app.flowestudos";
+
+// Impressões SHA-256 dos certificados que assinam o app (Play Console > Integridade do app), separadas por vírgula.
+export function androidCertFingerprints(): string[] {
+  return (process.env.ANDROID_CERT_FINGERPRINTS ?? "")
+    .split(",")
+    .map((fingerprint) => fingerprint.trim().toUpperCase())
+    .filter((fingerprint) => /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/.test(fingerprint));
+}
+
+// O app Android abre o Flow com ?origem=android. Na Play Store, conteúdo digital só pode ser vendido pelo
+// faturamento do Google, então o app não mostra a assinatura pelo Mercado Pago.
+export const ANDROID_LAUNCH_PARAM = "origem";
+export const ANDROID_LAUNCH_VALUE = "android";

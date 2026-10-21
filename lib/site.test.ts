@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { appOpen, isAppRoute, siteUrl } from "./site";
+import { androidCertFingerprints, appOpen, isAppRoute, siteUrl } from "./site";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -46,5 +46,14 @@ describe("isAppRoute", () => {
     expect(isAppRoute("/")).toBe(false);
     expect(isAppRoute("/privacidade")).toBe(false);
     expect(isAppRoute("/painelzinho")).toBe(false);
+  });
+});
+
+describe("androidCertFingerprints", () => {
+  it("keeps only valid SHA-256 fingerprints, in upper case", () => {
+    vi.stubEnv("ANDROID_CERT_FINGERPRINTS", "");
+    expect(androidCertFingerprints()).toEqual([]);
+    vi.stubEnv("ANDROID_CERT_FINGERPRINTS", " ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:ab:cd , 12:34, AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:CD");
+    expect(androidCertFingerprints()).toEqual(["AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:CD", "AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:AB:CD"]);
   });
 });
