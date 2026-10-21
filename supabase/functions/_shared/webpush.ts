@@ -87,8 +87,21 @@ async function vapidAuthorization(endpoint: string, vapid: VapidKeys): Promise<s
   return `vapid t=${unsigned}.${toBase64Url(signature)}, k=${vapid.publicKey}`;
 }
 
+// O mesmo filtro de public.is_push_endpoint: o servidor só faz POST nos serviços de push dos navegadores.
+const PUSH_HOSTS = /^(fcm\.googleapis\.com|updates\.push\.services\.mozilla\.com|web\.push\.apple\.com|([a-z0-9-]+\.)+(notify\.windows\.com|push\.apple\.com))$/;
+
+export function isPushEndpoint(endpoint: string): boolean {
+  try {
+    const url = new URL(endpoint);
+    return url.protocol === "https:" && url.port === "" && url.username === "" && PUSH_HOSTS.test(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
 // Devolve o status do serviço de push: 404 e 410 querem dizer que a inscrição não existe mais.
 export async function sendPush(target: PushTarget, message: unknown, vapid: VapidKeys, ttlSeconds = 3600): Promise<number> {
+  if (!isPushEndpoint(target.endpoint)) return 410;
   const body = await encryptPayload(encoder.encode(JSON.stringify(message)), target);
   const response = await fetch(target.endpoint, {
     method: "POST",
@@ -100,6 +113,7 @@ export async function sendPush(target: PushTarget, message: unknown, vapid: Vapi
       Urgency: "high",
     },
     body,
+    redirect: "manual",
   });
   await response.body?.cancel();
   return response.status;

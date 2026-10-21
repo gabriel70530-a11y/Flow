@@ -19,6 +19,14 @@ export function preflight(request: Request): Response | null {
   return request.method === "OPTIONS" ? new Response("ok", { headers: CORS_HEADERS }) : null;
 }
 
+// Compara segredos sem revelar pelo tempo de resposta onde está a primeira diferença.
+export function sameText(first: string, second: string): boolean {
+  if (first.length !== second.length) return false;
+  let difference = 0;
+  for (let index = 0; index < first.length; index++) difference |= first.charCodeAt(index) ^ second.charCodeAt(index);
+  return difference === 0;
+}
+
 export function env(name: string): string {
   const value = Deno.env.get(name);
   if (!value) throw new Error(`Variável ${name} não configurada.`);

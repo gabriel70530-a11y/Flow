@@ -1,6 +1,6 @@
 // Chamada a cada minuto pelo pg_cron (ver supabase/cron/lembretes.sql). Manda os lembretes de estudo
 // 1 hora antes, 30 minutos antes e na hora, no fuso de cada aparelho, só nos dias de estudo.
-import { adminClient, env, failure, json } from "../_shared/server.ts";
+import { adminClient, env, failure, json, sameText } from "../_shared/server.ts";
 import { sendPush, type VapidKeys } from "../_shared/webpush.ts";
 
 const OFFSETS = [60, 30, 0] as const;
@@ -74,7 +74,7 @@ function dueReminder(subscription: Subscription, now: Date) {
 }
 
 Deno.serve(async (request) => {
-  if (request.headers.get("x-reminders-secret") !== env("REMINDERS_SECRET")) return failure("Não autorizado.", 401);
+  if (!sameText(request.headers.get("x-reminders-secret") ?? "", env("REMINDERS_SECRET"))) return failure("Não autorizado.", 401);
   const vapid: VapidKeys = { publicKey: env("VAPID_PUBLIC_KEY"), privateKey: env("VAPID_PRIVATE_KEY"), subject: env("VAPID_SUBJECT") };
   const admin = adminClient();
   const { data, error } = await admin.from("push_subscriptions").select("*");
@@ -83,16 +83,17 @@ Deno.serve(async (request) => {
   const now = new Date();
   let sent = 0;
   for (const subscription of (data ?? []) as Subscription[]) {
-    const due = dueReminder(subscription, now);
-    if (!due) continue;
-    // Marca antes de enviar: se o envio falhar no meio, o aviso não se repete no minuto seguinte.
-    await admin.from("push_subscriptions").update({ last_sent: due.tag }).eq("endpoint", subscription.endpoint);
+    // Uma inscrição com fuso inválido ou um serviço de push fora do ar não pode travar os avisos das outras pessoas.
     try {
+      const due = dueReminder(subscription, now);
+      if (!due) continue;
+      // Marca antes de enviar: se o envio falhar no meio, o aviso não se repete no minuto seguinte.
+      await admin.from("push_subscriptions").update({ last_sent: due.tag }).eq("endpoint", subscription.endpoint);
       const status = await sendPush(subscription, { ...message(due.offset, due.time), tag: due.tag, url: "/painel" }, vapid);
       if (status === 404 || status === 410) await admin.from("push_subscriptions").delete().eq("endpoint", subscription.endpoint);
       else if (status < 300) sent++;
     } catch {
-      // Um serviço de push fora do ar não pode travar os avisos das outras pessoas.
+      // Segue para a próxima inscrição.
     }
   }
   return json({ sent });

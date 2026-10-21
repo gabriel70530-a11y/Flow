@@ -1,7 +1,7 @@
 // Recebe os avisos do Mercado Pago (publicado com --no-verify-jwt: quem chama é o Mercado Pago, não o app).
 // Nunca confia no corpo do aviso: confere a assinatura e consulta o pagamento na API antes de liberar o Pro.
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.118.0";
-import { mercadoPago, parseReference, validSignature, type BillingPlan } from "../_shared/mercadopago.ts";
+import { PRICES, mercadoPago, parseReference, validSignature, type BillingPlan } from "../_shared/mercadopago.ts";
 import { addDays, adminClient, failure, json } from "../_shared/server.ts";
 
 // Folga depois da data da próxima cobrança, para tentativas de cobrança não cortarem o Pro de quem está em dia.
@@ -12,6 +12,7 @@ interface Payment {
   status: string;
   external_reference: string | null;
   transaction_amount: number;
+  currency_id: string;
 }
 
 interface AuthorizedPayment {
@@ -66,6 +67,8 @@ async function onPayment(admin: SupabaseClient, id: string) {
   const reference = parseReference(payment.external_reference);
   // As cobranças da assinatura mensal chegam pelo aviso subscription_authorized_payment.
   if (payment.status !== "approved" || reference?.plan !== "anual") return;
+  // Só libera o ano pelo valor cobrado no checkout, em reais.
+  if (payment.currency_id !== "BRL" || payment.transaction_amount < PRICES.anual) return;
   if (!(await recordPayment(admin, String(payment.id), reference.userId, "anual", payment.transaction_amount))) return;
   const from = await currentUntil(admin, reference.userId);
   await grant(admin, reference.userId, "anual", addDays(from, 365), String(payment.id));

@@ -1,5 +1,5 @@
 // deno test supabase/functions/_shared/webpush_test.ts
-import { encryptPayload, fromBase64Url, toBase64Url } from "./webpush.ts";
+import { encryptPayload, fromBase64Url, isPushEndpoint, toBase64Url } from "./webpush.ts";
 
 type Bytes = Uint8Array<ArrayBuffer>;
 
@@ -50,4 +50,24 @@ Deno.test("o navegador abre a mensagem cifrada", async () => {
 Deno.test("base64url ida e volta", () => {
   const bytes = crypto.getRandomValues(new Uint8Array(65));
   assertEquals([...fromBase64Url(toBase64Url(bytes))], [...bytes]);
+});
+
+Deno.test("só aceita os serviços de push dos navegadores", () => {
+  const accepted = [
+    "https://fcm.googleapis.com/fcm/send/abc",
+    "https://updates.push.services.mozilla.com/wpush/v2/abc",
+    "https://web.push.apple.com/abc",
+    "https://wns2-bl2p.notify.windows.com/w/?token=abc",
+  ];
+  const refused = [
+    "http://fcm.googleapis.com/fcm/send/abc",
+    "https://fcm.googleapis.com.evil.example/abc",
+    "https://evil.example/fcm.googleapis.com/",
+    "https://fcm.googleapis.com:8443/abc",
+    "https://user@fcm.googleapis.com/abc",
+    "https://169.254.169.254/latest/meta-data",
+    "not a url",
+  ];
+  assertEquals(accepted.map(isPushEndpoint), accepted.map(() => true));
+  assertEquals(refused.map(isPushEndpoint), refused.map(() => false));
 });
