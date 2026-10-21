@@ -98,7 +98,7 @@ Copie `.env.example` para `.env.local` e preencha o que quiser. Sem as variávei
 | `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | ativam a conta e a sincronização. Sem elas, em produção o app diz que a conta não está disponível; no desenvolvimento local, abre sem conta. |
 | `NEXT_PUBLIC_PRO_TRIAL` | `true` libera o Pro para todos (testes com estudantes). Use junto com `PRO_TRIAL=true` nas funções. |
 | `NEXT_PUBLIC_PAYMENTS_OPEN` | `true` mostra os botões de assinar em Planos. Só ligue com o pagamento configurado (ver abaixo). |
-| `NEXT_PUBLIC_SITE_URL` | endereço público do site (ex.: `https://flow.exemplo.com`), usado no sitemap, no robots e nos cartões de compartilhamento. Só é preciso com domínio próprio: na Vercel, sem ela, vale o endereço de produção do projeto (hoje `https://flow-black.vercel.app`); fora da Vercel, `http://localhost:3000`. |
+| `NEXT_PUBLIC_SITE_URL` | endereço público do site (ex.: `https://flow.exemplo.com`), usado no sitemap, no robots e nos cartões de compartilhamento. Só é preciso com domínio próprio: na Vercel, sem ela, vale o endereço de produção do projeto (o `flow-black.vercel.app`, que hoje redireciona para `https://www.estudecomflow.com.br`); fora da Vercel, `http://localhost:3000`. |
 | `APP_OPEN` | `true` abre o app na produção da Vercel. Sem ela, a produção é só vitrine: página inicial, privacidade e termos, com "Em breve" no lugar dos botões, e as telas do app voltam para a página inicial. Local e prévias da Vercel ficam sempre abertos. Mudar exige publicar de novo. |
 
 ## Pagamento (funções do Supabase)

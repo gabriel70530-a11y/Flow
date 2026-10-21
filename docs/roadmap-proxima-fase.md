@@ -5,7 +5,7 @@ Pedido do Gabriel em 18/10/2026. A ordem abaixo é a sugerida: cada etapa destra
 ## Situação atual
 
 - Next.js 16 sem backend. Os dados ficam só no `localStorage`, na chave `enem-flow:v2`.
-- Publicado na Vercel (plano Hobby) em https://flow-black.vercel.app, a partir de github.com/gabriel70530-a11y/Flow. Cada push na `main` publica sozinho.
+- Publicado na Vercel (plano Hobby) em https://www.estudecomflow.com.br (o flow-black.vercel.app redireciona para ele), a partir de github.com/gabriel70530-a11y/Flow. Cada push na `main` publica sozinho.
 - O Pro (R$ 19,90/mês) é só um preço experimental: está tudo liberado e nada é cobrado (`lib/plan.ts`).
 - Já existem a camada de métricas com consentimento (`store/analytics.ts`), o backup em JSON e o service worker para uso offline.
 
