@@ -1,0 +1,53 @@
+plugins {
+    id "com.android.application"
+}
+
+def flowHost = providers.gradleProperty("flowHost").get()
+def launchUrl = "https://${flowHost}/painel?origem=android"
+def keystorePath = System.getenv("FLOW_KEYSTORE_PATH")
+
+android {
+    namespace "app.flowestudos"
+    compileSdk 36
+
+    defaultConfig {
+        // Igual a ANDROID_PACKAGE em lib/site.ts. Depois da primeira publicação não pode mais mudar.
+        applicationId "app.flowestudos"
+        minSdk 24
+        targetSdk 36
+        versionCode providers.gradleProperty("flowVersionCode").get().toInteger()
+        versionName providers.gradleProperty("flowVersionName").get()
+
+        manifestPlaceholders = [hostName: flowHost]
+        resValue "string", "launchUrl", launchUrl
+        resValue "string", "assetStatements",
+            "[{ \\\"relation\\\": [\\\"delegate_permission/common.handle_all_urls\\\"], \\\"target\\\": { \\\"namespace\\\": \\\"web\\\", \\\"site\\\": \\\"https://${flowHost}\\\" } }]"
+    }
+
+    signingConfigs {
+        if (keystorePath) {
+            release {
+                storeFile file(keystorePath)
+                storePassword System.getenv("FLOW_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("FLOW_KEY_ALIAS")
+                keyPassword System.getenv("FLOW_KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (keystorePath) signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation "com.google.androidbrowserhelper:androidbrowserhelper:2.7.4"
+}

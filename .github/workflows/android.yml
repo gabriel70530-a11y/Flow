@@ -1,0 +1,53 @@
+# Gera o app Android (.aab assinado) para enviar à Play Store. Roda à mão: Actions > App Android > Run workflow.
+name: App Android
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: "Versão mostrada na Play Store"
+        required: true
+        default: "1.0.0"
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Chave de upload
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Falta o segredo ANDROID_KEYSTORE_BASE64. Veja docs/play-store.md."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+
+      - name: Gerar o .aab
+        env:
+          FLOW_KEYSTORE_PATH: ${{ runner.temp }}/upload.jks
+          FLOW_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          FLOW_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          FLOW_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          VERSION_NAME: ${{ inputs.version_name }}
+        run: ./gradlew bundleRelease -PflowVersionCode=${{ github.run_number }} -PflowVersionName="$VERSION_NAME"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flow-${{ inputs.version_name }}-${{ github.run_number }}
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
+      - name: Remover a chave
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks"
