@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { buttonStyles } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
-import { FREE_FEATURES, PRICES, PRO_FEATURES, interestListUrl } from "@/lib/plan";
+import { FREE_FEATURES, PRICES, PRO_FEATURES, interestListUrl, paymentsOpen } from "@/lib/plan";
 import { appOpen } from "@/lib/site";
 import { InterestLink } from "./InterestLink";
 
@@ -48,7 +48,7 @@ export function PlanCards({ proActions }: { proActions?: ReactNode }) {
 
       <Card className="grid gap-4">
         <CardHeader title="Flow Pro" className="mb-0">
-          {!inApp && (
+          {!inApp && !paymentsOpen() && (
             <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent">Em breve</span>
           )}
         </CardHeader>
@@ -64,6 +64,10 @@ export function PlanCards({ proActions }: { proActions?: ReactNode }) {
         <FeatureList items={PRO_FEATURES} />
         {inApp ? (
           proActions
+        ) : paymentsOpen() ? (
+          <Link href="/planos" className={buttonStyles("secondary", "lg")}>
+            Assinar o Pro
+          </Link>
         ) : interestUrl ? (
           <InterestLink href={interestUrl} />
         ) : (
