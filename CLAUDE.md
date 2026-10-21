@@ -96,7 +96,7 @@ store/
   analytics.ts          eventos de uso: só com endpoint configurado e consentimento
   cloud.ts              login (e-mail e Google), sincronização, Pro do servidor, pagamento, sair e excluir conta
   pro.ts                registro do Pro confirmado pelo servidor (proAccessNow, useProAccess)
-supabase/migrations/    records com RLS, push_records, delete_account; entitlements, payments e ai_usage (sem uso)
+supabase/migrations/    records com RLS (gravação só por push_records), delete_account; entitlements, payments e ai_usage (sem uso); push só para serviços dos navegadores
 supabase/functions/     checkout, mercadopago-webhook, cancel-subscription, send-reminders (push)
 public/provas/          questões das provas no app (JSON por dia, sem gabarito) e imagens
 ```

@@ -134,6 +134,12 @@ A função `send-reminders` manda os avisos de estudo com o app fechado (Web Pus
 4. Publicar: `supabase functions deploy send-reminders --no-verify-jwt` (já publicada em 19/10/2026, sem verificação de JWT; falta só os segredos).
 5. Criar no Vault `project_url` e `reminders_secret` (o mesmo valor de `REMINDERS_SECRET`) e rodar `supabase/cron/lembretes.sql`.
 
+## Segurança
+
+- O site manda CSP, HSTS, `X-Frame-Options`, `nosniff`, `Referrer-Policy` e `Permissions-Policy` (`next.config.ts`). A CSP só deixa o navegador falar com o próprio site, o Supabase e o endpoint de métricas: com um domínio novo, configure a variável antes do build.
+- `supabase/migrations/20261023000000_security.sql`: os registros só entram por `push_records` (até 60 mil por conta), as inscrições de push só aceitam os serviços dos navegadores (a função também confere) e saem as funções de IA. Rode com as outras migrações.
+- No painel do Supabase (Authentication): ligar a proteção contra senhas vazadas, deixar a confirmação de e-mail ligada, restringir as Redirect URLs ao domínio do site e revisar os limites de tentativas de login.
+
 ## O que ainda depende de decisão ou serviço externo
 
 **Para publicar esta versão, na ordem:** (1) rodar no Supabase as migrações `20261019000000_pro.sql`, `20261020000000_study_tools.sql` e `20261021000000_push.sql` (sem elas, a sincronização de cartões e blocos falha); (2) na Vercel, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` e, se for abrir o app, `APP_OPEN=true` (e `NEXT_PUBLIC_PRO_TRIAL=true` para testar o Pro com estudantes); (3) para o login com Google, ativar o provedor no Supabase e pôr `NEXT_PUBLIC_GOOGLE_LOGIN=true` (sem ela, o botão não aparece); (4) dar push na `main`; (5) os lembretes por push, acima.
