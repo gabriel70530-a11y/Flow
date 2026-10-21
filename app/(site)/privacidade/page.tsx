@@ -64,11 +64,12 @@ export default function PrivacidadePage() {
           Mercado Pago (pagamento).
         </p>
       </section>
-      <section>
+      <section id="como-apagar">
         <h2>Como apagar</h2>
         <p>
           Em Ajustes, &quot;Apagar todos os dados&quot; remove o conteúdo do app neste aparelho e na nuvem. &quot;Excluir
-          conta&quot; apaga a conta e a cópia na nuvem. Registros de pagamento podem ser mantidos pelo prazo que a lei fiscal exige.
+          conta&quot; apaga a conta e a cópia na nuvem. Vale para o site e para o app Android, e dá para fazer pelo site mesmo
+          sem o app instalado. Registros de pagamento podem ser mantidos pelo prazo que a lei fiscal exige.
         </p>
       </section>
       <section>

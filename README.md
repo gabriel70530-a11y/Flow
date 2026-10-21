@@ -124,6 +124,14 @@ Para ativar:
 
 Conferência local: `deno check` e `deno lint` passam dentro de `supabase/functions`. As funções ainda não foram testadas de ponta a ponta contra o Supabase e o Mercado Pago (o anual foi testado com contas de teste em 19/10/2026).
 
+## App Android (Play Store)
+
+O app Android é o próprio site aberto pelo Chrome em tela cheia (Trusted Web Activity): o projeto fica em `android/` e o `.aab` assinado sai do workflow "App Android" no GitHub. Mudanças no site já valem no app. No app Android, Planos não oferece a assinatura (regra da Play Store); o Pro assinado pelo site vale nele. O passo a passo, da chave de upload à ficha da loja, está em `docs/play-store.md`.
+
+| Variável | Efeito |
+|---|---|
+| `ANDROID_CERT_FINGERPRINTS` | impressões SHA-256 dos certificados do app (Play Console > Integridade do app), separadas por vírgula. Publicadas em `/.well-known/assetlinks.json`; sem elas o app abre com a barra de endereço do Chrome. |
+
 ## Lembretes por push
 
 A função `send-reminders` manda os avisos de estudo com o app fechado (Web Push com VAPID, sem dependências: `_shared/webpush.ts`). Sem ela, os avisos aparecem só com o Flow aberto.

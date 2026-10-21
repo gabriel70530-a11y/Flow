@@ -96,9 +96,12 @@ store/
   analytics.ts          eventos de uso: só com endpoint configurado e consentimento
   cloud.ts              login (e-mail e Google), sincronização, Pro do servidor, pagamento, sair e excluir conta
   pro.ts                registro do Pro confirmado pelo servidor (proAccessNow, useProAccess)
+  platform.ts           se o Flow foi aberto pelo app Android (sessão)
 supabase/migrations/    records com RLS (gravação só por push_records), delete_account; entitlements, payments e ai_usage (sem uso); push só para serviços dos navegadores
 supabase/functions/     checkout, mercadopago-webhook, cancel-subscription, send-reminders (push)
 public/provas/          questões das provas no app (JSON por dia, sem gabarito) e imagens
+public/icons/           ícones PNG do manifest (exigidos pelo app Android)
+android/                app da Play Store (TWA): Gradle, manifest e recursos; endereço e versão em gradle.properties
 ```
 
 ## Modelo de dados (v2)
@@ -204,6 +207,7 @@ O estado completo (`StudyState`, `version: 2`) guarda `topics`, `progress`, `ses
 - **Lembrete de estudo** (Ajustes, gratuito): a pessoa escolhe o melhor horário (sincroniza) e liga os avisos em cada aparelho (pede a permissão de notificação). Avisa 1 hora antes, 30 minutos antes e na hora, só nos dias de estudo do cronograma, sem cobrança no texto. Com o app aberto, o navegador agenda o aviso (`useReminders`); com ele fechado, a função `send-reminders` (pg_cron a cada minuto, Web Push com VAPID em `_shared/webpush.ts`) manda pelo servidor. Os dois usam a mesma tag, então aparece um aviso só. Sair da conta desliga o push deste navegador.
 - **Modo foco** no Timer (Pro, junto com o Pomodoro; no gratuito o timer fica no cronômetro e mostra um `ProNotice`): tela cheia só com o relógio. Depois da sessão, a pergunta opcional "se distraiu?" vira uma linha no resumo da semana.
 - **Offline**: em produção, um service worker (`public/sw.js`) guarda as páginas e os arquivos do app; os dados já são locais.
+- **App Android** (Play Store): o site aberto pelo Chrome em tela cheia (TWA, `android/`, sem código Java), gerado pelo workflow `.github/workflows/android.yml`; passo a passo em `docs/play-store.md`. O app abre `/painel?origem=android`, guardado na `sessionStorage` (`store/platform.ts`); nele, Planos não oferece a assinatura (a Play Store só aceita o faturamento do Google e proíbe levar para pagar fora), e o Pro assinado pelo site vale normalmente. `/.well-known/assetlinks.json` sai de `ANDROID_CERT_FINGERPRINTS`; o pacote `app.flowestudos` fica em `lib/site.ts` e em `android/app/build.gradle`.
 
 **Painel** (prévia aprovada em `docs/previa-simplificada.html`)
 - Só três blocos: "Estudar hoje", "Esta semana" e "Revisões" (as 3 próximas), mais uma linha com o ritmo. No celular, logo depois de "Estudar hoje", vêm os atalhos da Preparação (grade 3×2 com ícone e "Ver tudo" para `/preparacao`). O subtítulo traz o dia e a contagem para o Enem.
