@@ -7,6 +7,7 @@ import { showToast } from "@/components/ui/Toast";
 import { shortDate, toDateKey } from "@/lib/dates";
 import { PRICES, isProActive, paymentsOpen, proTrialOpen, type BillingPlan } from "@/lib/plan";
 import { cancelSubscription, startCheckout, syncNow } from "@/store/cloud";
+import { useAndroidApp } from "@/store/platform";
 import { usePro } from "@/store/pro";
 import { InterestLink } from "./InterestLink";
 
@@ -50,6 +51,7 @@ function CancelButton() {
 // Nunca libera o Pro pelo navegador: só mostra o que o servidor confirmou e leva ao pagamento.
 export function ProActions({ interestUrl }: { interestUrl: string | null }) {
   const record = usePro((state) => state.record);
+  const androidApp = useAndroidApp();
   const [sending, setSending] = useState<BillingPlan | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,6 +76,16 @@ export function ProActions({ interestUrl }: { interestUrl: string | null }) {
         {record.plan === "mensal" && record.status === "ativa" && <CancelButton />}
         {record.plan === "anual" && <p className="text-muted">O anual não renova sozinho: perto do fim, você decide se continua.</p>}
       </div>
+    );
+  }
+
+  // Regra da Play Store: no app Android, nada de venda fora do faturamento do Google nem link para ela.
+  // O Pro assinado em outro lugar vale normalmente aqui.
+  if (androidApp) {
+    return (
+      <p className="rounded-[12px] bg-hover p-3.5 text-[13px]">
+        <strong>A assinatura não está disponível no app Android.</strong> Os recursos gratuitos funcionam normalmente.
+      </p>
     );
   }
 

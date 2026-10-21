@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Toast } from "@/components/ui/Toast";
 import { startCloud, useCloud } from "@/store/cloud";
+import { rememberAndroidLaunch } from "@/store/platform";
 import { useHydrated } from "@/store/study-store";
 import { Wordmark } from "./Wordmark";
 
@@ -41,6 +42,9 @@ function GateScreen({ children }: { children: ReactNode }) {
 export function AuthGate({ children }: { children: ReactNode }) {
   const hydrated = useHydrated();
   const { available, authReady, email, birthYear } = useCloud();
+
+  // Antes do login: a tela de entrar e o retorno do Google trocam o endereço de abertura do app Android.
+  useEffect(rememberAndroidLaunch, []);
 
   // Só depois de ler o aparelho: a sincronização compara com o que está salvo nele.
   useEffect(() => {
